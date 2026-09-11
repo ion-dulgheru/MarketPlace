@@ -1,4 +1,4 @@
-using App.Domain.Entities;
+/* using App.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -34,3 +34,4 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
     }
 }
+*/

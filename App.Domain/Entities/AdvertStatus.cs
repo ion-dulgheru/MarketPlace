@@ -1,4 +1,4 @@
-namespace App.Domain.Entites;
+namespace App.Domain.Entities;
 
 public enum AdvertStatus
 {

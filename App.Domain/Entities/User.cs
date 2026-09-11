@@ -1,5 +1,5 @@
 namespace App.Domain.Entities;
-
+using App.Domain.Common;
 public class User : BaseEntity {
     
     public string Email {get; private set; }
