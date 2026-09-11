@@ -1,5 +1,5 @@
 namespace App.Domain.Entites;
-
+using App.Domain.Common;
 public class UserSession : BaseEntity
 {
 

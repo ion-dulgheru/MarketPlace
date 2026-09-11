@@ -1,6 +1,6 @@
-namespace App.Domain.Entites;
+namespace App.Domain.Entities;
 
-public enum Advertype
+public enum AdvertType
 {
     Sale,
     Rent,
