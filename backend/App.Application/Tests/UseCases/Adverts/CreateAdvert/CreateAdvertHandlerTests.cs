@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace App.Application.Tests.UseCases.Adverts.CreateAdvert;
 
 public class CreateAdvertHandlerTests

@@ -7,5 +7,5 @@ public record CreateAdvertRequest(
     decimal SurfaceArea,
     int Rooms,
     int Floor,
-    AdvertType Type,
+    string AdvertType
 );
