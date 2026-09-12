@@ -10,6 +10,7 @@ public class DataContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Advert> Adverts => Set<Advert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

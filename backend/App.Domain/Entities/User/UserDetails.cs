@@ -1,10 +1,12 @@
+using App.Domain.Common;
+
 namespace App.Domain.Entities;
 
-public class UserDetails
+public class UserDetails : PublicEntity
 {
     public string FirstName { get; private set; } = null!;
     public string LastName { get; private set; } = null!;
-    public int Age { get; private set; }
-    public int PhoneNumber { get; private set; }
+    public DateTime? DateOfBirth { get; private set; }
+    public string? PhoneNumber { get; private set; }
     public long UserId { get; private set; }
 }
