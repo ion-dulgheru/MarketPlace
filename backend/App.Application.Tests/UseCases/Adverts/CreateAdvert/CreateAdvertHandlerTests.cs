@@ -1,4 +1,9 @@
+using Moq;
 using Xunit;
+using App.Application.UseCases.Adverts.CreateAdvert;
+using App.Contracts.Requests.Adverts;
+using App.Domain.Entities;      // for AdvertType
+using App.Domain.Repositories;  // for IAdvertRepository, IUnitOfWork
 
 namespace App.Application.Tests.UseCases.Adverts.CreateAdvert;
 
@@ -20,7 +25,7 @@ public class CreateAdvertHandlerTests
             45.5m, 
             2, 
             3, 
-            AdvertType.Sale
+            AdvertType.Sale.ToString()
         );
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 

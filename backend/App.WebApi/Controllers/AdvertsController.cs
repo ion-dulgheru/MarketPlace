@@ -1,3 +1,14 @@
+
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using App.Contracts.Requests.Adverts;
+using App.Application.UseCases.Adverts.CreateAdvert;
+using App.Contracts.Responses;
+
+namespace App.WebApi.Controllers;
+
 [Authorize]
 [Route("api/adverts")]
 public class AdvertsController(ISender sender) : BaseController

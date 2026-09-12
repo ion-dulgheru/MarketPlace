@@ -13,23 +13,22 @@ public class Advert : BaseEntity
     public AdvertStatus Status { get; private set; }
     public AdvertType Type { get; private set; }
     public DateTime ExpiresAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
-    public long UserId { get; private set; }
+    public Guid UserUuid { get; private set; }   // was long UserId
 
     protected Advert() { }
 
-    public Advert(long userId, string title, string description, decimal price, decimal surfaceArea,
-                int rooms, int floor, AdvertType type, DateTime expiresAt)
-{
-    UserId = userId;
-    Title = title;
-    Description = description;
-    Price = price;
-    SurfaceArea = surfaceArea;
-    Rooms = rooms;
-    Floor = floor;
-    Type = type;
-    ExpiresAt = expiresAt;
-    Status = AdvertStatus.Active;
-}
+    public Advert(Guid userUuid, string title, string description, decimal price, decimal surfaceArea,
+                  int rooms, int floor, AdvertType type, DateTime expiresAt)
+    {
+        UserUuid = userUuid;
+        Title = title;
+        Description = description;
+        Price = price;
+        SurfaceArea = surfaceArea;
+        Rooms = rooms;
+        Floor = floor;
+        Type = type;
+        ExpiresAt = expiresAt;
+        Status = AdvertStatus.Active;
+    }
 }
