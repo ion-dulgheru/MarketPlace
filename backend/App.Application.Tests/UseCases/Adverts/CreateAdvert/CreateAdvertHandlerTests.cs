@@ -40,4 +40,36 @@ public class CreateAdvertHandlerTests
         mockRepository.Verify(x => x.AddAsync(It.IsAny<Advert>(), It.IsAny<CancellationToken>()), Times.Once);
         mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Handle_WhenInvalidType_ReturnsValidationError()
+    {
+        // 1. Arrange
+        var mockRepository = new Mock<IAdvertRepository>();
+        var mockUnitOfWork = new Mock<IUnitOfWork>();
+
+        var handler = new CreateAdvertHandler(mockRepository.Object, mockUnitOfWork.Object);
+
+        var request = new CreateAdvertRequest(
+            "Cozy Studio", 
+            "Great apartment in city center", 
+            50000m, 
+            45.5m, 
+            2, 
+            3, 
+            "InvalidTypeName"
+        );
+        var command = new CreateAdvertCommand(request, Guid.NewGuid());
+
+        // 2. Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // 3. Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(AdvertErrors.InvalidType.Code, result.Error.Code);
+
+        // Verify repository and unit of work were never called
+        mockRepository.Verify(x => x.AddAsync(It.IsAny<Advert>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }
