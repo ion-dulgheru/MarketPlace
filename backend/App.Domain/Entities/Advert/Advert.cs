@@ -4,8 +4,8 @@ namespace App.Domain.Entities;
 
 public class Advert : BaseEntity
 {
-    public string Title { get; private set; }
-    public string Description { get; private set; }
+    public string Title { get; private set; }= null!;
+    public string Description { get; private set; }= null!;
     public decimal Price { get; private set; }
     public decimal SurfaceArea { get; private set; }
     public int Rooms { get; private set; }
