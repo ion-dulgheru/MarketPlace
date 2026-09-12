@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using App.Contracts.Responses;
 using App.Domain.Shared;
 
 namespace App.WebApi.Controllers;
@@ -17,13 +18,15 @@ public class BaseController : Controller
         }
     }
 
+    protected static ErrorDetails ToProblem(Error error) => new(error.Code, error.Message);
+
     protected IActionResult HandleFailure(Result result) =>
         result.Error.Type switch
         {
-            ErrorType.Validation => BadRequest(result.Error),
-            ErrorType.NotFound => NotFound(result.Error),
-            ErrorType.Conflict => Conflict(result.Error),
-            ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, result.Error),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, result.Error)
+            ErrorType.Validation => BadRequest(ToProblem(result.Error)),
+            ErrorType.NotFound => NotFound(ToProblem(result.Error)),
+            ErrorType.Conflict => Conflict(ToProblem(result.Error)),
+            ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, ToProblem(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, ToProblem(result.Error))
         };
 }
