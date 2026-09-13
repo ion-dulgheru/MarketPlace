@@ -47,6 +47,10 @@ public class Advert : PublicEntity, ISoftDeletable
         };
     }
 
+    public void ChangeStatus(AdvertStatus status)
+    {
+        Status = status;
+    }
 
     public void SoftDelete()
     {
