@@ -7,11 +7,14 @@ public class User : PublicEntity
     public string Email { get; private set; } = null!;
     public string PasswordHash { get; private set; } = null!;
     public bool EmailVerification { get; private set; }
-    protected User() { }
+    private User() { }
 
-public User(string email, string passwordHash)
-{
-    Email = email;
-    PasswordHash = passwordHash;
-}
+    public static User Create(string email, string passwordHash)
+    {
+        return new User
+        {
+            Email = email,
+            PasswordHash = passwordHash
+        };
+    }
 }
