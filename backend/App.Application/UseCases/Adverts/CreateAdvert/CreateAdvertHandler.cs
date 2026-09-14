@@ -17,7 +17,7 @@ public class CreateAdvertHandler(
             return Result.Failure<Guid>(AdvertErrors.InvalidType);
         }
 
-        var advert = new Advert(
+        var advert = Advert.Create(
             command.UserUuid,
             command.Request.Title,
             command.Request.Description,

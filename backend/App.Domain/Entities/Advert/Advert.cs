@@ -4,6 +4,8 @@ namespace App.Domain.Entities;
 
 public class Advert : PublicEntity, ISoftDeletable
 {
+    private Advert() { }
+
     public string Title { get; private set; } = null!;
     public string Description { get; private set; } = null!;
     public decimal Price { get; private set; }
@@ -18,9 +20,7 @@ public class Advert : PublicEntity, ISoftDeletable
     /// <inheritdoc cref="ISoftDeletable.DeletedAt"/>
     public DateTime? DeletedAt { get; private set; }
 
-    protected Advert() { }
-
-    public Advert(
+    public static Advert Create(
         Guid userUuid,
         string title,
         string description,
@@ -31,23 +31,23 @@ public class Advert : PublicEntity, ISoftDeletable
         AdvertType type,
         DateTime expiresAt)
     {
-        UserUuid = userUuid;
-        Title = title;
-        Description = description;
-        Price = price;
-        SurfaceArea = surfaceArea;
-        Rooms = rooms;
-        Floor = floor;
-        Type = type;
-        ExpiresAt = expiresAt;
-        Status = AdvertStatus.Active;
-        IsActive = true;
+        return new Advert
+        {
+            UserUuid = userUuid,
+            Title = title,
+            Description = description,
+            Price = price,
+            SurfaceArea = surfaceArea,
+            Rooms = rooms,
+            Floor = floor,
+            Type = type,
+            ExpiresAt = expiresAt,
+            Status = AdvertStatus.Active,
+            IsActive = true
+        };
     }
 
-    /// <summary>
-    /// Hides this advert from all public queries (sets IsActive = false)
-    /// and records the deletion time for audit purposes (sets DeletedAt = now).
-    /// </summary>
+
     public void SoftDelete()
     {
         IsActive = false;
