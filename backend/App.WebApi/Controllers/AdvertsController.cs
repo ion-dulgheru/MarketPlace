@@ -79,9 +79,9 @@ public class AdvertsController(ISender sender) : BaseController
     }
 
     [HttpGet("{uuid:guid}")]
+    [SwaggerResponse(204, "No advert content is available yet.")]
     public async Task<IActionResult> GetById(Guid uuid, CancellationToken ct = default)
     {
-        // Fetch endpoint placeholder
-        return Ok();
+        return NoContent();
     }
 }
