@@ -11,6 +11,12 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
         return await context.Adverts.FirstOrDefaultAsync(x => x.Guid == uuid, ct);
     }
 
+    public async Task<Advert?> GetByUuidForOwnerAsync(Guid uuid, Guid ownerUuid, CancellationToken ct)
+    {
+        return await context.Adverts
+            .FirstOrDefaultAsync(x => x.Guid == uuid && x.UserUuid == ownerUuid, ct);
+    }
+
     public async Task<IReadOnlyList<Advert>> GetActiveAsync(int page, int pageSize, CancellationToken ct)
     {
         return await context.Adverts
@@ -33,11 +39,6 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
     public async Task AddAsync(Advert advert, CancellationToken ct)
     {
         await context.Adverts.AddAsync(advert, ct);
-    }
-
-    public void Remove(Advert advert)
-    {
-        context.Adverts.Remove(advert);
     }
 }
 
