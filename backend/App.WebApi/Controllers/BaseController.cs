@@ -27,6 +27,7 @@ public class BaseController : Controller
             ErrorType.NotFound => NotFound(ToProblem(result.Error)),
             ErrorType.Conflict => Conflict(ToProblem(result.Error)),
             ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, ToProblem(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, ToProblem(result.Error))
+            ErrorType.Unauthorized => StatusCode(StatusCodes.Status401Unauthorized, ToProblem(result.Error)),
+        _ => StatusCode(StatusCodes.Status500InternalServerError, ToProblem(result.Error))
         };
 }
