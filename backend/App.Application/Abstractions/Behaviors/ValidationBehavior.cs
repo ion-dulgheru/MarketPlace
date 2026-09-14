@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Linq.Expressions;
 using System.Reflection;
 using App.Domain.Shared;
 using FluentValidation;
@@ -39,40 +37,26 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
             "Validation.Failed",
             string.Join("; ", errors.Select(e => e.ErrorMessage)));
 
-        return ValidationResultFactory.Create(error);
-    }
-
-    private static class ValidationResultFactory
-    {
-        private static readonly ConcurrentDictionary<Type, Func<Error, TResponse>> Cache = new();
-
-        public static TResponse Create(Error error)
+        if (typeof(TResponse) == typeof(Result))
         {
-            var factory = Cache.GetOrAdd(typeof(TResponse), type =>
-            {
-                if (type == typeof(Result))
-                {
-                    return err => (TResponse)(object)Result.Failure(err);
-                }
-
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Result<>))
-                {
-                    var valueType = type.GetGenericArguments()[0];
-                    var method = typeof(Result)
-                        .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                        .First(m => m.Name == nameof(Result.Failure) && m.IsGenericMethodDefinition)
-                        .MakeGenericMethod(valueType);
-
-                    var errorParam = Expression.Parameter(typeof(Error), "error");
-                    var call = Expression.Call(method, errorParam);
-                    return Expression.Lambda<Func<Error, TResponse>>(call, errorParam).Compile();
-                }
-
-                throw new InvalidOperationException($"Type {type.Name} is not a valid Result response type.");
-            });
-
-            return factory(error);
+            return (TResponse)(object)Result.Failure(error);
         }
+
+        var responseType = typeof(TResponse);
+        if (!responseType.IsGenericType || responseType.GetGenericTypeDefinition() != typeof(Result<>))
+        {
+            throw new InvalidOperationException($"Type {responseType.Name} is not a valid Result response type.");
+        }
+
+        var failureMethod = typeof(Result)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method =>
+                method.Name == nameof(Result.Failure) &&
+                method.IsGenericMethodDefinition &&
+                method.GetParameters().Length == 1)
+            .MakeGenericMethod(responseType.GetGenericArguments()[0]);
+
+        return (TResponse)failureMethod.Invoke(null, [error])!;
     }
 }
 
