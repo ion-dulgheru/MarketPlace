@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using App.Contracts.Requests.Users;
 using App.Application.UseCases.Users.Register;
+using App.Application.UseCases.Users.SignIn;
 
 namespace App.WebApi.Controllers;
 
@@ -19,4 +20,16 @@ public class AuthController(ISender sender) : BaseController
             ? HandleFailure(result)
             : Created(string.Empty, result.Value);
     }
+      [HttpPost("login")]
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new SignInCommand(request.Email, request.Password), ct);
+ 
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(new { token = result.Value });
+    }
+
 }

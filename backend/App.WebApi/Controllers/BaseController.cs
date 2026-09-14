@@ -21,12 +21,13 @@ public class BaseController : Controller
     protected static ErrorDetails ToProblem(Error error) => new(error.Code, error.Message);
 
     protected IActionResult HandleFailure(Result result) =>
-        result.Error.Type switch
-        {
-            ErrorType.Validation => BadRequest(ToProblem(result.Error)),
-            ErrorType.NotFound => NotFound(ToProblem(result.Error)),
-            ErrorType.Conflict => Conflict(ToProblem(result.Error)),
-            ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, ToProblem(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, ToProblem(result.Error))
-        };
+    result.Error.Type switch
+    {
+        ErrorType.Validation => BadRequest(ToProblem(result.Error)),
+        ErrorType.NotFound => NotFound(ToProblem(result.Error)),
+        ErrorType.Conflict => Conflict(ToProblem(result.Error)),
+        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, ToProblem(result.Error)),
+        ErrorType.Unauthorized => Unauthorized(ToProblem(result.Error)),
+        _ => StatusCode(StatusCodes.Status500InternalServerError, ToProblem(result.Error))
+    };
 }
