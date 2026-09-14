@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using App.Contracts.Responses;
 using App.Domain.Shared;
 
@@ -13,7 +14,9 @@ public class BaseController : Controller
     {
         get
         {
-            var value = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
             return Guid.TryParse(value, out var id) ? id : null;
         }
     }
