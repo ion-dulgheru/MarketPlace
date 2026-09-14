@@ -1,5 +1,6 @@
 using App.Application.Abstractions.Messaging;
 using App.Domain.Entities;
+using App.Domain.Errors;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -12,10 +13,7 @@ public class CreateAdvertHandler(
 {
     public async Task<Result<Guid>> Handle(CreateAdvertCommand command, CancellationToken ct)
     {
-        if (!Enum.TryParse<AdvertType>(command.Request.Type, ignoreCase: true, out var type))
-        {
-            return Result.Failure<Guid>(AdvertErrors.InvalidType);
-        }
+        var type = Enum.Parse<AdvertType>(command.Request.Type, ignoreCase: true);
 
         var advert = Advert.Create(
             command.UserUuid,

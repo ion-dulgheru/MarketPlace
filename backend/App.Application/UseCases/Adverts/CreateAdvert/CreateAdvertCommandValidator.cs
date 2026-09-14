@@ -1,3 +1,5 @@
+using App.Domain.Entities;
+using App.Domain.Errors;
 using FluentValidation;
 
 namespace App.Application.UseCases.Adverts.CreateAdvert;
@@ -6,25 +8,25 @@ public class CreateAdvertCommandValidator : AbstractValidator<CreateAdvertComman
 {
     public CreateAdvertCommandValidator()
     {
-        // 1. Validate Title
         RuleFor(x => x.Request.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+            .NotEmpty().WithMessage(AdvertErrors.TitleRequired.Message)
+            .MaximumLength(200).WithMessage(AdvertErrors.TitleTooLong.Message);
 
-        // 2. Validate Price (Must be positive!)
+        RuleFor(x => x.Request.Type)
+            .NotEmpty()
+            .Must(type => Enum.TryParse<AdvertType>(type, true, out _))
+            .WithMessage(AdvertErrors.InvalidType.Message);
+
         RuleFor(x => x.Request.Price)
-            .GreaterThan(0).WithMessage("Price must be greater than 0.");
+            .GreaterThan(0).WithMessage(AdvertErrors.PriceMustBePositive.Message);
 
-        // 3. Validate Surface Area
         RuleFor(x => x.Request.SurfaceArea)
-            .GreaterThan(0).WithMessage("Surface area must be greater than 0.");
+            .GreaterThan(0).WithMessage(AdvertErrors.SurfaceAreaMustBePositive.Message);
 
-        // 4. Validate Rooms
         RuleFor(x => x.Request.Rooms)
-            .GreaterThan(0).WithMessage("Room count must be at least 1.");
+            .GreaterThan(0).WithMessage(AdvertErrors.RoomsMustBePositive.Message);
 
-        // 5. Validate Description Length
         RuleFor(x => x.Request.Description)
-            .MaximumLength(4000).WithMessage("Description is too long.");
+            .MaximumLength(4000).WithMessage(AdvertErrors.DescriptionTooLong.Message);
     }
 }
