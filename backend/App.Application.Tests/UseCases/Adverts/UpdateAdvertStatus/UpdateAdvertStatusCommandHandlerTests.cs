@@ -1,6 +1,7 @@
 using App.Application.UseCases.Adverts.UpdateAdvertStatus;
 using App.Contracts.Requests.Adverts;
 using App.Domain.Entities;
+using App.Domain.Errors;
 using App.Domain.Repositories;
 using Moq;
 using Xunit;

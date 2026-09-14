@@ -1,5 +1,6 @@
 using App.Application.Abstractions.Messaging;
 using App.Domain.Entities;
+using App.Domain.Errors;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -12,6 +13,11 @@ public class UpdateAdvertStatusCommandHandler(
 {
     public async Task<Result> Handle(UpdateAdvertStatusCommand command, CancellationToken ct)
     {
+        if (command.AdvertUuid == Guid.Empty || command.UserUuid == Guid.Empty)
+        {
+            return Result.Failure(AdvertErrors.InvalidIdentifier);
+        }
+
         var advert = await advertRepository.GetByUuidForOwnerAsync(
             command.AdvertUuid,
             command.UserUuid,
