@@ -11,6 +11,17 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
         return await context.Adverts.FirstOrDefaultAsync(x => x.Guid == uuid, ct);
     }
 
+    public async Task<IReadOnlyList<Advert>> GetActiveAsync(int page, int pageSize, CancellationToken ct)
+    {
+        return await context.Adverts
+            .Where(x => x.IsActive && x.Status == AdvertStatus.Active)
+            .OrderByDescending(x => x.CreatedDate)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Advert>> GetByUserAsync(Guid userUuid, CancellationToken ct)
     {
         return await context.Adverts
