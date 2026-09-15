@@ -10,6 +10,7 @@ using App.Application.UseCases.Adverts.UpdateAdvertStatus;
 using App.Application.UseCases.Adverts.DeleteAdvert;
 using App.Contracts.Responses;
 using App.Contracts.Responses.Adverts;
+using App.Application.UseCases.Adverts.UpdateAdvert;
 
 namespace App.WebApi.Controllers;
 
@@ -83,5 +84,23 @@ public class AdvertsController(ISender sender) : BaseController
     public async Task<IActionResult> GetById(Guid uuid, CancellationToken ct = default)
     {
         return NoContent();
+    }
+
+    [HttpPut("{uuid:guid}")]
+    [SwaggerResponse(200, "Advert updated.")]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> Update(
+        Guid uuid,
+        [FromBody] UpdateAdvertRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(
+            new UpdateAdvertCommand(uuid, request, UserUuid),
+            ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok();
     }
 }
