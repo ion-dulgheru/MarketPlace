@@ -1,0 +1,16 @@
+using App.Domain.Entities;
+using App.Domain.Errors;
+using FluentValidation;
+
+namespace App.Application.UseCases.Adverts.UpdateAdvertStatus;
+
+public class UpdateAdvertStatusCommandValidator : AbstractValidator<UpdateAdvertStatusCommand>
+{
+    public UpdateAdvertStatusCommandValidator()
+    {
+        RuleFor(x => x.Request.Status)
+            .NotEmpty()
+            .Must(status => Enum.TryParse<AdvertStatus>(status, true, out _))
+            .WithMessage(AdvertErrors.InvalidStatus.Message);
+    }
+}
