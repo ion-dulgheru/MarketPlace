@@ -57,7 +57,6 @@ const listings: Listing[] = [
   { id: 5, title: "Bright studio near the university", location: "Rîșcani, Chișinău", price: "MDL 8,500 / month", kind: "rent", type: "Studio", beds: 1, baths: 1, area: 42, image: apartment, imageAlt: "Bright modern studio apartment", seller: "Elena Ceban · Owner", posted: "Yesterday" },
   { id: 6, title: "Spacious apartment with terrace", location: "Botanica, Chișinău", price: "MDL 14,000 / month", kind: "rent", type: "Apartment", beds: 2, baths: 2, area: 110, image: loft, imageAlt: "Spacious apartment with a modern kitchen", seller: "Capital Living · Agency", posted: "2 days ago", status: "rented" },
 ];
-
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "OpenKey Moldova — Homes for Sale & Rent" },
@@ -75,7 +74,7 @@ function Index() {
   const [query, setQuery] = useState("");
   const [propertyType, setPropertyType] = useState("All types");
   const [saved, setSaved] = useState<number[]>([]);
-  const [dialog, setDialog] = useState<"contact" | "publish" | "signin" | null>(null);
+  const [dialog, setDialog] = useState<"contact" | "publish" | "signin" | "register" | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [published, setPublished] = useState(false);
 
@@ -176,8 +175,57 @@ function Index() {
 
       <Dialog open={dialog === "contact"} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle className="font-display text-2xl">Contact {selected?.seller.split(" · ")[0]}</DialogTitle><DialogDescription>Create an account or sign in to contact the owner of “{selected?.title}”. Browsing always stays open.</DialogDescription></DialogHeader><div className="grid gap-3 py-2"><Button onClick={() => setDialog("signin")}><UserRound /> Continue to sign in</Button><Button variant="outline" onClick={() => setDialog(null)}>Keep browsing</Button></div></DialogContent></Dialog>
 
-      <Dialog open={dialog === "signin"} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle className="font-display text-2xl">Welcome to OpenKey</DialogTitle><DialogDescription>Sign in to contact owners and manage your own listings.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); setDialog(null); }}><label className="grid gap-1.5 text-sm font-medium">Email<input required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><label className="grid gap-1.5 text-sm font-medium">Password<input required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><Button type="submit">Sign in</Button><p className="text-center text-xs text-muted-foreground">New here? Creating an account takes less than a minute.</p></form></DialogContent></Dialog>
+      <Dialog open={dialog === "signin"} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle className="font-display text-2xl">Welcome to OpenKey</DialogTitle><DialogDescription>Sign in to contact owners and manage your own listings.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); setDialog(null); }}><label className="grid gap-1.5 text-sm font-medium">Email<input required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><label className="grid gap-1.5 text-sm font-medium">Password<input required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><Button type="submit">Sign in</Button><div className="border-t border-border pt-4 text-center"><p className="text-xs text-muted-foreground">Don&apos;t have an account?</p><Button type="button" variant="link" className="mt-1" onClick={() => setDialog("register")}>Create account</Button></div></form></DialogContent></Dialog>
 
+      <Dialog open={dialog === "register"} onOpenChange={(open) => !open && setDialog(null)}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle className="font-display text-2xl">Create your account</DialogTitle>
+      <DialogDescription>Register to contact property owners and manage your listings.</DialogDescription>
+    </DialogHeader>
+    <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); setDialog(null); }}>
+      <label className="grid gap-1.5 text-sm font-medium">
+        Name
+        <input required type="text" placeholder="Your name" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+      </label>
+
+      <label className="grid gap-1.5 text-sm font-medium">
+        Email
+        <input required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+      </label>
+
+      <label className="grid gap-1.5 text-sm font-medium">
+        Password
+        <input required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+      </label>
+
+      <div className="grid grid-cols-2 gap-4">
+        <label className="grid gap-1.5 text-sm font-medium">
+          Gender
+          <select required defaultValue="" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring">
+            <option value="" disabled>Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label className="grid gap-1.5 text-sm font-medium">
+          Age
+          <input required type="number" min={1} max={120} placeholder="e.g. 28" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+        </label>
+      </div>
+
+      <label className="grid gap-1.5 text-sm font-medium">
+        Phone Number
+        <input required type="tel" placeholder="+1 (555) 000-0000" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+      </label>
+
+      <Button type="submit">Create account</Button>
+      <Button type="button" variant="ghost" onClick={() => setDialog("signin")}>Back to sign in</Button>
+    </form>
+  </DialogContent>
+</Dialog>
       <Dialog open={dialog === "publish"} onOpenChange={(open) => !open && setDialog(null)}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle className="font-display text-2xl">Publish a property</DialogTitle><DialogDescription>Your listing becomes public immediately. You can mark it sold or rented later.</DialogDescription></DialogHeader>{published ? <div className="py-8 text-center"><span className="mx-auto grid size-14 place-items-center rounded-full bg-brand-soft text-primary"><Check className="size-7" /></span><h3 className="mt-4 font-display text-2xl">Your listing is live</h3><p className="mt-2 text-sm text-muted-foreground">It is now visible to everyone browsing OpenKey.</p><Button className="mt-6" onClick={() => setDialog(null)}>View listing</Button></div> : <form className="grid gap-4" onSubmit={submitPublish}><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-medium">Listing type<select className="h-11 rounded-md border border-input bg-background px-3"><option>For sale</option><option>For rent</option></select></label><label className="grid gap-1.5 text-sm font-medium">Property type<select className="h-11 rounded-md border border-input bg-background px-3"><option>Apartment</option><option>House</option><option>Studio</option><option>Loft</option></select></label></div><label className="grid gap-1.5 text-sm font-medium">Title<input required placeholder="Bright two-bedroom apartment" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><label className="grid gap-1.5 text-sm font-medium">Location<input required placeholder="Neighbourhood, city" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-medium">Price<input required type="number" placeholder="485000" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label><label className="grid gap-1.5 text-sm font-medium">Size in m²<input required type="number" placeholder="84" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" /></label></div><label className="grid gap-1.5 text-sm font-medium">Photos<span className="grid h-24 cursor-pointer place-items-center rounded-md border border-dashed border-input bg-muted text-xs text-muted-foreground"><Building2 className="mb-1 size-5" />Choose property photos<input type="file" accept="image/*" className="sr-only" /></span></label><DialogFooter><Button type="button" variant="outline" onClick={() => setDialog(null)}>Cancel</Button><Button type="submit">Publish now</Button></DialogFooter></form>}</DialogContent></Dialog>
     </div>
   );
