@@ -28,7 +28,13 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
                 advert.Floor,
                 advert.Status.ToString(),
                 advert.Type.ToString(),
-                advert.CreatedDate))
+                advert.CreatedDate,
+                new AddressResponse(
+                    advert.Address.Country,
+                    advert.Address.City,
+                    advert.Address.Region,
+                    advert.Address.StreetAddress,
+                    advert.Address.StreetNumber)))
             .ToList();
 
         return new GetAdvertsResponse(

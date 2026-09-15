@@ -18,6 +18,7 @@ public class CreateAdvertValidationPipelineTests
         var behavior = new ValidationBehavior<CreateAdvertCommand, Result<Guid>>([validator]);
         var nextMock = new Mock<RequestHandlerDelegate<Result<Guid>>>();
 
+        var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var invalidRequest = new CreateAdvertRequest(
             "", // Empty title triggers FluentValidation
             "Some description",
@@ -25,7 +26,8 @@ public class CreateAdvertValidationPipelineTests
             50m,
             2,
             1,
-            "Sale");
+            "Sale",
+            defaultAddress);
         var command = new CreateAdvertCommand(invalidRequest, Guid.NewGuid());
 
         // 2. Act
@@ -48,6 +50,7 @@ public class CreateAdvertValidationPipelineTests
         var behavior = new ValidationBehavior<CreateAdvertCommand, Result<Guid>>([validator]);
         var nextMock = new Mock<RequestHandlerDelegate<Result<Guid>>>();
 
+        var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var invalidRequest = new CreateAdvertRequest(
             "Apartment",
             "Some description",
@@ -55,7 +58,8 @@ public class CreateAdvertValidationPipelineTests
             50m,
             2,
             1,
-            "InvalidTypeName");
+            "InvalidTypeName",
+            defaultAddress);
         var command = new CreateAdvertCommand(invalidRequest, Guid.NewGuid());
 
         var result = await behavior.Handle(command, nextMock.Object, CancellationToken.None);
@@ -76,6 +80,7 @@ public class CreateAdvertValidationPipelineTests
         var expectedGuid = Guid.NewGuid();
         nextMock.Setup(n => n(It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success(expectedGuid));
 
+        var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var validRequest = new CreateAdvertRequest(
             "Spacious Flat",
             "Great views and location",
@@ -83,7 +88,8 @@ public class CreateAdvertValidationPipelineTests
             75m,
             3,
             2,
-            "Sale");
+            "Sale",
+            defaultAddress);
         var command = new CreateAdvertCommand(validRequest, Guid.NewGuid());
 
         // 2. Act

@@ -25,7 +25,8 @@ public class CreateAdvertHandlerTests
             45.5m, 
             2, 
             3, 
-            AdvertType.Sale.ToString()
+            AdvertType.Sale.ToString(),
+            new AddressRequest("USA", "New York", "NY", "5th Ave", "101")
         );
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
