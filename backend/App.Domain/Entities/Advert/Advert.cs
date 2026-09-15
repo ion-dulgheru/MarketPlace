@@ -69,4 +69,23 @@ public class Advert : PublicEntity, ISoftDeletable
     {
         _photos.Add(photo);
     }
+
+    public void Update(
+        string title,
+        string description,
+        decimal price,
+        decimal surfaceArea,
+        int rooms,
+        int floor,
+        Address address
+    )
+    {
+        Title = title;
+        Description = description;
+        Price = price;
+        SurfaceArea = surfaceArea;
+        Rooms = rooms;
+        Floor = floor;
+        Address = address;
+    }
 }
