@@ -10,5 +10,6 @@ public record AdvertResponse(
     int Floor,
     string Status,
     string Type,
-    DateTime CreatedDate
+    DateTime CreatedDate,
+    AddressResponse Address
 );

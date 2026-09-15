@@ -1,4 +1,5 @@
 using App.Domain.Common;
+using App.Domain.ValueObjects;
 
 namespace App.Domain.Entities;
 
@@ -16,6 +17,7 @@ public class Advert : PublicEntity, ISoftDeletable
     public AdvertType Type { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public Guid UserUuid { get; private set; }
+    public Address Address { get; private set; } = null!;
 
     /// <inheritdoc cref="ISoftDeletable.DeletedAt"/>
     public DateTime? DeletedAt { get; private set; }
@@ -29,6 +31,7 @@ public class Advert : PublicEntity, ISoftDeletable
         int rooms,
         int floor,
         AdvertType type,
+        Address address,
         DateTime expiresAt)
     {
         return new Advert
@@ -43,6 +46,7 @@ public class Advert : PublicEntity, ISoftDeletable
             Type = type,
             ExpiresAt = expiresAt,
             Status = AdvertStatus.Active,
+            Address = address,
             IsActive = true
         };
     }

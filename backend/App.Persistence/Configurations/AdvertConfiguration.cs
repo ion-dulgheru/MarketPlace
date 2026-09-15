@@ -52,6 +52,29 @@ public class AdvertConfiguration : IEntityTypeConfiguration<Advert>
         builder.Property(x => x.CreatedDate)
             .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
+        builder.ComplexProperty(x => x.Address, addressBuilder =>
+        {
+            addressBuilder.Property(a => a.Country)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            addressBuilder.Property(a => a.City)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            addressBuilder.Property(a => a.Region)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            addressBuilder.Property(a => a.StreetAddress)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            addressBuilder.Property(a => a.StreetNumber)
+                .IsRequired()
+                .HasMaxLength(20);
+        });
+
         // IsActive = visibility filter, applied to all queries via the global query filter.
         // DeletedAt = audit-only timestamp (from ISoftDeletable), NOT used for filtering.
         builder.HasQueryFilter(x => x.IsActive);
