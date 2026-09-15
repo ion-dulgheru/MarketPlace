@@ -34,7 +34,12 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
                     advert.Address.City,
                     advert.Address.Region,
                     advert.Address.StreetAddress,
-                    advert.Address.StreetNumber)))
+                    advert.Address.StreetNumber),
+                advert.Photos
+                    .OrderByDescending(p => p.IsPrimary)
+                    .Take(1)
+                    .Select(p => new AdvertPhotoResponse(p.PhotoUrl, p.FileName, p.ContentType, p.IsPrimary))
+                    .ToList()))
             .ToList();
 
         return new GetAdvertsResponse(

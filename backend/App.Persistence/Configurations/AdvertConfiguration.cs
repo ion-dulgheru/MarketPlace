@@ -75,6 +75,11 @@ public class AdvertConfiguration : IEntityTypeConfiguration<Advert>
                 .HasMaxLength(20);
         });
 
+        builder.HasMany(x => x.Photos)
+            .WithOne(p => p.Advert)
+            .HasForeignKey(p => p.AdvertId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // IsActive = visibility filter, applied to all queries via the global query filter.
         // DeletedAt = audit-only timestamp (from ISoftDeletable), NOT used for filtering.
         builder.HasQueryFilter(x => x.IsActive);

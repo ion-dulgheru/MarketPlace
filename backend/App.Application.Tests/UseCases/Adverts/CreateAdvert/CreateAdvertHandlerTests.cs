@@ -26,7 +26,10 @@ public class CreateAdvertHandlerTests
             2, 
             3, 
             AdvertType.Sale.ToString(),
-            new AddressRequest("USA", "New York", "NY", "5th Ave", "101")
+            new AddressRequest("USA", "New York", "NY", "5th Ave", "101"),
+            [
+                new AdvertPhotoRequest("url1", "file1.jpg", "image/jpeg", true)
+            ]
         );
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
@@ -38,7 +41,11 @@ public class CreateAdvertHandlerTests
         Assert.NotEqual(Guid.Empty, result.Value);
 
         // Verify that repository.AddAsync and unitOfWork.SaveChangesAsync were each called exactly once
-        mockRepository.Verify(x => x.AddAsync(It.IsAny<Advert>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(x => x.AddAsync(It.Is<Advert>(a => 
+            a.Title == "Cozy Studio" && 
+            a.Photos.Count == 1 && 
+            a.Photos.First().PhotoUrl == "url1"
+        ), It.IsAny<CancellationToken>()), Times.Once);
         mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

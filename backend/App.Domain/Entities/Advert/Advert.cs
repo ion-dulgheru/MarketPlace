@@ -19,6 +19,9 @@ public class Advert : PublicEntity, ISoftDeletable
     public Guid UserUuid { get; private set; }
     public Address Address { get; private set; } = null!;
 
+    private readonly List<AdvertPhoto> _photos = [];
+    public IReadOnlyCollection<AdvertPhoto> Photos => _photos.AsReadOnly();
+
     /// <inheritdoc cref="ISoftDeletable.DeletedAt"/>
     public DateTime? DeletedAt { get; private set; }
 
@@ -60,5 +63,10 @@ public class Advert : PublicEntity, ISoftDeletable
     {
         IsActive = false;
         DeletedAt = DateTime.UtcNow;
+    }
+
+    public void AddPhoto(AdvertPhoto photo)
+    {
+        _photos.Add(photo);
     }
 }

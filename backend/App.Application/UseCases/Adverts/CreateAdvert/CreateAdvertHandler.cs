@@ -40,6 +40,19 @@ public class CreateAdvertHandler(
             addressResult.Value,
             DateTime.UtcNow.AddDays(30));
 
+        if (command.Request.Photos != null)
+        {
+            foreach (var photoReq in command.Request.Photos)
+            {
+                var photo = AdvertPhoto.Create(
+                    photoReq.PhotoUrl,
+                    photoReq.FileName,
+                    photoReq.ContentType,
+                    photoReq.IsPrimary);
+                advert.AddPhoto(photo);
+            }
+        }
+
         await advertRepository.AddAsync(advert, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
