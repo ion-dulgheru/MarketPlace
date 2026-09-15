@@ -8,5 +8,6 @@ public record CreateAdvertRequest(
     int Rooms,
     int Floor,
     string Type,
-    AddressRequest Address
+    AddressRequest Address,
+    List<AdvertPhotoRequest>? Photos = null
 );

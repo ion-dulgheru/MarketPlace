@@ -27,6 +27,11 @@ public class GetActiveAdvertsCommandHandlerTests
             address,
             DateTime.UtcNow.AddDays(30));
 
+        var photo1 = AdvertPhoto.Create("url1", "file1.jpg", "image/jpeg", false);
+        var photo2 = AdvertPhoto.Create("url2", "file2.jpg", "image/jpeg", true); // Primary
+        advert.AddPhoto(photo1);
+        advert.AddPhoto(photo2);
+
         repository
             .Setup(x => x.GetActiveAsync(2, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync([advert]);
@@ -50,6 +55,12 @@ public class GetActiveAdvertsCommandHandlerTests
         Assert.Equal(address.Region, response.Address.Region);
         Assert.Equal(address.StreetAddress, response.Address.StreetAddress);
         Assert.Equal(address.StreetNumber, response.Address.StreetNumber);
+        
+        Assert.NotNull(response.Photos);
+        var photoResponse = Assert.Single(response.Photos);
+        Assert.Equal("url2", photoResponse.PhotoUrl);
+        Assert.True(photoResponse.IsPrimary);
+
         repository.Verify(x => x.GetActiveAsync(2, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

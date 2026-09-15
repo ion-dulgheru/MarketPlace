@@ -11,5 +11,6 @@ public record AdvertResponse(
     string Status,
     string Type,
     DateTime CreatedDate,
-    AddressResponse Address
+    AddressResponse Address,
+    List<AdvertPhotoResponse> Photos
 );
