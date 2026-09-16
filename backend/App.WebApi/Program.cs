@@ -16,8 +16,7 @@ var certificatePath = builder.Configuration["Jwt:CertificatePath"]
     ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
 var certificatePassword = builder.Configuration["Jwt:CertificatePassword"]
     ?? throw new InvalidOperationException("Jwt:CertificatePassword is not configured.");
-var signingCertificate = new X509Certificate2(certificatePath, certificatePassword);
-
+var signingCertificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

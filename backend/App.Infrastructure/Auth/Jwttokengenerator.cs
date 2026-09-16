@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using App.Application.Abstractions.JWT;
 using App.Domain.Entities;
@@ -10,7 +11,7 @@ namespace App.Infrastructure.Auth;
 
 public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerator
 {
-    public string GenerateToken(User user)
+    public (string Token, string JwtId) GenerateToken(User user)
     {
         var certificatePath = configuration["Jwt:CertificatePath"]
             ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
@@ -20,13 +21,17 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
         var audience = configuration["Jwt:Audience"];
         var expiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "15");
 
+        var jwtId = Guid.NewGuid().ToString();
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Guid.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, jwtId),
         };
 
-var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);        var key = new X509SecurityKey(certificate);
+        var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
+        var key = new X509SecurityKey(certificate);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(
@@ -36,6 +41,13 @@ var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, cert
             expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        return (tokenString, jwtId);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(randomBytes);
     }
 }
