@@ -4,7 +4,6 @@ namespace App.Domain.Entities;
 
 public class UserSession : BaseEntity
 {
-    private UserSession() { }
 
     public string RefreshTokenHash { get; private set; } = null!;
     public string JwtId { get; private set; } = null!;
@@ -20,5 +19,20 @@ public class UserSession : BaseEntity
         RefreshTokenHash = refreshTokenHash;
         JwtId = jwtId;
         RefreshTokenExpiry = refreshTokenExpiry;
+    }
+
+    public static UserSession Create(long userId, string refreshTokenHash, string jwtId, DateTime refreshTokenExpiry)
+    {
+        return new UserSession(userId, refreshTokenHash, jwtId, refreshTokenExpiry);
+    }
+
+    public bool IsValid(DateTime now)
+    {
+        return !Redeemed && RefreshTokenExpiry > now;
+    }
+
+    public void Redeem()
+    {
+        Redeemed = true;
     }
 }
