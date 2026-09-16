@@ -7,8 +7,6 @@ public class AdvertPhoto : PublicEntity
     private AdvertPhoto() { }
 
     public string PhotoUrl { get; private set; } = null!;
-    public string FileName { get; private set; } = null!;
-    public string ContentType { get; private set; } = null!;
     public bool IsPrimary { get; private set; }
     
     public long AdvertId { get; private set; }
@@ -16,15 +14,11 @@ public class AdvertPhoto : PublicEntity
 
     public static AdvertPhoto Create(
         string photoUrl,
-        string fileName,
-        string contentType,
         bool isPrimary)
     {
         return new AdvertPhoto
         {
             PhotoUrl = photoUrl,
-            FileName = fileName,
-            ContentType = contentType,
             IsPrimary = isPrimary
         };
     }

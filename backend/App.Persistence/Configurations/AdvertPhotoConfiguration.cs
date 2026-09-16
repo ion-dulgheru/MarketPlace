@@ -17,14 +17,6 @@ public class AdvertPhotoConfiguration : IEntityTypeConfiguration<AdvertPhoto>
             .IsRequired()
             .HasMaxLength(2048);
 
-        builder.Property(x => x.FileName)
-            .IsRequired()
-            .HasMaxLength(255);
-
-        builder.Property(x => x.ContentType)
-            .IsRequired()
-            .HasMaxLength(100);
-
         builder.Property(x => x.IsPrimary)
             .IsRequired();
             

@@ -46,8 +46,6 @@ public class CreateAdvertHandler(
             {
                 var photo = AdvertPhoto.Create(
                     photoReq.PhotoUrl,
-                    photoReq.FileName,
-                    photoReq.ContentType,
                     photoReq.IsPrimary);
                 advert.AddPhoto(photo);
             }

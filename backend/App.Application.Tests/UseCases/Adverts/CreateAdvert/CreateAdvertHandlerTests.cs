@@ -28,7 +28,7 @@ public class CreateAdvertHandlerTests
             AdvertType.Sale.ToString(),
             new AddressRequest("USA", "New York", "NY", "5th Ave", "101"),
             [
-                new AdvertPhotoRequest("url1", "file1.jpg", "image/jpeg", true)
+                new AdvertPhotoRequest("url1", true)
             ]
         );
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
