@@ -1,5 +1,6 @@
 using App.Application.Abstractions.Messaging;
 using App.Contracts.Responses.Adverts;
+using App.Domain.Entities;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -12,10 +13,28 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
         GetActiveAdvertsCommand query,
         CancellationToken ct)
     {
-        var adverts = await advertRepository.GetActiveAsync(
-            query.Request.Page,
-            query.Request.PageSize,
-            ct);
+        AdvertType? advertType = null;
+        if (!string.IsNullOrWhiteSpace(query.Request.Type) &&
+            Enum.TryParse<AdvertType>(query.Request.Type, true, out var parsedType))
+        {
+            advertType = parsedType;
+        }
+
+        var criteria = new AdvertSearchCriteria(
+            Page: query.Request.Page,
+            PageSize: query.Request.PageSize,
+            SearchTerm: query.Request.SearchTerm,
+            Type: advertType,
+            City: query.Request.City,
+            MinPrice: query.Request.MinPrice,
+            MaxPrice: query.Request.MaxPrice,
+            MinSurfaceArea: query.Request.MinSurfaceArea,
+            MaxSurfaceArea: query.Request.MaxSurfaceArea,
+            Rooms: query.Request.Rooms,
+            SortBy: query.Request.SortBy,
+            SortDescending: query.Request.SortDescending);
+
+        var (adverts, totalCount) = await advertRepository.GetActiveAsync(criteria, ct);
 
         var response = adverts
             .Select(advert => new AdvertResponse(
@@ -45,6 +64,7 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
         return new GetAdvertsResponse(
             response,
             query.Request.Page,
-            query.Request.PageSize);
+            query.Request.PageSize,
+            totalCount);
     }
 }

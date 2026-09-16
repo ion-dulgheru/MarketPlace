@@ -11,7 +11,7 @@ namespace App.Application.Tests.UseCases.Adverts.GetActiveAdverts;
 public class GetActiveAdvertsCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_WhenAdvertsExist_ReturnsMappedAdvertResponses()
+    public async Task Handle_WhenAdvertsExist_ReturnsMappedAdvertResponsesAndTotalCount()
     {
         var repository = new Mock<IAdvertRepository>();
         var address = Address.Create("USA", "New York", "NY", "5th Ave", "101").Value;
@@ -33,8 +33,8 @@ public class GetActiveAdvertsCommandHandlerTests
         advert.AddPhoto(photo2);
 
         repository
-            .Setup(x => x.GetActiveAsync(2, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([advert]);
+            .Setup(x => x.GetActiveAsync(It.Is<AdvertSearchCriteria>(c => c.Page == 2 && c.PageSize == 10), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(([advert], 1));
 
         var handler = new GetActiveAdvertsCommandHandler(repository.Object);
 
@@ -45,6 +45,7 @@ public class GetActiveAdvertsCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Page);
         Assert.Equal(10, result.Value.PageSize);
+        Assert.Equal(1, result.Value.TotalCount);
         var response = Assert.Single(result.Value.Items);
         Assert.Equal(advert.Guid, response.Guid);
         Assert.Equal(advert.Title, response.Title);
@@ -61,6 +62,53 @@ public class GetActiveAdvertsCommandHandlerTests
         Assert.Equal("url2", photoResponse.PhotoUrl);
         Assert.True(photoResponse.IsPrimary);
 
-        repository.Verify(x => x.GetActiveAsync(2, 10, It.IsAny<CancellationToken>()), Times.Once);
+        repository.Verify(x => x.GetActiveAsync(It.IsAny<AdvertSearchCriteria>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WithSearchAndFilters_PassesCorrectCriteriaToRepository()
+    {
+        var repository = new Mock<IAdvertRepository>();
+        AdvertSearchCriteria? capturedCriteria = null;
+
+        repository
+            .Setup(x => x.GetActiveAsync(It.IsAny<AdvertSearchCriteria>(), It.IsAny<CancellationToken>()))
+            .Callback<AdvertSearchCriteria, CancellationToken>((c, _) => capturedCriteria = c)
+            .ReturnsAsync(([], 0));
+
+        var handler = new GetActiveAdvertsCommandHandler(repository.Object);
+
+        var request = new GetAdvertsRequest(
+            Page: 1,
+            PageSize: 15,
+            SearchTerm: "penthouse",
+            Type: "Sale",
+            City: "Chisinau",
+            MinPrice: 50000m,
+            MaxPrice: 200000m,
+            MinSurfaceArea: 60m,
+            MaxSurfaceArea: 150m,
+            Rooms: 3,
+            SortBy: "price",
+            SortDescending: false);
+
+        var result = await handler.Handle(
+            new GetActiveAdvertsCommand(request),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(capturedCriteria);
+        Assert.Equal(1, capturedCriteria.Page);
+        Assert.Equal(15, capturedCriteria.PageSize);
+        Assert.Equal("penthouse", capturedCriteria.SearchTerm);
+        Assert.Equal(AdvertType.Sale, capturedCriteria.Type);
+        Assert.Equal("Chisinau", capturedCriteria.City);
+        Assert.Equal(50000m, capturedCriteria.MinPrice);
+        Assert.Equal(200000m, capturedCriteria.MaxPrice);
+        Assert.Equal(60m, capturedCriteria.MinSurfaceArea);
+        Assert.Equal(150m, capturedCriteria.MaxSurfaceArea);
+        Assert.Equal(3, capturedCriteria.Rooms);
+        Assert.Equal("price", capturedCriteria.SortBy);
+        Assert.False(capturedCriteria.SortDescending);
     }
 }

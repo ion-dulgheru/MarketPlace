@@ -1,11 +1,12 @@
-namespace App.Contracts.Requests.Adverts;
+using App.Domain.Entities;
 
-public record GetAdvertsRequest(
+namespace App.Domain.Repositories;
+
+public record AdvertSearchCriteria(
     int Page = 1,
     int PageSize = 20,
-    bool Mine = false,
     string? SearchTerm = null,
-    string? Type = null,
+    AdvertType? Type = null,
     string? City = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
