@@ -12,6 +12,7 @@ using App.Contracts.Responses;
 using App.Contracts.Responses.Adverts;
 using App.Application.UseCases.Adverts.UpdateAdvert;
 using App.Application.UseCases.Adverts.GetMyAdverts;
+using App.Application.UseCases.Adverts.GetAdvertById;
 
 namespace App.WebApi.Controllers;
 
@@ -95,11 +96,18 @@ public class AdvertsController(ISender sender) : BaseController
             : NoContent();
     }
 
+    [AllowAnonymous]
     [HttpGet("{uuid:guid}")]
-    [SwaggerResponse(204, "No advert content is available yet.")]
+    [SwaggerResponse(200, "Advert details.", typeof(AdvertResponse))]
+    [SwaggerResponse(400, "Invalid identifier.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
     public async Task<IActionResult> GetById(Guid uuid, CancellationToken ct = default)
     {
-        return NoContent();
+        var result = await sender.Send(new GetAdvertByIdQuery(uuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
     }
 
     [HttpPut("{uuid:guid}")]
