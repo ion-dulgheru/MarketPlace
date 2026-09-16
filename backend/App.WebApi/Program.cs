@@ -5,17 +5,18 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-
+using System.Security.Cryptography.X509Certificates;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 
-var jwtSecret = builder.Configuration["Jwt:Secret"]
-    ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
-
-
+var certificatePath = builder.Configuration["Jwt:CertificatePath"]
+    ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
+var certificatePassword = builder.Configuration["Jwt:CertificatePassword"]
+    ?? throw new InvalidOperationException("Jwt:CertificatePassword is not configured.");
+var signingCertificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -27,7 +28,7 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            IssuerSigningKey = new X509SecurityKey(signingCertificate),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
         };
@@ -60,7 +61,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:8080")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

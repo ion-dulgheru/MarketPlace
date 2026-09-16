@@ -1,31 +1,37 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using App.Application.Abstractions;
+using System.Security.Cryptography.X509Certificates;
+using App.Application.Abstractions.JWT;
 using App.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using App.Application.Abstractions.JWT;
+
 namespace App.Infrastructure.Auth;
 
 public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerator
 {
-    public string GenerateToken(User user)
+    public (string Token, string JwtId) GenerateToken(User user)
     {
-        var secret = configuration["Jwt:Secret"]
-            ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+        var certificatePath = configuration["Jwt:CertificatePath"]
+            ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
+        var certificatePassword = configuration["Jwt:CertificatePassword"]
+            ?? throw new InvalidOperationException("Jwt:CertificatePassword is not configured.");
         var issuer = configuration["Jwt:Issuer"];
         var audience = configuration["Jwt:Audience"];
         var expiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "15");
+
+        var jwtId = Guid.NewGuid().ToString();
 
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Guid.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, jwtId),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
+        var key = new X509SecurityKey(certificate);
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(
             issuer: issuer,
@@ -34,6 +40,7 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
             expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        return (tokenString, jwtId);
     }
 }

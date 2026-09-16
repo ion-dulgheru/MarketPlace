@@ -10,7 +10,10 @@ public class DataContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserDetails> UserDetails => Set<UserDetails>();
     public DbSet<Advert> Adverts => Set<Advert>();
+    public DbSet<AdvertPhoto> AdvertPhotos => Set<AdvertPhoto>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

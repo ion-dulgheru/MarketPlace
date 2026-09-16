@@ -3,6 +3,7 @@ using App.Contracts.Requests.Adverts;
 using App.Domain.Entities;
 using App.Domain.Errors;
 using App.Domain.Repositories;
+using App.Domain.ValueObjects;
 using Moq;
 using Xunit;
 
@@ -14,9 +15,10 @@ public class UpdateAdvertStatusCommandHandlerTests
     public async Task Handle_WhenOwnerUpdatesStatus_ChangesStatusAndSaves()
     {
         var ownerUuid = Guid.NewGuid();
+        var address = Address.Create("USA", "New York", "NY", "5th Ave", "101").Value;
         var advert = Advert.Create(
             ownerUuid, "Apartment", "Description", 100000m, 60m, 2, 1,
-            AdvertType.Sale, DateTime.UtcNow.AddDays(30));
+            AdvertType.Sale, address, DateTime.UtcNow.AddDays(30));
         var repository = new Mock<IAdvertRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         repository
