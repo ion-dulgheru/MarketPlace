@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using App.Contracts.Requests.Users;
 using App.Application.UseCases.Users.Register;
 using App.Application.UseCases.Users.SignIn;
+using App.Application.UseCases.Users.RefreshToken;
 
 namespace App.WebApi.Controllers;
 
@@ -32,4 +33,15 @@ public async Task<IActionResult> Login(
         : Ok(result.Value);
 }
 
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new RefreshTokenCommand(request.RefreshToken), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
+    }
 }

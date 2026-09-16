@@ -3,6 +3,7 @@ using App.Domain.Entities;
 using App.Domain.Errors;
 using App.Domain.Repositories;
 using App.Domain.Shared;
+using App.Domain.ValueObjects;
 
 namespace App.Application.UseCases.Adverts.CreateAdvert;
 
@@ -13,6 +14,18 @@ public class CreateAdvertHandler(
 {
     public async Task<Result<Guid>> Handle(CreateAdvertCommand command, CancellationToken ct)
     {
+        var addressResult = Address.Create(
+            command.Request.Address.Country,
+            command.Request.Address.City,
+            command.Request.Address.Region,
+            command.Request.Address.StreetAddress,
+            command.Request.Address.StreetNumber);
+
+        if (addressResult.IsFailure)
+        {
+            return Result.Failure<Guid>(addressResult.Error);
+        }
+
         var type = Enum.Parse<AdvertType>(command.Request.Type, ignoreCase: true);
 
         var advert = Advert.Create(
@@ -24,7 +37,21 @@ public class CreateAdvertHandler(
             command.Request.Rooms,
             command.Request.Floor,
             type,
+            addressResult.Value,
             DateTime.UtcNow.AddDays(30));
+
+        if (command.Request.Photos != null)
+        {
+            foreach (var photoReq in command.Request.Photos)
+            {
+                var photo = AdvertPhoto.Create(
+                    photoReq.PhotoUrl,
+                    photoReq.FileName,
+                    photoReq.ContentType,
+                    photoReq.IsPrimary);
+                advert.AddPhoto(photo);
+            }
+        }
 
         await advertRepository.AddAsync(advert, ct);
         await unitOfWork.SaveChangesAsync(ct);

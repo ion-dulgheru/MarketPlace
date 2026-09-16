@@ -1,4 +1,5 @@
 using App.Application.Abstractions.Messaging;
+using App.Contracts.Responses.Users;
 
 namespace App.Application.UseCases.Users.SignIn;
 

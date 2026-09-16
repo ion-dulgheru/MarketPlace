@@ -7,5 +7,7 @@ public record CreateAdvertRequest(
     decimal SurfaceArea,
     int Rooms,
     int Floor,
-    string Type 
+    string Type,
+    AddressRequest Address,
+    List<AdvertPhotoRequest>? Photos = null
 );

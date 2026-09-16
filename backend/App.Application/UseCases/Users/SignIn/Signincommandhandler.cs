@@ -18,7 +18,13 @@ public class SignInCommandHandler(
 {
     public async Task<Result<SignInResponse>> Handle(SignInCommand request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        var now = DateTime.UtcNow;
+        var user = await userRepository.GetByEmailAsync(request.Email, ct);
+
+        if (user is not null && user.IsLockedOut(now))
+        {
+            return Result.Failure<AuthTokensResponse>(InvalidCredentials);
+        }
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {

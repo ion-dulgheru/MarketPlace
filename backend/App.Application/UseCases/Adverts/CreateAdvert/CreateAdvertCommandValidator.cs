@@ -28,5 +28,31 @@ public class CreateAdvertCommandValidator : AbstractValidator<CreateAdvertComman
 
         RuleFor(x => x.Request.Description)
             .MaximumLength(4000).WithMessage(AdvertErrors.DescriptionTooLong.Message);
+
+        RuleFor(x => x.Request.Address)
+            .NotNull().WithMessage(AddressErrors.RequiredField.Message);
+
+        When(x => x.Request.Address is not null, () =>
+        {
+            RuleFor(x => x.Request.Address.Country)
+                .NotEmpty().WithMessage(AddressErrors.RequiredField.Message)
+                .MaximumLength(100);
+
+            RuleFor(x => x.Request.Address.City)
+                .NotEmpty().WithMessage(AddressErrors.RequiredField.Message)
+                .MaximumLength(100);
+
+            RuleFor(x => x.Request.Address.Region)
+                .NotEmpty().WithMessage(AddressErrors.RequiredField.Message)
+                .MaximumLength(100);
+
+            RuleFor(x => x.Request.Address.StreetAddress)
+                .NotEmpty().WithMessage(AddressErrors.RequiredField.Message)
+                .MaximumLength(200);
+
+            RuleFor(x => x.Request.Address.StreetNumber)
+                .NotEmpty().WithMessage(AddressErrors.RequiredField.Message)
+                .MaximumLength(20);
+        });
     }
 }

@@ -3,16 +3,17 @@ using App.Contracts.Responses.Adverts;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
-namespace App.Application.UseCases.Adverts.GetActiveAdverts;
+namespace App.Application.UseCases.Adverts.GetMyAdverts;
 
-public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
-    : IQueryHandler<GetActiveAdvertsCommand, GetAdvertsResponse>
+public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
+    : IQueryHandler<GetMyAdvertsCommand, GetAdvertsResponse>
 {
     public async Task<Result<GetAdvertsResponse>> Handle(
-        GetActiveAdvertsCommand query,
+        GetMyAdvertsCommand query,
         CancellationToken ct)
     {
-        var adverts = await advertRepository.GetActiveAsync(
+        var adverts = await advertRepository.GetByUserAsync(
+            query.UserUuid,
             query.Request.Page,
             query.Request.PageSize,
             ct);
@@ -42,9 +43,6 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
                     .ToList()))
             .ToList();
 
-        return new GetAdvertsResponse(
-            response,
-            query.Request.Page,
-            query.Request.PageSize);
+        return new GetAdvertsResponse(response, query.Request.Page, query.Request.PageSize);
     }
 }
