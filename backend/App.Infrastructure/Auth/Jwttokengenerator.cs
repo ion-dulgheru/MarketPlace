@@ -29,8 +29,7 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
             new Claim(JwtRegisteredClaimNames.Jti, jwtId),
         };
 
-        var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
-        var key = new X509SecurityKey(certificate);
+var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);        var key = new X509SecurityKey(certificate);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(
