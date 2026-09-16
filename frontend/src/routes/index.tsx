@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   Bath,
@@ -141,13 +141,13 @@ function Index() {
           {visible.length ? <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((listing) => <article key={listing.id} className="group min-w-0">
               <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                <img src={listing.image} alt={listing.imageAlt} width={1024} height={768} loading={listing.id === 1 ? "eager" : "lazy"} className="listing-image size-full object-cover" />
+                <Link to="/listings/$listingId" params={{ listingId: String(listing.id) }} aria-label={`View details for ${listing.title}`} className="block size-full"><img src={listing.image} alt={listing.imageAlt} width={1024} height={768} loading={listing.id === 1 ? "eager" : "lazy"} className="listing-image size-full object-cover" /></Link>
                 <div className="absolute left-3 top-3 flex gap-2"><span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">{listing.kind === "sale" ? "For sale" : "For rent"}</span>{listing.featured && <span className="rounded-sm bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">Fresh</span>}</div>
                 <Button size="icon" variant="secondary" className="absolute right-3 top-3 rounded-full" onClick={() => toggleSaved(listing.id)} aria-label={saved.includes(listing.id) ? "Remove from saved" : "Save listing"}><Heart className={saved.includes(listing.id) ? "fill-primary text-primary" : ""} /></Button>
                 {listing.status && <div className="absolute inset-0 grid place-items-center bg-foreground/45"><span className="-rotate-3 border-2 border-status-foreground bg-status px-5 py-2 text-lg font-bold uppercase text-status-foreground">{listing.status}</span></div>}
               </div>
               <div className="pt-4">
-                <div className="flex items-start justify-between gap-3"><div><p className="font-display text-2xl">{listing.price}</p><h3 className="mt-1 text-base font-semibold">{listing.title}</h3></div><span className="shrink-0 text-xs text-muted-foreground">{listing.posted}</span></div>
+                <div className="flex items-start justify-between gap-3"><div><p className="font-display text-2xl">{listing.price}</p><h3 className="mt-1 text-base font-semibold"><Link to="/listings/$listingId" params={{ listingId: String(listing.id) }} className="hover:text-primary">{listing.title}</Link></h3></div><span className="shrink-0 text-xs text-muted-foreground">{listing.posted}</span></div>
                 <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin className="size-3.5" />{listing.location}</p>
                 <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground"><span className="flex items-center gap-1.5"><BedDouble className="size-4" />{listing.beds}</span><span className="flex items-center gap-1.5"><Bath className="size-4" />{listing.baths}</span><span className="flex items-center gap-1.5"><Square className="size-4" />{listing.area} m²</span></div>
                 <div className="mt-3 flex items-center justify-between gap-3"><p className="truncate text-xs text-muted-foreground">{listing.seller}</p><Button size="sm" variant={listing.status ? "secondary" : "outline"} disabled={Boolean(listing.status)} onClick={() => openContact(listing)}>{listing.status ? "Unavailable" : "Contact"}</Button></div>
