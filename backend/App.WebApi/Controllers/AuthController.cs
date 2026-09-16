@@ -21,18 +21,17 @@ public class AuthController(ISender sender) : BaseController
             ? HandleFailure(result)
             : Created(string.Empty, result.Value);
     }
+      [HttpPost("login")]
+public async Task<IActionResult> Login(
+    [FromBody] LoginRequest request,
+    CancellationToken ct = default)
+{
+    var result = await sender.Send(new SignInCommand(request.Email, request.Password), ct);
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(
-        [FromBody] LoginRequest request,
-        CancellationToken ct = default)
-    {
-        var result = await sender.Send(new SignInCommand(request.Email, request.Password), ct);
-
-        return result.IsFailure
-            ? HandleFailure(result)
-            : Ok(result.Value);
-    }
+    return result.IsFailure
+        ? HandleFailure(result)
+        : Ok(result.Value);
+}
 
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(

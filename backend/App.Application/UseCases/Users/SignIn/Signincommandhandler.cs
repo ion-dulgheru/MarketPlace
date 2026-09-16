@@ -1,6 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
+using App.Application.Abstractions;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
-using App.Contracts.Responses.Users;
 using App.Domain.Entities;
 using App.Domain.Repositories;
 using App.Domain.Shared;
@@ -9,18 +11,12 @@ namespace App.Application.UseCases.Users.SignIn;
 
 public class SignInCommandHandler(
     IUserRepository userRepository,
-    IJwtTokenGenerator jwtTokenGenerator,
-    IRefreshTokenGenerator refreshTokenGenerator,
     IUserSessionRepository userSessionRepository,
+    IJwtTokenGenerator jwtTokenGenerator,
     IUnitOfWork unitOfWork)
-    : ICommandHandler<SignInCommand, AuthTokensResponse>
+    : ICommandHandler<SignInCommand, SignInResponse>
 {
-    private static readonly Error InvalidCredentials =
-        Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password.");
-
-    private const int RefreshTokenExpiryDays = 30;
-
-    public async Task<Result<AuthTokensResponse>> Handle(SignInCommand request, CancellationToken ct)
+    public async Task<Result<SignInResponse>> Handle(SignInCommand request, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var user = await userRepository.GetByEmailAsync(request.Email, ct);
@@ -32,31 +28,30 @@ public class SignInCommandHandler(
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            if (user is not null)
-            {
-                user.RegisterFailedLogin(now);
-                await unitOfWork.SaveChangesAsync(ct);
-            }
-
-            return Result.Failure<AuthTokensResponse>(InvalidCredentials);
+            return Result.Failure<SignInResponse>(Error.Unauthorized(
+                "Auth.InvalidCredentials",
+                "Invalid email or password."));
         }
 
-        user.RegisterSuccessfulLogin();
-
         var (accessToken, jwtId) = jwtTokenGenerator.GenerateToken(user);
+        var refreshToken = jwtTokenGenerator.GenerateRefreshToken();
+        var refreshTokenHash = HashToken(refreshToken);
 
-        var refreshToken = refreshTokenGenerator.GenerateToken();
-        var refreshTokenHash = refreshTokenGenerator.Hash(refreshToken);
-
-        var session = UserSession.Create(
+        var session = new UserSession(
             user.Id,
             refreshTokenHash,
             jwtId,
-            now.AddDays(RefreshTokenExpiryDays));
+            DateTime.UtcNow.AddDays(30));
 
-        await userSessionRepository.AddAsync(session, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+        await userSessionRepository.AddAsync(session, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new AuthTokensResponse(accessToken, refreshToken));
+        return Result.Success(new SignInResponse(accessToken, refreshToken));
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
     }
 }

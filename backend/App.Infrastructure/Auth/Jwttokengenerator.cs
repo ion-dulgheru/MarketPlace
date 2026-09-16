@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using App.Application.Abstractions.JWT;
 using App.Domain.Entities;
@@ -29,7 +30,8 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
             new Claim(JwtRegisteredClaimNames.Jti, jwtId),
         };
 
-var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);        var key = new X509SecurityKey(certificate);
+        var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
+        var key = new X509SecurityKey(certificate);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(
@@ -40,7 +42,12 @@ var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, cert
             signingCredentials: credentials);
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
         return (tokenString, jwtId);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(randomBytes);
     }
 }

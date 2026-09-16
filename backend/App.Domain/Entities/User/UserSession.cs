@@ -12,26 +12,13 @@ public class UserSession : BaseEntity
     public bool Redeemed { get; private set; }
     public long UserId { get; private set; }
 
-    public static UserSession Create(
-        long userId,
-        string refreshTokenHash,
-        string jwtId,
-        DateTime refreshTokenExpiry)
-    {
-        return new UserSession
-        {
-            UserId = userId,
-            RefreshTokenHash = refreshTokenHash,
-            JwtId = jwtId,
-            RefreshTokenExpiry = refreshTokenExpiry,
-            Redeemed = false
-        };
-    }
+    protected UserSession() { }
 
-    public bool IsValid(DateTime now) => !Redeemed && RefreshTokenExpiry > now;
-
-    public void Redeem()
+    public UserSession(long userId, string refreshTokenHash, string jwtId, DateTime refreshTokenExpiry)
     {
-        Redeemed = true;
+        UserId = userId;
+        RefreshTokenHash = refreshTokenHash;
+        JwtId = jwtId;
+        RefreshTokenExpiry = refreshTokenExpiry;
     }
 }
