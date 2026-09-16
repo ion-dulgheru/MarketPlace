@@ -1,6 +1,7 @@
-using App.Application.Abstractions;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
+using App.Contracts.Responses.Users;
+using App.Domain.Entities;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -8,22 +9,54 @@ namespace App.Application.UseCases.Users.SignIn;
 
 public class SignInCommandHandler(
     IUserRepository userRepository,
-    IJwtTokenGenerator jwtTokenGenerator)
-    : ICommandHandler<SignInCommand, string>
+    IJwtTokenGenerator jwtTokenGenerator,
+    IRefreshTokenGenerator refreshTokenGenerator,
+    IUserSessionRepository userSessionRepository,
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<SignInCommand, AuthTokensResponse>
 {
-    public async Task<Result<string>> Handle(SignInCommand request, CancellationToken cancellationToken)
+    private static readonly Error InvalidCredentials =
+        Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password.");
+
+    private const int RefreshTokenExpiryDays = 30;
+
+    public async Task<Result<AuthTokensResponse>> Handle(SignInCommand request, CancellationToken ct)
     {
-        var user = await userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        var now = DateTime.UtcNow;
+        var user = await userRepository.GetByEmailAsync(request.Email, ct);
+
+        if (user is not null && user.IsLockedOut(now))
+        {
+            return Result.Failure<AuthTokensResponse>(InvalidCredentials);
+        }
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            return Result.Failure<string>(Error.Unauthorized(
-                "Auth.InvalidCredentials",
-                "Invalid email or password."));
+            if (user is not null)
+            {
+                user.RegisterFailedLogin(now);
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+
+            return Result.Failure<AuthTokensResponse>(InvalidCredentials);
         }
 
-        var token = jwtTokenGenerator.GenerateToken(user);
+        user.RegisterSuccessfulLogin();
 
-        return Result.Success(token);
+        var (accessToken, jwtId) = jwtTokenGenerator.GenerateToken(user);
+
+        var refreshToken = refreshTokenGenerator.GenerateToken();
+        var refreshTokenHash = refreshTokenGenerator.Hash(refreshToken);
+
+        var session = UserSession.Create(
+            user.Id,
+            refreshTokenHash,
+            jwtId,
+            now.AddDays(RefreshTokenExpiryDays));
+
+        await userSessionRepository.AddAsync(session, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return Result.Success(new AuthTokensResponse(accessToken, refreshToken));
     }
 }

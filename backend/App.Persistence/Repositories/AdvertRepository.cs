@@ -28,7 +28,7 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Advert>> GetByUserAsync(Guid userUuid, CancellationToken ct)
+    public async Task<IReadOnlyList<Advert>> GetByUserAsync(Guid userUuid, int page, int pageSize, CancellationToken ct)
     {
         return await context.Adverts.Include(x => x.Photos)
             .Where(x => x.UserUuid == userUuid)

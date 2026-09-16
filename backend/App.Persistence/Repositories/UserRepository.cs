@@ -19,4 +19,8 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
     {
        await context.Users.AddAsync(user, ct);
     }
+    public async Task<User?> GetByIdAsync(long id, CancellationToken ct)
+{
+    return await context.Users.FirstOrDefaultAsync(x => x.Id == id, ct);
+}
 }
