@@ -1,65 +1,53 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FormEvent, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Bath,
   BedDouble,
-  ChevronDown,
   Heart,
-  House,
   KeyRound,
+  Layers,
   MapPin,
-  Menu,
   Plus,
   Search,
-  SlidersHorizontal,
   Sparkles,
   Square,
-  UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddPropertyDialog } from "@/components/dialogs/AddPropertyDialog";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
-import apartment from "@/assets/openkey-apartment.jpg";
-import townhouse from "@/assets/openkey-townhouse.jpg";
-import loft from "@/assets/openkey-loft.jpg";
+import { isLoggedIn } from "@/lib/tokens";
+import {
+  getAdverts,
+  getAdvertPhotoUrl,
+  getFavoriteAdvertIds,
+  favoriteAdvert,
+  unfavoriteAdvert,
+  type Advert,
+} from "@/api/adverts";
+import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
+import placeholderImage from "@/assets/openkey-apartment.jpg";
 import Header from "@/components/Navigation/header";
 
-type Listing = {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  kind: "sale" | "rent";
-  type: string;
-  beds: number;
-  baths: number;
-  area: number;
-  image: string;
-  imageAlt: string;
-  seller: string;
-  posted: string;
-  status?: "sold" | "rented";
-  featured?: boolean;
-};
+const PAGE_SIZE = 9;
 
-const listings: Listing[] = [
-  { id: 1, title: "Sunny apartment near the park", location: "Centru, Chișinău", price: "MDL 1,850,000", kind: "sale", type: "Apartment", beds: 2, baths: 1, area: 84, image: apartment, imageAlt: "Bright apartment with large windows", seller: "Ana Popescu · Owner", posted: "18 min ago", featured: true },
-  { id: 2, title: "Family house with garden", location: "Telecentru, Chișinău", price: "MDL 3,450,000", kind: "sale", type: "House", beds: 4, baths: 2, area: 142, image: townhouse, imageAlt: "Family house with a garden", seller: "Moldova Home · Agency", posted: "1 hour ago" },
-  { id: 3, title: "Modern loft in the city centre", location: "Centru, Chișinău", price: "MDL 18,500 / month", kind: "rent", type: "Loft", beds: 2, baths: 1, area: 96, image: loft, imageAlt: "Renovated loft with a modern interior", seller: "Victor Rusu · Owner", posted: "2 hours ago" },
-  { id: 4, title: "Quiet family home near the lake", location: "Bălți", price: "MDL 2,250,000", kind: "sale", type: "House", beds: 3, baths: 2, area: 128, image: townhouse, imageAlt: "Family home with a private yard", seller: "Nord Imobil · Agency", posted: "Yesterday", status: "sold" },
-  { id: 5, title: "Bright studio near the university", location: "Rîșcani, Chișinău", price: "MDL 8,500 / month", kind: "rent", type: "Studio", beds: 1, baths: 1, area: 42, image: apartment, imageAlt: "Bright modern studio apartment", seller: "Elena Ceban · Owner", posted: "Yesterday" },
-  { id: 6, title: "Spacious apartment with terrace", location: "Botanica, Chișinău", price: "MDL 14,000 / month", kind: "rent", type: "Apartment", beds: 2, baths: 2, area: 110, image: loft, imageAlt: "Spacious apartment with a modern kitchen", seller: "Capital Living · Agency", posted: "2 days ago", status: "rented" },
-];
+type SortOption = "date" | "price-asc" | "price-desc";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "OpenKey Moldova — Homes for Sale & Rent" },
-      { name: "description", content: "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey." },
+      {
+        name: "description",
+        content:
+          "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey.",
+      },
       { property: "og:title", content: "OpenKey Moldova — Homes for Sale & Rent" },
-      { property: "og:description", content: "Open property listings across Moldova, published instantly by owners and agencies." },
+      {
+        property: "og:description",
+        content:
+          "Open property listings across Moldova, published instantly by owners and agencies.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-    ]
+    ],
   }),
   component: Index,
 });
@@ -68,97 +56,337 @@ function Index() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"all" | "sale" | "rent">("all");
   const [query, setQuery] = useState("");
-  const [propertyType, setPropertyType] = useState("All types");
-  const [saved, setSaved] = useState<number[]>([]);
-  const [dialog, setDialog] = useState<"contact" | "publish" | null>(null);
-  const [selected, setSelected] = useState<Listing | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [sort, setSort] = useState<SortOption>("date");
 
-  const visible = useMemo(() => listings.filter((listing) => {
-    const matchesMode = mode === "all" || listing.kind === mode;
-    const matchesQuery = `${listing.title} ${listing.location}`.toLowerCase().includes(query.toLowerCase());
-    const matchesType = propertyType === "All types" || listing.type === propertyType;
-    return matchesMode && matchesQuery && matchesType;
-  }), [mode, query, propertyType]);
+  const [adverts, setAdverts] = useState<Advert[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
 
-  const openContact = (listing: Listing) => { setSelected(listing); setDialog("contact"); };
-  const toggleSaved = (id: number) => setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<"contact" | null>(null);
+  const [selected, setSelected] = useState<Advert | null>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(query), 400);
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [mode, debouncedQuery, sort]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isFirstPage = page === 1;
+    (isFirstPage ? setLoading : setLoadingMore)(true);
+    setError(false);
+
+    const [sortBy, sortDescending] =
+      sort === "price-asc"
+        ? (["price", false] as const)
+        : sort === "price-desc"
+          ? (["price", true] as const)
+          : (["date", true] as const);
+
+    getAdverts({
+      page,
+      pageSize: PAGE_SIZE,
+      searchTerm: debouncedQuery || undefined,
+      type: mode === "all" ? undefined : mode === "sale" ? "Sale" : "Rent",
+      sortBy,
+      sortDescending,
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setAdverts((previous) => (isFirstPage ? response.items : [...previous, ...response.items]));
+        setTotalCount(response.totalCount);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, debouncedQuery, sort, page]);
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      void getFavoriteAdvertIds().then(setSavedIds);
+    }
+  }, []);
+
+  const openContact = (advert: Advert) => {
+    setSelected(advert);
+    setDialog("contact");
+  };
+
+  const toggleSaved = (guid: string) => {
+    if (!isLoggedIn()) {
+      void navigate({ to: "/login" });
+      return;
+    }
+    const nextSaved = !savedIds.includes(guid);
+    setSavedIds((ids) => (nextSaved ? [...ids, guid] : ids.filter((id) => id !== guid)));
+    void (nextSaved ? favoriteAdvert(guid) : unfavoriteAdvert(guid));
+  };
+
+  const hasMore = adverts.length < totalCount;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-
       <Header />
 
       <main id="top">
         <section className="border-b border-border bg-[#f5f9fa]">
           <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-7 sm:py-16 lg:px-10 flex flex-col items-center">
             <div className="max-w-4xl w-full text-center">
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary"><Sparkles className="size-4" /> New homes appear the moment they’re published</p>
-              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">Find a place you'll love to call home.</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Open listings from owners and agencies. Browse freely, contact directly, and skip the waiting list.</p>
+              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="size-4" /> New homes appear the moment they’re published
+              </p>
+              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">
+                Find a place you'll love to call home.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Open listings from owners and agencies. Browse freely, contact directly, and skip
+                the waiting list.
+              </p>
             </div>
 
             <div className="mt-9 w-full max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="mb-3 flex w-fit gap-1 rounded-md bg-muted p-1">
-                {(["all", "sale", "rent"] as const).map((item) => <Button key={item} size="sm" variant={mode === item ? "default" : "ghost"} onClick={() => setMode(item)}>{item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}</Button>)}
+                {(["all", "sale", "rent"] as const).map((item) => (
+                  <Button
+                    key={item}
+                    size="sm"
+                    variant={mode === item ? "default" : "ghost"}
+                    onClick={() => setMode(item)}
+                  >
+                    {item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}
+                  </Button>
+                ))}
               </div>
-              <div className="grid gap-2 md:grid-cols-[1fr_190px_160px_auto]">
+              <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                 <label className="flex h-12 items-center gap-3 rounded-md border border-input bg-background px-4">
-                  <MapPin className="size-5 text-primary" /><span className="sr-only">Search location</span>
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="City, neighbourhood, or postcode" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+                  <MapPin className="size-5 text-primary" />
+                  <span className="sr-only">Search adverts</span>
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search by title or description"
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
                 </label>
-                <label className="flex h-12 items-center gap-3 rounded-md border border-input bg-background px-4">
-                  <House className="size-5 text-primary" /><span className="sr-only">Property type</span>
-                  <select value={propertyType} onChange={(event) => setPropertyType(event.target.value)} className="min-w-0 flex-1 appearance-none bg-transparent text-sm outline-none"><option>All types</option><option>Apartment</option><option>House</option><option>Loft</option><option>Studio</option></select><ChevronDown className="size-4 text-muted-foreground" />
-                </label>
-                <Button variant="outline" className="h-12 justify-between"><span className="flex items-center gap-2"><SlidersHorizontal /> Price & details</span></Button>
-                <Button className="h-12 px-6"><Search /> Search homes</Button>
+                <Button className="h-12 px-6">
+                  <Search /> Search homes
+                </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="listings" className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14">
+        <section
+          id="listings"
+          className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14"
+        >
           <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div><p className="text-xs font-bold uppercase text-primary">Recently published</p><h2 className="mt-1 font-display text-3xl sm:text-4xl">Homes ready to discover</h2><p className="mt-2 text-sm text-muted-foreground">{visible.length} listings match your search</p></div>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">Sort by <select className="rounded-md border border-input bg-background px-3 py-2 font-medium text-foreground outline-none"><option>Newest first</option><option>Price: low to high</option><option>Price: high to low</option></select></label>
+            <div>
+              <p className="text-xs font-bold uppercase text-primary">Recently published</p>
+              <h2 className="mt-1 font-display text-3xl sm:text-4xl">Homes ready to discover</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {loading ? "Loading listings…" : `${totalCount} listings match your search`}
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Sort by{" "}
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortOption)}
+                className="rounded-md border border-input bg-background px-3 py-2 font-medium text-foreground outline-none"
+              >
+                <option value="date">Newest first</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+              </select>
+            </label>
           </div>
 
-          {visible.length ? <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((listing) => <article key={listing.id} className="group min-w-0">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                <Link to="/listings/$listingId" params={{ listingId: String(listing.id) }} aria-label={`View details for ${listing.title}`} className="block size-full"><img src={listing.image} alt={listing.imageAlt} width={1024} height={768} loading={listing.id === 1 ? "eager" : "lazy"} className="listing-image size-full object-cover" /></Link>
-                <div className="absolute left-3 top-3 flex gap-2"><span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">{listing.kind === "sale" ? "For sale" : "For rent"}</span>{listing.featured && <span className="rounded-sm bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">Fresh</span>}</div>
-                <Button size="icon" variant="secondary" className="absolute right-3 top-3 rounded-full" onClick={() => toggleSaved(listing.id)} aria-label={saved.includes(listing.id) ? "Remove from saved" : "Save listing"}><Heart className={saved.includes(listing.id) ? "fill-primary text-primary" : ""} /></Button>
-                {listing.status && <div className="absolute inset-0 grid place-items-center bg-foreground/45"><span className="-rotate-3 border-2 border-status-foreground bg-status px-5 py-2 text-lg font-bold uppercase text-status-foreground">{listing.status}</span></div>}
+          {error ? (
+            <div className="border-y border-border py-20 text-center">
+              <h3 className="font-display text-2xl">Couldn't load listings</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Please try again in a moment.</p>
+            </div>
+          ) : !loading && adverts.length === 0 ? (
+            <div className="border-y border-border py-20 text-center">
+              <Search className="mx-auto size-8 text-muted-foreground" />
+              <h3 className="mt-4 font-display text-2xl">No homes found</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try another search term or category.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-5"
+                onClick={() => {
+                  setQuery("");
+                  setMode("all");
+                }}
+              >
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+                {adverts.map((advert) => {
+                  const primaryPhoto = advert.photos[0];
+                  const location = [advert.address.region, advert.address.city]
+                    .filter(Boolean)
+                    .join(", ");
+                  const saved = savedIds.includes(advert.guid);
+                  return (
+                    <article key={advert.guid} className="group min-w-0">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
+                        <Link
+                          to="/listings/$listingId"
+                          params={{ listingId: advert.guid }}
+                          aria-label={`View details for ${advert.title}`}
+                          className="block size-full"
+                        >
+                          <img
+                            src={
+                              primaryPhoto
+                                ? getAdvertPhotoUrl(primaryPhoto.photoUrl)
+                                : placeholderImage
+                            }
+                            alt={advert.title}
+                            loading="lazy"
+                            className="listing-image size-full object-cover"
+                          />
+                        </Link>
+                        <div className="absolute left-3 top-3 flex gap-2">
+                          <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                            {advert.type === "Sale" ? "For sale" : "For rent"}
+                          </span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="absolute right-3 top-3 rounded-full"
+                          onClick={() => toggleSaved(advert.guid)}
+                          aria-label={saved ? "Remove from saved" : "Save listing"}
+                        >
+                          <Heart className={saved ? "fill-primary text-primary" : ""} />
+                        </Button>
+                      </div>
+                      <div className="pt-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-display text-2xl">{formatAdvertPrice(advert)}</p>
+                            <h3 className="mt-1 text-base font-semibold">
+                              <Link
+                                to="/listings/$listingId"
+                                params={{ listingId: advert.guid }}
+                                className="hover:text-primary"
+                              >
+                                {advert.title}
+                              </Link>
+                            </h3>
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatPostedDate(advert.createdDate)}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <MapPin className="size-3.5" />
+                          {location}
+                        </p>
+                        <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <BedDouble className="size-4" />
+                            {advert.rooms}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Square className="size-4" />
+                            {advert.surfaceArea} m²
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Layers className="size-4" />
+                            Floor {advert.floor}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center justify-end gap-3">
+                          <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
+                            Contact
+                          </Button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-              <div className="pt-4">
-                <div className="flex items-start justify-between gap-3"><div><p className="font-display text-2xl">{listing.price}</p><h3 className="mt-1 text-base font-semibold"><Link to="/listings/$listingId" params={{ listingId: String(listing.id) }} className="hover:text-primary">{listing.title}</Link></h3></div><span className="shrink-0 text-xs text-muted-foreground">{listing.posted}</span></div>
-                <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin className="size-3.5" />{listing.location}</p>
-                <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground"><span className="flex items-center gap-1.5"><BedDouble className="size-4" />{listing.beds}</span><span className="flex items-center gap-1.5"><Bath className="size-4" />{listing.baths}</span><span className="flex items-center gap-1.5"><Square className="size-4" />{listing.area} m²</span></div>
-                <div className="mt-3 flex items-center justify-between gap-3"><p className="truncate text-xs text-muted-foreground">{listing.seller}</p><Button size="sm" variant={listing.status ? "secondary" : "outline"} disabled={Boolean(listing.status)} onClick={() => openContact(listing)}>{listing.status ? "Unavailable" : "Contact"}</Button></div>
-              </div>
-            </article>)}
-          </div> : <div className="border-y border-border py-20 text-center"><Search className="mx-auto size-8 text-muted-foreground" /><h3 className="mt-4 font-display text-2xl">No homes found</h3><p className="mt-2 text-sm text-muted-foreground">Try another location or property type.</p><Button variant="outline" className="mt-5" onClick={() => { setQuery(""); setPropertyType("All types"); setMode("all"); }}>Clear filters</Button></div>}
+
+              {hasMore && (
+                <div className="mt-10 flex justify-center">
+                  <Button
+                    variant="outline"
+                    disabled={loadingMore}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </section>
 
         <section className="border-y border-border bg-primary text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-4 py-10 sm:px-7 md:flex-row md:items-center lg:px-10">
-            <div><p className="text-sm font-semibold opacity-80">For owners & agencies</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Your listing. Live in minutes.</h2><p className="mt-2 max-w-xl text-sm leading-6 opacity-80">Publish directly, update it anytime, and mark it sold or rented when the deal is done.</p></div>
-            <Button variant="secondary" size="lg" onClick={() => setDialog("publish")}><Plus /> Publish a property</Button>
+            <div>
+              <p className="text-sm font-semibold opacity-80">For owners & agencies</p>
+              <h2 className="mt-2 font-display text-3xl sm:text-4xl">
+                Your listing. Live in minutes.
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 opacity-80">
+                Publish directly, update it anytime, and mark it sold or rented when the deal is
+                done.
+              </p>
+            </div>
+            <Button variant="secondary" size="lg" asChild>
+              <Link to="/createadvert">
+                <Plus /> Publish a property
+              </Link>
+            </Button>
           </div>
         </section>
       </main>
 
-      <footer className="mx-auto flex max-w-[1440px] flex-col justify-between gap-5 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-7 lg:px-10"><div className="flex items-center gap-2 text-foreground"><KeyRound className="size-5 text-primary" /><span className="font-display text-lg">OpenKey</span></div><p>Open property listings, published directly.</p><p>© 2026 OpenKey</p></footer>
+      <footer className="mx-auto flex max-w-[1440px] flex-col justify-between gap-5 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-7 lg:px-10">
+        <div className="flex items-center gap-2 text-foreground">
+          <KeyRound className="size-5 text-primary" />
+          <span className="font-display text-lg">OpenKey</span>
+        </div>
+        <p>Open property listings, published directly.</p>
+        <p>© 2026 OpenKey</p>
+      </footer>
 
       <ContactOwnerDialog
         open={dialog === "contact"}
-        sellerName={selected?.seller.split(" · ")[0]}
+        sellerName="the owner"
         listingTitle={selected?.title}
         onClose={() => setDialog(null)}
         onSignIn={() => void navigate({ to: "/login" })}
       />
-
     </div>
   );
 }

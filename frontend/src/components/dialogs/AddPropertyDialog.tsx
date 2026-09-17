@@ -1,4 +1,4 @@
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Building2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 type AddPropertyDialogProps = {
   open: boolean;
@@ -23,6 +24,7 @@ export function AddPropertyDialog({
   onClose,
   onPublish,
 }: AddPropertyDialogProps) {
+  const [description, setDescription] = useState("");
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -67,6 +69,11 @@ export function AddPropertyDialog({
               Location
               <input required placeholder="Neighbourhood, city" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
+            <div className="grid gap-1.5 text-sm font-medium">
+              <span>Description</span>
+              <RichTextEditor value={description} onChange={setDescription} />
+              <input type="hidden" name="description" value={description} />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">
                 Price

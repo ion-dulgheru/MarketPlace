@@ -14,6 +14,7 @@ public class DataContext : DbContext
     public DbSet<Advert> Adverts => Set<Advert>();
     public DbSet<AdvertPhoto> AdvertPhotos => Set<AdvertPhoto>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<FavoriteAdvert> FavoriteAdverts => Set<FavoriteAdvert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
