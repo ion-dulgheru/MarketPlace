@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   Bath,
   BedDouble,
@@ -84,20 +84,20 @@ function Index() {
   const toggleSaved = (id: number) => setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground"> 
+    <div className="min-h-screen bg-background text-foreground">
 
-     <Header/>
+      <Header />
 
       <main id="top">
-        <section className="border-b border-border bg-brand-soft/65">
-          <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-7 sm:py-16 lg:px-10">
-            <div className="max-w-4xl">
+        <section className="border-b border-border bg-[#f5f9fa]">
+          <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-7 sm:py-16 lg:px-10 flex flex-col items-center">
+            <div className="max-w-4xl w-full text-center">
               <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary"><Sparkles className="size-4" /> New homes appear the moment they’re published</p>
-              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">A clearer way to find your next place.</h1>
+              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">Find a place you'll love to call home.</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Open listings from owners and agencies. Browse freely, contact directly, and skip the waiting list.</p>
             </div>
 
-            <div className="mt-9 max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
+            <div className="mt-9 w-full max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="mb-3 flex w-fit gap-1 rounded-md bg-muted p-1">
                 {(["all", "sale", "rent"] as const).map((item) => <Button key={item} size="sm" variant={mode === item ? "default" : "ghost"} onClick={() => setMode(item)}>{item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}</Button>)}
               </div>
@@ -158,10 +158,7 @@ function Index() {
         onClose={() => setDialog(null)}
         onSignIn={() => void navigate({ to: "/login" })}
       />
-      <AddPropertyDialog
-        open={dialog === "publish"}
-        onClose={() => setDialog(null)}
-      />
+
     </div>
   );
 }

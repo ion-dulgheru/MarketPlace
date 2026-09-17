@@ -1,5 +1,13 @@
 import { apiFetch } from "@/lib/api-client";
 
+export interface CreateAdvertAddress {
+  country: string;
+  city: string;
+  region: string;
+  streetAddress: string;
+  streetNumber: string;
+}
+
 export interface CreateAdvertRequest {
   title: string;
   description: string;
@@ -8,13 +16,7 @@ export interface CreateAdvertRequest {
   rooms: number;
   floor: number;
   type: "Sale" | "Rent";
-  address: {
-    country: string;
-    city: string;
-    region: string;
-    streetAddress: string;
-    streetNumber: string;
-  };
+  address: CreateAdvertAddress;
 }
 
 export async function createAdvert(data: CreateAdvertRequest): Promise<void> {
