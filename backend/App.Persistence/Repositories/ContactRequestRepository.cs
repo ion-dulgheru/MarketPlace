@@ -18,4 +18,8 @@ public class ContactRequestRepository(DataContext context) : IContactRequestRepo
             .OrderByDescending(x => x.CreatedDate)
             .ToListAsync(ct);
     }
+    public async Task<ContactRequest?> GetByUuidAsync(Guid uuid, CancellationToken ct)
+{
+    return await context.ContactRequests.FirstOrDefaultAsync(x => x.Uuid == uuid, ct);
+}
 }
