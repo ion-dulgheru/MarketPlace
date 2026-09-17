@@ -1,6 +1,6 @@
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "@/lib/tokens";
 
-const API_URL = import.meta.env.VITE_API_URL as string;
+export const API_URL = import.meta.env.VITE_API_URL as string;
 
 // Încearcă să reînnoiască access token-ul cu refresh token-ul
 async function tryRefresh(): Promise<boolean> {

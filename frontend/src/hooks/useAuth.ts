@@ -3,11 +3,14 @@ import { isLoggedIn, clearTokens } from "@/lib/tokens";
 
 export function useAuth() {
   // Starea locală: este userul logat?
-  // Citim direct din localStorage la inițializare
-  const [loggedIn, setLoggedIn] = useState<boolean>(isLoggedIn);
+  // Pornim cu false (localStorage nu există la randarea pe server) și
+  // citim valoarea reală după montare, doar în browser.
+  const [loggedIn, setLoggedIn] = useState<boolean>(false);
 
-  // Sincronizăm starea dacă localStorage se schimbă în alt tab
   useEffect(() => {
+    setLoggedIn(isLoggedIn());
+
+    // Sincronizăm starea dacă localStorage se schimbă în alt tab
     const handleStorage = () => setLoggedIn(isLoggedIn());
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
