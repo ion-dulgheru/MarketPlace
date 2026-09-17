@@ -1,5 +1,7 @@
 using App.Application.Abstractions;
+using App.Application.Abstractions.Interfaces;
 using App.Infrastructure.Auth;
+using App.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using App.Application.Abstractions.JWT;
@@ -12,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         return services;
     }

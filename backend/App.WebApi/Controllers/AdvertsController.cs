@@ -13,6 +13,7 @@ using App.Contracts.Responses.Adverts;
 using App.Application.UseCases.Adverts.UpdateAdvert;
 using App.Application.UseCases.Adverts.GetMyAdverts;
 using App.Application.UseCases.Adverts.GetAdvertById;
+using App.Application.UseCases.Adverts.AddAdvertPhoto;
 
 namespace App.WebApi.Controllers;
 
@@ -128,5 +129,35 @@ public class AdvertsController(ISender sender) : BaseController
             : Ok();
     }
 
-    
+    [HttpPost("{uuid:guid}/photos")]
+    [Consumes("multipart/form-data")]
+    [SwaggerResponse(201, "Photo added.", typeof(AdvertPhotoResponse))]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> AddPhoto(
+        Guid uuid,
+        IFormFile file,
+        [FromForm] bool isPrimary = false,
+        CancellationToken ct = default)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new ErrorDetails("Advert.FileRequired", "A valid photo file is required."));
+        }
+
+        await using var stream = file.OpenReadStream();
+        var command = new AddAdvertPhotoCommand(
+            uuid,
+            UserUuid,
+            stream,
+            file.FileName,
+            file.Length,
+            isPrimary);
+
+        var result = await sender.Send(command, ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : StatusCode(StatusCodes.Status201Created, result.Value);
+    }
 }

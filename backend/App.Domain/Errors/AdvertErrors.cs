@@ -33,4 +33,13 @@ public static class AdvertErrors
 
     public static readonly Error NotFound =
         Error.NotFound("Advert.NotFound", "Advert not found.");
+
+    public static readonly Error FileRequired =
+        Error.Validation("Advert.FileRequired", "A valid photo file is required.");
+
+    public static readonly Error FileTooLarge =
+        Error.Validation("Advert.FileTooLarge", "Photo file size cannot exceed 5 MB.");
+
+    public static readonly Error InvalidFileFormat =
+        Error.Validation("Advert.InvalidFileFormat", "Only .jpg, .jpeg, .png, and .webp images are allowed.");
 }
