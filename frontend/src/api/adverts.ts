@@ -141,6 +141,32 @@ export function getAdvertPhotoUrl(photoUrl: string): string {
   return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
 }
 
+export async function updateAdvertStatus(
+  guid: string,
+  status: "Active" | "Sold" | "Rented",
+): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${guid}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to update status" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to update status");
+  }
+}
+
+export async function deleteAdvert(guid: string): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${guid}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to delete advert" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to delete advert");
+  }
+}
+
 export async function getAdvertById(guid: string): Promise<Advert | null> {
   const response = await apiFetch(`/api/adverts/${guid}`);
   if (response.status === 404) {
