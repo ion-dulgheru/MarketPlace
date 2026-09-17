@@ -19,7 +19,12 @@ export interface CreateAdvertRequest {
   address: CreateAdvertAddress;
 }
 
-export async function createAdvert(data: CreateAdvertRequest): Promise<void> {
+export interface CreateAdvertResponse {
+  id: string;
+  guid: string;
+}
+
+export async function createAdvert(data: CreateAdvertRequest): Promise<CreateAdvertResponse> {
   const response = await apiFetch("/api/adverts", {
     method: "POST",
     body: JSON.stringify(data),
@@ -29,6 +34,14 @@ export async function createAdvert(data: CreateAdvertRequest): Promise<void> {
     const error = await response.json().catch(() => ({ message: "Failed to create advert" }));
     throw new Error((error as { message?: string }).message ?? "Failed to create advert");
   }
+
+  if (response.status === 204) {
+    return { id: "", guid: "" };
+  }
+
+  const result = (await response.json()) as { id?: string; guid?: string };
+  const id = result.guid ?? result.id ?? "";
+  return { id, guid: id };
 }
 
 export async function setAdvertFavorite(uuid: string, isFavorite: boolean): Promise<void> {

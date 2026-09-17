@@ -1,8 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type DragEvent } from "react";
+import { ArrowLeft, Image as ImageIcon, KeyRound, Star, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createAdvert } from "@/api/adverts";
+import { createAdvert, addAdvertPhoto } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
@@ -19,11 +19,33 @@ export const Route = createFileRoute("/createadvert")({
   component: CreateAdvertPage,
 });
 
+interface SelectedPhoto {
+  id: string;
+  file: File;
+  previewUrl: string;
+  isPrimary: boolean;
+}
+
 function CreateAdvertPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [description, setDescription] = useState("");
+
+  const [photos, setPhotos] = useState<SelectedPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photosRef = useRef<SelectedPhoto[]>([]);
+  photosRef.current = photos;
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    };
+  }, []);
 
   // Doar userii logați pot publica un anunț
   useEffect(() => {
@@ -32,10 +54,101 @@ function CreateAdvertPage() {
     }
   }, [navigate]);
 
+  const handleAddFiles = (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setPhotoError(null);
+
+    const validFiles: File[] = [];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const maxTotalPhotos = 20;
+
+    if (photos.length + files.length > maxTotalPhotos) {
+      setPhotoError(`You can upload up to ${maxTotalPhotos} photos per listing.`);
+      return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith("image/")) {
+        setPhotoError("Only image files (JPEG, PNG, WebP, etc.) are supported.");
+        continue;
+      }
+      if (file.size > maxFileSize) {
+        setPhotoError(`"${file.name}" exceeds the 10MB file size limit.`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    setPhotos((current) => {
+      const hasPrimary = current.some((p) => p.isPrimary);
+      const newItems: SelectedPhoto[] = validFiles.map((file, idx) => ({
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        isPrimary: !hasPrimary && idx === 0,
+      }));
+      return [...current, ...newItems];
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePhoto = (id: string) => {
+    setPhotos((current) => {
+      const target = current.find((p) => p.id === id);
+      if (target) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      const updated = current.filter((p) => p.id !== id);
+      // If we removed the primary photo and have remaining photos, make the first one primary
+      if (target?.isPrimary && updated.length > 0) {
+        updated[0] = { ...updated[0], isPrimary: true };
+      }
+      return updated;
+    });
+  };
+
+  const handleSetPrimary = (id: string) => {
+    setPhotos((current) =>
+      current.map((p) => ({
+        ...p,
+        isPrimary: p.id === id,
+      })),
+    );
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files) {
+      handleAddFiles(e.dataTransfer.files);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setPhotoError(null);
     setLoading(true);
+    setStatusMessage("Creating listing…");
 
     const form = event.currentTarget;
     const get = (name: string) =>
@@ -45,11 +158,12 @@ function CreateAdvertPage() {
     if (!strippedText) {
       setError("Description is required.");
       setLoading(false);
+      setStatusMessage(null);
       return;
     }
 
     try {
-      await createAdvert({
+      const created = await createAdvert({
         title: get("title"),
         description: description,
         price: Number(get("price")),
@@ -65,11 +179,32 @@ function CreateAdvertPage() {
           streetNumber: get("streetNumber"),
         },
       });
-      void navigate({ to: "/" });
+
+      const advertId = created.id || created.guid;
+
+      if (advertId && photos.length > 0) {
+        for (let i = 0; i < photos.length; i++) {
+          setStatusMessage(`Uploading photo ${i + 1} of ${photos.length}…`);
+          try {
+            await addAdvertPhoto(advertId, photos[i].file, photos[i].isPrimary);
+          } catch (photoErr) {
+            console.error(`Failed to upload photo ${i + 1}:`, photoErr);
+            // Continue uploading the remaining photos even if one fails
+          }
+        }
+      }
+
+      setStatusMessage("Listing published!");
+      if (advertId) {
+        void navigate({ to: `/listings/${advertId}` });
+      } else {
+        void navigate({ to: "/" });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
+      setStatusMessage(null);
     }
   };
 
@@ -136,6 +271,110 @@ function CreateAdvertPage() {
               <input name="floor" required type="number" min={0} max={100} placeholder="3" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
 
+            {/* Photos Section */}
+            <div className="border-t border-border pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Photos</p>
+                  <p className="text-xs text-muted-foreground">
+                    Upload photos of your property. The photo with the star will be the cover image.
+                  </p>
+                </div>
+                {photos.length > 0 && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {photos.length} {photos.length === 1 ? "photo" : "photos"} selected
+                  </span>
+                )}
+              </div>
+
+              {/* Photos Preview Grid */}
+              {photos.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {photos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="group relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-muted shadow-sm transition-all hover:shadow-md"
+                    >
+                      <img
+                        src={photo.previewUrl}
+                        alt=""
+                        className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+
+                      {/* Primary Badge or Make Primary Button */}
+                      {photo.isPrimary ? (
+                        <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-semibold text-primary shadow-sm backdrop-blur-sm">
+                          <Star className="size-3 fill-primary text-primary" />
+                          Cover
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimary(photo.id)}
+                          title="Set as cover photo"
+                          className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity hover:bg-background hover:text-primary group-hover:opacity-100"
+                        >
+                          <Star className="size-3" />
+                          Set cover
+                        </button>
+                      )}
+
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(photo.id)}
+                        aria-label="Remove photo"
+                        className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-background/90 text-destructive shadow-sm backdrop-blur-sm transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Dropzone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                  isDragging
+                    ? "border-primary bg-primary/10"
+                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleAddFiles(e.target.files)}
+                />
+                <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
+                  {photos.length > 0 ? (
+                    <ImageIcon className="size-5" />
+                  ) : (
+                    <Upload className="size-5" />
+                  )}
+                </div>
+                <p className="mt-2 text-sm font-medium">
+                  {photos.length > 0 ? "Add more photos" : "Choose photos or drag & drop"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  PNG, JPG, WebP up to 10MB each (max 20 photos)
+                </p>
+              </div>
+
+              {photoError && (
+                <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  {photoError}
+                </p>
+              )}
+            </div>
+
             <p className="border-t border-border pt-3 text-sm font-semibold text-foreground">Address</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">
@@ -165,7 +404,7 @@ function CreateAdvertPage() {
             )}
 
             <Button type="submit" disabled={loading} className="mt-2 w-full">
-              {loading ? "Publishing…" : "Publish now"}
+              {loading ? (statusMessage ?? "Publishing…") : "Publish now"}
             </Button>
           </form>
         </section>
@@ -175,3 +414,4 @@ function CreateAdvertPage() {
     </main>
   );
 }
+
