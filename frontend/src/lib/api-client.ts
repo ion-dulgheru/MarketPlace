@@ -16,7 +16,7 @@ async function tryRefresh(): Promise<boolean> {
 
     if (!response.ok) return false;
 
-    const data = await response.json() as { accessToken: string; refreshToken: string };
+    const data = (await response.json()) as { accessToken: string; refreshToken: string };
     saveTokens(data.accessToken, data.refreshToken);
     return true;
   } catch {
@@ -28,11 +28,14 @@ async function tryRefresh(): Promise<boolean> {
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const token = getAccessToken();
 
+  // FormData își setează singur Content-Type-ul (cu boundary); nu-l suprascriem.
+  const isFormData = init.body instanceof FormData;
+
   const makeRequest = (accessToken: string | null) =>
     fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(init.headers ?? {}),
       },

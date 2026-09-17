@@ -1,8 +1,16 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, KeyRound, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getAdvertById, updateAdvert, type Advert } from "@/api/adverts";
+import {
+  getAdvertById,
+  updateAdvert,
+  addAdvertPhoto,
+  deleteAdvertPhoto,
+  getAdvertPhotoUrl,
+  type Advert,
+  type AdvertPhoto,
+} from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
@@ -22,6 +30,12 @@ function EditAdvertPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [photos, setPhotos] = useState<AdvertPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [pendingPhotoId, setPendingPhotoId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!isLoggedIn()) {
       void navigate({ to: "/login" });
@@ -34,6 +48,7 @@ function EditAdvertPage() {
         if (cancelled) return;
         setAdvert(result);
         setDescription(result?.description ?? "");
+        setPhotos(result?.photos ?? []);
       })
       .catch(() => {
         if (!cancelled) setAdvert(null);
@@ -43,6 +58,33 @@ function EditAdvertPage() {
       cancelled = true;
     };
   }, [listingId, navigate]);
+
+  const handleUploadPhoto = async (file: File) => {
+    setPhotoError(null);
+    setUploading(true);
+    try {
+      const photo = await addAdvertPhoto(listingId, file, photos.length === 0);
+      setPhotos((current) => [...current, photo]);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Failed to upload photo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeletePhoto = async (photoUuid: string) => {
+    setPhotoError(null);
+    setPendingPhotoId(photoUuid);
+    try {
+      await deleteAdvertPhoto(listingId, photoUuid);
+      setPhotos((current) => current.filter((photo) => photo.uuid !== photoUuid));
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Failed to delete photo");
+    } finally {
+      setPendingPhotoId(null);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -271,6 +313,62 @@ function EditAdvertPage() {
               {loading ? "Saving…" : "Save changes"}
             </Button>
           </form>
+
+          <div className="mt-8 border-t border-border pt-6">
+            <p className="text-sm font-semibold text-foreground">Photos</p>
+
+            {photos.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {photos.map((photo) => (
+                  <div
+                    key={photo.uuid}
+                    className="group relative aspect-[4/3] overflow-hidden rounded-md bg-muted"
+                  >
+                    <img
+                      src={getAdvertPhotoUrl(photo.photoUrl)}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                    {photo.isPrimary && (
+                      <span className="absolute left-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-background/90 text-primary">
+                        <Star className="size-3.5 fill-primary" />
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      disabled={pendingPhotoId === photo.uuid}
+                      onClick={() => void handleDeletePhoto(photo.uuid)}
+                      aria-label="Delete photo"
+                      className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-background/90 text-destructive hover:bg-background"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <label className="mt-4 flex h-11 w-fit cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted">
+              {uploading ? "Uploading…" : "Add a photo"}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void handleUploadPhoto(file);
+                }}
+              />
+            </label>
+
+            {photoError && (
+              <p className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {photoError}
+              </p>
+            )}
+          </div>
         </section>
 
         <p className="text-center text-xs text-muted-foreground">© 2026 OpenKey</p>

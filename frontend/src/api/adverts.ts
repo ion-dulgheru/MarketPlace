@@ -77,7 +77,7 @@ export interface AdvertAddress {
 }
 
 export interface AdvertPhoto {
-  guid: string;
+  uuid: string;
   photoUrl: string;
   isPrimary: boolean;
 }
@@ -139,6 +139,39 @@ export async function getAdverts(params: GetAdvertsParams = {}): Promise<GetAdve
 
 export function getAdvertPhotoUrl(photoUrl: string): string {
   return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
+}
+
+export async function addAdvertPhoto(
+  advertGuid: string,
+  file: File,
+  isPrimary = false,
+): Promise<AdvertPhoto> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("isPrimary", String(isPrimary));
+
+  const response = await apiFetch(`/api/adverts/${advertGuid}/photos`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to upload photo" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to upload photo");
+  }
+
+  return (await response.json()) as AdvertPhoto;
+}
+
+export async function deleteAdvertPhoto(advertGuid: string, photoUuid: string): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${advertGuid}/photos/${photoUuid}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to delete photo" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to delete photo");
+  }
 }
 
 export interface UpdateAdvertRequest {
