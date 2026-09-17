@@ -13,10 +13,10 @@ export default function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+        <header className="sticky top-0 z-40  border-border bg-[#f5f9fa] backdrop-blur">
             <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-4 sm:px-7 lg:px-10">
                 <a href="#top" className="flex items-center gap-2" aria-label="OpenKey home">
-                    <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">
+                    <span className="grid size-9 place-items-center rounded-md  text-black">
                         <KeyRound className="size-5" />
                     </span>
                     <span className="font-display text-2xl">OpenKey</span>
@@ -47,7 +47,7 @@ export default function Header() {
                         </Button>
                     )}
 
-                    <Button onClick={() => void navigate({ to: "/register" })}>
+                    <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
                         <Plus /> Publish listing
                     </Button>
                     <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
