@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bath, BedDouble, Check, Heart, MapPin, Square } from "lucide-react";
+import { ArrowLeft, Bath, BedDouble, Check, Heart, Loader2, MapPin, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { listingDetails } from "@/data/listing-details";
-import { favoriteAdvert, unfavoriteAdvert, getFavoriteAdvertIds } from "@/api/adverts";
+import { listingDetails, type ListingDetail } from "@/data/listing-details";
+import { getAdvertById, favoriteAdvert, unfavoriteAdvert, getFavoriteAdvertIds } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 import DOMPurify from "dompurify";
+import apartment from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/listings/$listingId")({
   head: () => ({
@@ -17,18 +18,105 @@ export const Route = createFileRoute("/listings/$listingId")({
 function ListingDetailsPage() {
   const navigate = useNavigate();
   const { listingId } = Route.useParams();
-  const listing = listingDetails.find((item) => item.id === Number(listingId));
+  const [listing, setListing] = useState<ListingDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (isLoggedIn()) {
-      void getFavoriteAdvertIds().then((ids) => {
-        if (ids.includes(listingId)) {
-          setSaved(true);
+    let isCancelled = false;
+    setLoading(true);
+
+    async function loadData() {
+      if (isLoggedIn()) {
+        try {
+          const ids = await getFavoriteAdvertIds();
+          if (!isCancelled && ids.includes(listingId)) {
+            setSaved(true);
+          }
+        } catch {
+          // Ignore
         }
-      });
+      }
+
+      if (listingId.includes("-")) {
+        try {
+          const advert = await getAdvertById(listingId);
+          if (!isCancelled) {
+            if (advert) {
+              const fullAddress = [
+                advert.address.streetAddress,
+                advert.address.streetNumber,
+                advert.address.region,
+                advert.address.city,
+                advert.address.country,
+              ]
+                .filter(Boolean)
+                .join(", ");
+
+              const mapped: ListingDetail = {
+                id: advert.guid,
+                title: advert.title,
+                location: fullAddress || advert.address.city,
+                price:
+                  advert.type.toLowerCase() === "rent"
+                    ? `MDL ${advert.price.toLocaleString()} / month`
+                    : `MDL ${advert.price.toLocaleString()}`,
+                kind: advert.type.toLowerCase() === "rent" ? "rent" : "sale",
+                type: advert.type,
+                beds: advert.rooms,
+                baths: 1,
+                area: advert.surfaceArea,
+                images:
+                  advert.photos && advert.photos.length > 0
+                    ? advert.photos.map((p) => p.photoUrl)
+                    : [apartment],
+                imageAlt: advert.title,
+                seller: "Owner",
+                sellerRole: "Verified Seller",
+                posted: new Date(advert.createdDate).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                }),
+                description: advert.description,
+                amenities: [
+                  `Floor: ${advert.floor}`,
+                  `Rooms: ${advert.rooms}`,
+                  `Area: ${advert.surfaceArea} m²`,
+                  `Type: ${advert.type}`,
+                  `City: ${advert.address.city}`,
+                ],
+                status:
+                  advert.status.toLowerCase() === "active"
+                    ? undefined
+                    : (advert.status.toLowerCase() as "sold" | "rented"),
+              };
+              setListing(mapped);
+            } else {
+              setListing(null);
+            }
+          }
+        } catch {
+          if (!isCancelled) setListing(null);
+        }
+      } else {
+        const mockListing = listingDetails.find((item) => item.id === Number(listingId));
+        if (!isCancelled) {
+          setListing(mockListing ?? null);
+        }
+      }
+
+      if (!isCancelled) {
+        setLoading(false);
+      }
     }
+
+    void loadData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [listingId]);
 
   const handleToggleFavorite = async () => {
@@ -45,9 +133,20 @@ function ListingDetailsPage() {
         await unfavoriteAdvert(listingId);
       }
     } catch {
-      // Keep optimistic state or revert on real server error if desired
+      setSaved(!nextSaved);
     }
   };
+
+  if (loading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-background px-4 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading property details…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!listing) {
     return (
@@ -83,7 +182,7 @@ function ListingDetailsPage() {
           <section aria-label="Listing photos">
             <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
               <img
-                src={listing.images[selectedImage]}
+                src={listing.images[selectedImage] || apartment}
                 alt={listing.imageAlt}
                 className="size-full object-cover"
               />
@@ -95,19 +194,21 @@ function ListingDetailsPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              {listing.images.map((image, index) => (
-                <button
-                  key={image}
-                  type="button"
-                  onClick={() => setSelectedImage(index)}
-                  className={`aspect-[4/3] overflow-hidden rounded-md border-2 bg-muted ${selectedImage === index ? "border-primary" : "border-transparent"}`}
-                  aria-label={`View photo ${index + 1}`}
-                >
-                  <img src={image} alt="" className="size-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {listing.images.length > 1 && (
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {listing.images.map((image, index) => (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setSelectedImage(index)}
+                    className={`aspect-[4/3] overflow-hidden rounded-md border-2 bg-muted ${selectedImage === index ? "border-primary" : "border-transparent"}`}
+                    aria-label={`View photo ${index + 1}`}
+                  >
+                    <img src={image} alt="" className="size-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           <section>
@@ -166,7 +267,7 @@ function ListingDetailsPage() {
             <div className="mt-7">
               <h2 className="font-display text-2xl">About this property</h2>
               <div
-                className="mt-3 text-sm leading-7 text-muted-foreground [&_p]:mb-3 [&_strong]:font-semibold [&_strong]:text-foreground [&_em]:italic [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-3"
+                className="mt-3 text-sm leading-7 text-muted-foreground [&_p]:mb-3 [&_strong]:font-semibold [&_strong]:text-foreground [&_em]:italic [&_u]:underline [&_s]:line-through [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-3 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-3 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_a]:text-primary [&_a]:underline"
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(listing.description),
                 }}
@@ -193,3 +294,4 @@ function ListingDetailsPage() {
     </div>
   );
 }
+

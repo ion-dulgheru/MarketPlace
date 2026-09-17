@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Bath,
   BedDouble,
@@ -17,7 +17,6 @@ import {
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddPropertyDialog } from "@/components/dialogs/AddPropertyDialog";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import { isLoggedIn } from "@/lib/tokens";
 import apartment from "@/assets/openkey-apartment.jpg";
@@ -25,8 +24,10 @@ import townhouse from "@/assets/openkey-townhouse.jpg";
 import loft from "@/assets/openkey-loft.jpg";
 import Header from "@/components/Navigation/header";
 
+import { getActiveAdverts, getFavoriteAdvertIds, setAdvertFavorite } from "@/api/adverts";
+
 type Listing = {
-  id: number;
+  id: number | string;
   title: string;
   location: string;
   price: string;
@@ -51,6 +52,7 @@ const listings: Listing[] = [
   { id: 5, title: "Bright studio near the university", location: "Rîșcani, Chișinău", price: "MDL 8,500 / month", kind: "rent", type: "Studio", beds: 1, baths: 1, area: 42, image: apartment, imageAlt: "Bright modern studio apartment", seller: "Elena Ceban · Owner", posted: "Yesterday" },
   { id: 6, title: "Spacious apartment with terrace", location: "Botanica, Chișinău", price: "MDL 14,000 / month", kind: "rent", type: "Apartment", beds: 2, baths: 2, area: 110, image: loft, imageAlt: "Spacious apartment with a modern kitchen", seller: "Capital Living · Agency", posted: "2 days ago", status: "rented" },
 ];
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -67,27 +69,86 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"all" | "sale" | "rent">("all");
+  const [mode, setMode] = useState<"all" | "sale" | "rent" | "saved">("all");
   const [query, setQuery] = useState("");
   const [propertyType, setPropertyType] = useState("All types");
-  const [saved, setSaved] = useState<number[]>([]);
-  const [dialog, setDialog] = useState<"contact" | "publish" | null>(null);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<"contact" | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
+  const [backendListings, setBackendListings] = useState<Listing[]>([]);
 
-  const visible = useMemo(() => listings.filter((listing) => {
-    const matchesMode = mode === "all" || listing.kind === mode;
+  useEffect(() => {
+    void getActiveAdverts()
+      .then((res) => {
+        const mapped: Listing[] = res.items.map((advert) => ({
+          id: advert.guid,
+          title: advert.title,
+          location: `${advert.address.region ? advert.address.region + ", " : ""}${advert.address.city}`,
+          price:
+            advert.type.toLowerCase() === "rent"
+              ? `MDL ${advert.price.toLocaleString()} / month`
+              : `MDL ${advert.price.toLocaleString()}`,
+          kind: advert.type.toLowerCase() === "rent" ? "rent" : "sale",
+          type: advert.type,
+          beds: advert.rooms,
+          baths: 1,
+          area: advert.surfaceArea,
+          image: advert.photos[0]?.photoUrl || apartment,
+          imageAlt: advert.title,
+          seller: "Owner",
+          posted: "Recently",
+          status:
+            advert.status.toLowerCase() === "active"
+              ? undefined
+              : (advert.status.toLowerCase() as "sold" | "rented"),
+          featured: true,
+        }));
+        setBackendListings(mapped);
+      })
+      .catch(() => {
+        // Fallback to local mock listings if backend is unavailable
+      });
+
+    if (isLoggedIn()) {
+      void getFavoriteAdvertIds().then((ids) => {
+        setSaved(ids);
+      });
+    }
+  }, []);
+
+  const allListings = useMemo(() => {
+    return backendListings.length > 0 ? [...backendListings, ...listings] : listings;
+  }, [backendListings]);
+
+  const visible = useMemo(() => allListings.filter((listing) => {
+    const matchesMode =
+      mode === "all"
+        ? true
+        : mode === "saved"
+        ? saved.includes(String(listing.id))
+        : listing.kind === mode;
     const matchesQuery = `${listing.title} ${listing.location}`.toLowerCase().includes(query.toLowerCase());
     const matchesType = propertyType === "All types" || listing.type === propertyType;
     return matchesMode && matchesQuery && matchesType;
-  }), [mode, query, propertyType]);
+  }), [allListings, mode, query, propertyType, saved]);
 
   const openContact = (listing: Listing) => { setSelected(listing); setDialog("contact"); };
-  const toggleSaved = (id: number) => {
+  const toggleSaved = async (id: number | string) => {
     if (!isLoggedIn()) {
       void navigate({ to: "/login" });
       return;
     }
-    setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+    const idStr = String(id);
+    const nextSaved = !saved.includes(idStr);
+    setSaved((items) => (nextSaved ? [...items, idStr] : items.filter((item) => item !== idStr)));
+
+    if (idStr.includes("-")) {
+      try {
+        await setAdvertFavorite(idStr, nextSaved);
+      } catch {
+        setSaved((items) => (!nextSaved ? [...items, idStr] : items.filter((item) => item !== idStr)));
+      }
+    }
   };
 
   return (
@@ -106,7 +167,27 @@ function Index() {
 
             <div className="mt-9 w-full max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="mb-3 flex w-fit gap-1 rounded-md bg-muted p-1">
-                {(["all", "sale", "rent"] as const).map((item) => <Button key={item} size="sm" variant={mode === item ? "default" : "ghost"} onClick={() => setMode(item)}>{item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}</Button>)}
+                {(["all", "sale", "rent"] as const).map((item) => (
+                  <Button
+                    key={item}
+                    size="sm"
+                    variant={mode === item ? "default" : "ghost"}
+                    onClick={() => setMode(item)}
+                  >
+                    {item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}
+                  </Button>
+                ))}
+                {isLoggedIn() && (
+                  <Button
+                    size="sm"
+                    variant={mode === "saved" ? "default" : "ghost"}
+                    onClick={() => setMode("saved")}
+                    className="gap-1.5"
+                  >
+                    <Heart className={`size-3.5 ${mode === "saved" || saved.length > 0 ? "fill-primary text-primary" : ""}`} />
+                    Saved {saved.length > 0 ? `(${saved.length})` : ""}
+                  </Button>
+                )}
               </div>
               <div className="grid gap-2 md:grid-cols-[1fr_190px_160px_auto]">
                 <label className="flex h-12 items-center gap-3 rounded-md border border-input bg-background px-4">
@@ -135,7 +216,7 @@ function Index() {
               <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
                 <Link to="/listings/$listingId" params={{ listingId: String(listing.id) }} aria-label={`View details for ${listing.title}`} className="block size-full"><img src={listing.image} alt={listing.imageAlt} width={1024} height={768} loading={listing.id === 1 ? "eager" : "lazy"} className="listing-image size-full object-cover" /></Link>
                 <div className="absolute left-3 top-3 flex gap-2"><span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">{listing.kind === "sale" ? "For sale" : "For rent"}</span>{listing.featured && <span className="rounded-sm bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">Fresh</span>}</div>
-                <Button size="icon" variant="secondary" className="absolute right-3 top-3 rounded-full" onClick={() => toggleSaved(listing.id)} aria-label={saved.includes(listing.id) ? "Remove from saved" : "Save listing"}><Heart className={saved.includes(listing.id) ? "fill-primary text-primary" : ""} /></Button>
+                <Button size="icon" variant="secondary" className="absolute right-3 top-3 rounded-full" onClick={() => void toggleSaved(listing.id)} aria-label={saved.includes(String(listing.id)) ? "Remove from saved" : "Save listing"}><Heart className={saved.includes(String(listing.id)) ? "fill-primary text-primary" : ""} /></Button>
                 {listing.status && <div className="absolute inset-0 grid place-items-center bg-foreground/45"><span className="-rotate-3 border-2 border-status-foreground bg-status px-5 py-2 text-lg font-bold uppercase text-status-foreground">{listing.status}</span></div>}
               </div>
               <div className="pt-4">
@@ -151,7 +232,7 @@ function Index() {
         <section className="border-y border-border bg-primary text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-4 py-10 sm:px-7 md:flex-row md:items-center lg:px-10">
             <div><p className="text-sm font-semibold opacity-80">For owners & agencies</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Your listing. Live in minutes.</h2><p className="mt-2 max-w-xl text-sm leading-6 opacity-80">Publish directly, update it anytime, and mark it sold or rented when the deal is done.</p></div>
-            <Button variant="secondary" size="lg" onClick={() => setDialog("publish")}><Plus /> Publish a property</Button>
+            <Button variant="secondary" size="lg" onClick={() => void navigate({ to: isLoggedIn() ? "/createadvert" : "/register" })}><Plus /> Publish a property</Button>
           </div>
         </section>
       </main>
