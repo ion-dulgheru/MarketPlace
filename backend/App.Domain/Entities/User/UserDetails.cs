@@ -24,7 +24,9 @@ public class UserDetails : PublicEntity
             UserId = userId,
             FirstName = firstName,
             LastName = lastName,
-            DateOfBirth = dateOfBirth,
+            DateOfBirth = dateOfBirth is null
+                ? null
+                : DateTime.SpecifyKind(dateOfBirth.Value, DateTimeKind.Utc),
             PhoneNumber = phoneNumber
         };
     }

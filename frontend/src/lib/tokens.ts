@@ -1,0 +1,30 @@
+// Cheile sub care salvăm token-urile în localStorage (browser)
+const ACCESS_TOKEN_KEY = "openkey_access_token";
+const REFRESH_TOKEN_KEY = "openkey_refresh_token";
+
+// Salvează ambele token-uri după login / register
+export function saveTokens(accessToken: string, refreshToken: string) {
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+// Citește access token-ul (folosit la fiecare cerere autentificată)
+export function getAccessToken(): string | null {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+// Citește refresh token-ul (folosit când access token-ul a expirat)
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+// Șterge token-urile la logout
+export function clearTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+// Returnează true dacă userul este logat (are un access token salvat)
+export function isLoggedIn(): boolean {
+  return getAccessToken() !== null;
+}

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 import {
   Bath,
   BedDouble,
@@ -22,6 +22,7 @@ import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import apartment from "@/assets/openkey-apartment.jpg";
 import townhouse from "@/assets/openkey-townhouse.jpg";
 import loft from "@/assets/openkey-loft.jpg";
+import Header from "@/components/Navigation/header";
 
 type Listing = {
   id: number;
@@ -50,14 +51,16 @@ const listings: Listing[] = [
   { id: 6, title: "Spacious apartment with terrace", location: "Botanica, Chișinău", price: "MDL 14,000 / month", kind: "rent", type: "Apartment", beds: 2, baths: 2, area: 110, image: loft, imageAlt: "Spacious apartment with a modern kitchen", seller: "Capital Living · Agency", posted: "2 days ago", status: "rented" },
 ];
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [
-    { title: "OpenKey Moldova — Homes for Sale & Rent" },
-    { name: "description", content: "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey." },
-    { property: "og:title", content: "OpenKey Moldova — Homes for Sale & Rent" },
-    { property: "og:description", content: "Open property listings across Moldova, published instantly by owners and agencies." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary_large_image" },
-  ]}),
+  head: () => ({
+    meta: [
+      { title: "OpenKey Moldova — Homes for Sale & Rent" },
+      { name: "description", content: "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey." },
+      { property: "og:title", content: "OpenKey Moldova — Homes for Sale & Rent" },
+      { property: "og:description", content: "Open property listings across Moldova, published instantly by owners and agencies." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ]
+  }),
   component: Index,
 });
 
@@ -69,7 +72,6 @@ function Index() {
   const [saved, setSaved] = useState<number[]>([]);
   const [dialog, setDialog] = useState<"contact" | "publish" | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
-  const [published, setPublished] = useState(false);
 
   const visible = useMemo(() => listings.filter((listing) => {
     const matchesMode = mode === "all" || listing.kind === mode;
@@ -80,28 +82,11 @@ function Index() {
 
   const openContact = (listing: Listing) => { setSelected(listing); setDialog("contact"); };
   const toggleSaved = (id: number) => setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
-  const submitPublish = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setPublished(true); };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-4 sm:px-7 lg:px-10">
-          <a href="#top" className="flex items-center gap-2" aria-label="OpenKey home">
-            <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground"><KeyRound className="size-5" /></span>
-            <span className="font-display text-2xl">OpenKey</span>
-          </a>
-          <nav className="hidden items-center gap-8 text-sm font-medium lg:flex" aria-label="Main navigation">
-            <a href="#listings" className="border-b-2 border-primary py-6">Browse homes</a>
-            <button onClick={() => setMode("sale")} className="cursor-pointer text-muted-foreground hover:text-foreground">Buy</button>
-            <button onClick={() => setMode("rent")} className="cursor-pointer text-muted-foreground hover:text-foreground">Rent</button>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => void navigate({ to: "/login" })}><UserRound /> Sign in</Button>
-            <Button onClick={() => { setPublished(false); setDialog("publish"); }}><Plus /> Publish listing</Button>
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu"><Menu /></Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background text-foreground"> 
+
+     <Header/>
 
       <main id="top">
         <section className="border-b border-border bg-brand-soft/65">
@@ -159,7 +144,7 @@ function Index() {
         <section className="border-y border-border bg-primary text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-4 py-10 sm:px-7 md:flex-row md:items-center lg:px-10">
             <div><p className="text-sm font-semibold opacity-80">For owners & agencies</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Your listing. Live in minutes.</h2><p className="mt-2 max-w-xl text-sm leading-6 opacity-80">Publish directly, update it anytime, and mark it sold or rented when the deal is done.</p></div>
-            <Button variant="secondary" size="lg" onClick={() => { setPublished(false); setDialog("publish"); }}><Plus /> Publish a property</Button>
+            <Button variant="secondary" size="lg" onClick={() => setDialog("publish")}><Plus /> Publish a property</Button>
           </div>
         </section>
       </main>
@@ -175,9 +160,7 @@ function Index() {
       />
       <AddPropertyDialog
         open={dialog === "publish"}
-        published={published}
         onClose={() => setDialog(null)}
-        onPublish={submitPublish}
       />
     </div>
   );

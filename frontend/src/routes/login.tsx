@@ -1,7 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { loginUser } from "@/api/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -18,10 +19,26 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void navigate({ to: "/" });
+    setError(null);
+    setLoading(true);
+
+    const form = event.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    try {
+      await loginUser({ email, password });
+      void navigate({ to: "/" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,13 +66,18 @@ function LoginPage() {
           <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
             <label className="grid gap-1.5 text-sm font-medium">
               Email
-              <input required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+              <input name="email" required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Password
-              <input required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+              <input name="password" required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
-            <Button type="submit" className="mt-2 w-full">Log in</Button>
+            {error && (
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+            )}
+            <Button type="submit" disabled={loading} className="mt-2 w-full">
+              {loading ? "Logging in…" : "Log in"}
+            </Button>
           </form>
 
           <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted-foreground">

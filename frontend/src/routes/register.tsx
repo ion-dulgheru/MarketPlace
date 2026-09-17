@@ -1,7 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { registerUser } from "@/api/auth";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -18,10 +19,37 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void navigate({ to: "/" });
+    setError(null);
+    setLoading(true);
+
+    const form = event.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+    const firstName = (form.elements.namedItem("firstName") as HTMLInputElement).value;
+    const lastName = (form.elements.namedItem("lastName") as HTMLInputElement).value;
+    const dateOfBirth = (form.elements.namedItem("dateOfBirth") as HTMLInputElement).value;
+    const phoneNumber = (form.elements.namedItem("phoneNumber") as HTMLInputElement).value;
+
+    try {
+      await registerUser({
+        email,
+        password,
+        firstName,
+        lastName,
+        dateOfBirth: dateOfBirth || null,
+        phoneNumber: phoneNumber || null,
+      });
+      void navigate({ to: "/" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,38 +75,40 @@ function RegisterPage() {
           </p>
 
           <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Name
-              <input required type="text" placeholder="Your name" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
-            </label>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Email
-              <input required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
-            </label>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Password
-              <input required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
-            </label>
             <div className="grid grid-cols-2 gap-4">
               <label className="grid gap-1.5 text-sm font-medium">
-                Gender
-                <select required defaultValue="" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring">
-                  <option value="" disabled>Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                First name
+                <input name="firstName" required type="text" placeholder="Ana" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Age
-                <input required type="number" min={1} max={120} placeholder="e.g. 28" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+                Last name
+                <input name="lastName" required type="text" placeholder="Popescu" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
               </label>
             </div>
             <label className="grid gap-1.5 text-sm font-medium">
-              Phone number
-              <input required type="tel" placeholder="+1 (555) 000-0000" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+              Email
+              <input name="email" required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
-            <Button type="submit" className="mt-2 w-full">Create account</Button>
+            <label className="grid gap-1.5 text-sm font-medium">
+              Password
+              <input name="password" required minLength={8} type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label className="grid gap-1.5 text-sm font-medium">
+                Date of birth
+                <input name="dateOfBirth" type="date" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium">
+                Phone number
+                <input name="phoneNumber" type="tel" placeholder="+1 (555) 000-0000" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+            </div>
+            {error && (
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+            )}
+            <Button type="submit" disabled={loading} className="mt-2 w-full">
+              {loading ? "Creating account…" : "Create account"}
+            </Button>
           </form>
         </section>
 

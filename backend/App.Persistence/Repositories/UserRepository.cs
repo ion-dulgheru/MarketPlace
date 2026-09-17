@@ -23,4 +23,9 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
 {
     return await context.Users.FirstOrDefaultAsync(x => x.Id == id, ct);
 }
+
+    public async Task AddDetailsAsync(UserDetails details, CancellationToken ct)
+    {
+        await context.UserDetails.AddAsync(details, ct);
+    }
 }

@@ -15,11 +15,19 @@ public class AuthController(ISender sender) : BaseController
         [FromBody] RegisterUserRequest request,
         CancellationToken ct = default)
     {
-        var result = await sender.Send(new RegisterUserCommand(request.Email, request.Password), ct);
+        var result = await sender.Send(
+            new RegisterUserCommand(
+                request.Email,
+                request.Password,
+                request.FirstName,
+                request.LastName,
+                request.DateOfBirth,
+                request.PhoneNumber),
+            ct);
 
         return result.IsFailure
             ? HandleFailure(result)
-            : Created(string.Empty, result.Value);
+            : Ok(result.Value);
     }
       [HttpPost("login")]
 public async Task<IActionResult> Login(
