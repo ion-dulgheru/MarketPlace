@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Bath, BedDouble, Check, Heart, MapPin, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listingDetails } from "@/data/listing-details";
+import { favoriteAdvert, unfavoriteAdvert, getFavoriteAdvertIds } from "@/api/adverts";
+import { isLoggedIn } from "@/lib/tokens";
 import DOMPurify from "dompurify";
 
 export const Route = createFileRoute("/listings/$listingId")({
@@ -13,10 +15,39 @@ export const Route = createFileRoute("/listings/$listingId")({
 });
 
 function ListingDetailsPage() {
+  const navigate = useNavigate();
   const { listingId } = Route.useParams();
   const listing = listingDetails.find((item) => item.id === Number(listingId));
   const [selectedImage, setSelectedImage] = useState(0);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      void getFavoriteAdvertIds().then((ids) => {
+        if (ids.includes(listingId)) {
+          setSaved(true);
+        }
+      });
+    }
+  }, [listingId]);
+
+  const handleToggleFavorite = async () => {
+    if (!isLoggedIn()) {
+      void navigate({ to: "/login" });
+      return;
+    }
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+    try {
+      if (nextSaved) {
+        await favoriteAdvert(listingId);
+      } else {
+        await unfavoriteAdvert(listingId);
+      }
+    } catch {
+      // Keep optimistic state or revert on real server error if desired
+    }
+  };
 
   if (!listing) {
     return (
@@ -93,7 +124,7 @@ function ListingDetailsPage() {
                 size="icon"
                 variant="outline"
                 className="shrink-0 rounded-full"
-                onClick={() => setSaved((value) => !value)}
+                onClick={handleToggleFavorite}
                 aria-label={saved ? "Remove from saved" : "Save listing"}
               >
                 <Heart className={saved ? "fill-primary text-primary" : ""} />

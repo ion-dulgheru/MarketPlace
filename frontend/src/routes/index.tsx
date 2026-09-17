@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AddPropertyDialog } from "@/components/dialogs/AddPropertyDialog";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
+import { isLoggedIn } from "@/lib/tokens";
 import apartment from "@/assets/openkey-apartment.jpg";
 import townhouse from "@/assets/openkey-townhouse.jpg";
 import loft from "@/assets/openkey-loft.jpg";
@@ -81,7 +82,13 @@ function Index() {
   }), [mode, query, propertyType]);
 
   const openContact = (listing: Listing) => { setSelected(listing); setDialog("contact"); };
-  const toggleSaved = (id: number) => setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+  const toggleSaved = (id: number) => {
+    if (!isLoggedIn()) {
+      void navigate({ to: "/login" });
+      return;
+    }
+    setSaved((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">

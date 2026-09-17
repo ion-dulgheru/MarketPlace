@@ -15,6 +15,8 @@ using App.Application.UseCases.Adverts.GetMyAdverts;
 using App.Application.UseCases.Adverts.GetAdvertById;
 using App.Application.UseCases.Adverts.AddAdvertPhoto;
 using App.Application.UseCases.Adverts.DeleteAdvertPhoto;
+using App.Application.UseCases.Adverts.FavoriteAdvert;
+using App.Application.UseCases.Adverts.GetFavoriteAdverts;
 
 namespace App.WebApi.Controllers;
 
@@ -176,5 +178,38 @@ public class AdvertsController(ISender sender) : BaseController
         return result.IsFailure
             ? HandleFailure(result)
             : NoContent();
+    }
+
+    [HttpPost("{uuid:guid}/favorite")]
+    [SwaggerResponse(204, "Advert favorite status updated.")]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(401, "Not signed in.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> SetFavorite(
+        Guid uuid,
+        [FromBody] SetFavoriteAdvertRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new FavoriteAdvertCommand(uuid, UserUuid, request.IsFavorite), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : NoContent();
+    }
+
+    [HttpGet("favorites")]
+    [SwaggerResponse(200, "Favorite adverts.", typeof(GetAdvertsResponse))]
+    [SwaggerResponse(400, "Invalid pagination parameters.", typeof(ErrorDetails))]
+    [SwaggerResponse(401, "Not signed in.", typeof(ErrorDetails))]
+    public async Task<IActionResult> GetFavorites(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetFavoriteAdvertsQuery(UserUuid, page, pageSize), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
     }
 }
