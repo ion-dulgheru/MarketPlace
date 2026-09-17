@@ -107,6 +107,7 @@ export interface GetAdvertsResponse {
 export interface GetAdvertsParams {
   page?: number;
   pageSize?: number;
+  mine?: boolean | undefined;
   searchTerm?: string | undefined;
   type?: "Sale" | "Rent" | undefined;
   city?: string | undefined;
