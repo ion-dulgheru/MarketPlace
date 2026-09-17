@@ -22,6 +22,7 @@ import {
   unfavoriteAdvert,
   type Advert,
 } from "@/api/adverts";
+import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 import Header from "@/components/Navigation/header";
 
@@ -29,38 +30,24 @@ const PAGE_SIZE = 9;
 
 type SortOption = "date" | "price-asc" | "price-desc";
 
-function formatPrice(advert: Advert): string {
-  const amount = new Intl.NumberFormat("ro-MD").format(advert.price);
-  return advert.type === "Rent" ? `MDL ${amount} / month` : `MDL ${amount}`;
-}
-
-function formatPostedDate(createdDate: string): string {
-  const created = new Date(createdDate);
-  const diffMinutes = Math.floor((Date.now() - created.getTime()) / 60000);
-
-  if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes} min ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-
-  return created.toLocaleDateString();
-}
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "OpenKey Moldova — Homes for Sale & Rent" },
-      { name: "description", content: "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey." },
+      {
+        name: "description",
+        content:
+          "Browse public property listings across Moldova or publish your own home for sale or rent instantly on OpenKey.",
+      },
       { property: "og:title", content: "OpenKey Moldova — Homes for Sale & Rent" },
-      { property: "og:description", content: "Open property listings across Moldova, published instantly by owners and agencies." },
+      {
+        property: "og:description",
+        content:
+          "Open property listings across Moldova, published instantly by owners and agencies.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-    ]
+    ],
   }),
   component: Index,
 });
@@ -98,11 +85,12 @@ function Index() {
     (isFirstPage ? setLoading : setLoadingMore)(true);
     setError(false);
 
-    const [sortBy, sortDescending] = sort === "price-asc"
-      ? (["price", false] as const)
-      : sort === "price-desc"
-        ? (["price", true] as const)
-        : (["date", true] as const);
+    const [sortBy, sortDescending] =
+      sort === "price-asc"
+        ? (["price", false] as const)
+        : sort === "price-desc"
+          ? (["price", true] as const)
+          : (["date", true] as const);
 
     getAdverts({
       page,
@@ -138,7 +126,10 @@ function Index() {
     }
   }, []);
 
-  const openContact = (advert: Advert) => { setSelected(advert); setDialog("contact"); };
+  const openContact = (advert: Advert) => {
+    setSelected(advert);
+    setDialog("contact");
+  };
 
   const toggleSaved = (guid: string) => {
     if (!isLoggedIn()) {
@@ -154,37 +145,80 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-
       <Header />
 
       <main id="top">
         <section className="border-b border-border bg-[#f5f9fa]">
           <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-7 sm:py-16 lg:px-10 flex flex-col items-center">
             <div className="max-w-4xl w-full text-center">
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary"><Sparkles className="size-4" /> New homes appear the moment they’re published</p>
-              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">Find a place you'll love to call home.</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Open listings from owners and agencies. Browse freely, contact directly, and skip the waiting list.</p>
+              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="size-4" /> New homes appear the moment they’re published
+              </p>
+              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">
+                Find a place you'll love to call home.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Open listings from owners and agencies. Browse freely, contact directly, and skip
+                the waiting list.
+              </p>
             </div>
 
             <div className="mt-9 w-full max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="mb-3 flex w-fit gap-1 rounded-md bg-muted p-1">
-                {(["all", "sale", "rent"] as const).map((item) => <Button key={item} size="sm" variant={mode === item ? "default" : "ghost"} onClick={() => setMode(item)}>{item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}</Button>)}
+                {(["all", "sale", "rent"] as const).map((item) => (
+                  <Button
+                    key={item}
+                    size="sm"
+                    variant={mode === item ? "default" : "ghost"}
+                    onClick={() => setMode(item)}
+                  >
+                    {item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}
+                  </Button>
+                ))}
               </div>
               <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                 <label className="flex h-12 items-center gap-3 rounded-md border border-input bg-background px-4">
-                  <MapPin className="size-5 text-primary" /><span className="sr-only">Search adverts</span>
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by title or description" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+                  <MapPin className="size-5 text-primary" />
+                  <span className="sr-only">Search adverts</span>
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search by title or description"
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
                 </label>
-                <Button className="h-12 px-6"><Search /> Search homes</Button>
+                <Button className="h-12 px-6">
+                  <Search /> Search homes
+                </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="listings" className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14">
+        <section
+          id="listings"
+          className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14"
+        >
           <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div><p className="text-xs font-bold uppercase text-primary">Recently published</p><h2 className="mt-1 font-display text-3xl sm:text-4xl">Homes ready to discover</h2><p className="mt-2 text-sm text-muted-foreground">{loading ? "Loading listings…" : `${totalCount} listings match your search`}</p></div>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">Sort by <select value={sort} onChange={(event) => setSort(event.target.value as SortOption)} className="rounded-md border border-input bg-background px-3 py-2 font-medium text-foreground outline-none"><option value="date">Newest first</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option></select></label>
+            <div>
+              <p className="text-xs font-bold uppercase text-primary">Recently published</p>
+              <h2 className="mt-1 font-display text-3xl sm:text-4xl">Homes ready to discover</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {loading ? "Loading listings…" : `${totalCount} listings match your search`}
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Sort by{" "}
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortOption)}
+                className="rounded-md border border-input bg-background px-3 py-2 font-medium text-foreground outline-none"
+              >
+                <option value="date">Newest first</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+              </select>
+            </label>
           </div>
 
           {error ? (
@@ -193,33 +227,108 @@ function Index() {
               <p className="mt-2 text-sm text-muted-foreground">Please try again in a moment.</p>
             </div>
           ) : !loading && adverts.length === 0 ? (
-            <div className="border-y border-border py-20 text-center"><Search className="mx-auto size-8 text-muted-foreground" /><h3 className="mt-4 font-display text-2xl">No homes found</h3><p className="mt-2 text-sm text-muted-foreground">Try another search term or category.</p><Button variant="outline" className="mt-5" onClick={() => { setQuery(""); setMode("all"); }}>Clear filters</Button></div>
+            <div className="border-y border-border py-20 text-center">
+              <Search className="mx-auto size-8 text-muted-foreground" />
+              <h3 className="mt-4 font-display text-2xl">No homes found</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try another search term or category.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-5"
+                onClick={() => {
+                  setQuery("");
+                  setMode("all");
+                }}
+              >
+                Clear filters
+              </Button>
+            </div>
           ) : (
             <>
               <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
                 {adverts.map((advert) => {
                   const primaryPhoto = advert.photos[0];
-                  const location = [advert.address.region, advert.address.city].filter(Boolean).join(", ");
+                  const location = [advert.address.region, advert.address.city]
+                    .filter(Boolean)
+                    .join(", ");
                   const saved = savedIds.includes(advert.guid);
                   return (
                     <article key={advert.guid} className="group min-w-0">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                        <Link to="/listings/$listingId" params={{ listingId: advert.guid }} aria-label={`View details for ${advert.title}`} className="block size-full">
+                        <Link
+                          to="/listings/$listingId"
+                          params={{ listingId: advert.guid }}
+                          aria-label={`View details for ${advert.title}`}
+                          className="block size-full"
+                        >
                           <img
-                            src={primaryPhoto ? getAdvertPhotoUrl(primaryPhoto.photoUrl) : placeholderImage}
+                            src={
+                              primaryPhoto
+                                ? getAdvertPhotoUrl(primaryPhoto.photoUrl)
+                                : placeholderImage
+                            }
                             alt={advert.title}
                             loading="lazy"
                             className="listing-image size-full object-cover"
                           />
                         </Link>
-                        <div className="absolute left-3 top-3 flex gap-2"><span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">{advert.type === "Sale" ? "For sale" : "For rent"}</span></div>
-                        <Button size="icon" variant="secondary" className="absolute right-3 top-3 rounded-full" onClick={() => toggleSaved(advert.guid)} aria-label={saved ? "Remove from saved" : "Save listing"}><Heart className={saved ? "fill-primary text-primary" : ""} /></Button>
+                        <div className="absolute left-3 top-3 flex gap-2">
+                          <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                            {advert.type === "Sale" ? "For sale" : "For rent"}
+                          </span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="absolute right-3 top-3 rounded-full"
+                          onClick={() => toggleSaved(advert.guid)}
+                          aria-label={saved ? "Remove from saved" : "Save listing"}
+                        >
+                          <Heart className={saved ? "fill-primary text-primary" : ""} />
+                        </Button>
                       </div>
                       <div className="pt-4">
-                        <div className="flex items-start justify-between gap-3"><div><p className="font-display text-2xl">{formatPrice(advert)}</p><h3 className="mt-1 text-base font-semibold"><Link to="/listings/$listingId" params={{ listingId: advert.guid }} className="hover:text-primary">{advert.title}</Link></h3></div><span className="shrink-0 text-xs text-muted-foreground">{formatPostedDate(advert.createdDate)}</span></div>
-                        <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin className="size-3.5" />{location}</p>
-                        <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground"><span className="flex items-center gap-1.5"><BedDouble className="size-4" />{advert.rooms}</span><span className="flex items-center gap-1.5"><Square className="size-4" />{advert.surfaceArea} m²</span><span className="flex items-center gap-1.5"><Layers className="size-4" />Floor {advert.floor}</span></div>
-                        <div className="mt-3 flex items-center justify-end gap-3"><Button size="sm" variant="outline" onClick={() => openContact(advert)}>Contact</Button></div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-display text-2xl">{formatAdvertPrice(advert)}</p>
+                            <h3 className="mt-1 text-base font-semibold">
+                              <Link
+                                to="/listings/$listingId"
+                                params={{ listingId: advert.guid }}
+                                className="hover:text-primary"
+                              >
+                                {advert.title}
+                              </Link>
+                            </h3>
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatPostedDate(advert.createdDate)}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <MapPin className="size-3.5" />
+                          {location}
+                        </p>
+                        <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <BedDouble className="size-4" />
+                            {advert.rooms}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Square className="size-4" />
+                            {advert.surfaceArea} m²
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Layers className="size-4" />
+                            Floor {advert.floor}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center justify-end gap-3">
+                          <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
+                            Contact
+                          </Button>
+                        </div>
                       </div>
                     </article>
                   );
@@ -228,7 +337,11 @@ function Index() {
 
               {hasMore && (
                 <div className="mt-10 flex justify-center">
-                  <Button variant="outline" disabled={loadingMore} onClick={() => setPage((current) => current + 1)}>
+                  <Button
+                    variant="outline"
+                    disabled={loadingMore}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
                     {loadingMore ? "Loading…" : "Load more"}
                   </Button>
                 </div>
@@ -239,13 +352,33 @@ function Index() {
 
         <section className="border-y border-border bg-primary text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-4 py-10 sm:px-7 md:flex-row md:items-center lg:px-10">
-            <div><p className="text-sm font-semibold opacity-80">For owners & agencies</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Your listing. Live in minutes.</h2><p className="mt-2 max-w-xl text-sm leading-6 opacity-80">Publish directly, update it anytime, and mark it sold or rented when the deal is done.</p></div>
-            <Button variant="secondary" size="lg" asChild><Link to="/createadvert"><Plus /> Publish a property</Link></Button>
+            <div>
+              <p className="text-sm font-semibold opacity-80">For owners & agencies</p>
+              <h2 className="mt-2 font-display text-3xl sm:text-4xl">
+                Your listing. Live in minutes.
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 opacity-80">
+                Publish directly, update it anytime, and mark it sold or rented when the deal is
+                done.
+              </p>
+            </div>
+            <Button variant="secondary" size="lg" asChild>
+              <Link to="/createadvert">
+                <Plus /> Publish a property
+              </Link>
+            </Button>
           </div>
         </section>
       </main>
 
-      <footer className="mx-auto flex max-w-[1440px] flex-col justify-between gap-5 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-7 lg:px-10"><div className="flex items-center gap-2 text-foreground"><KeyRound className="size-5 text-primary" /><span className="font-display text-lg">OpenKey</span></div><p>Open property listings, published directly.</p><p>© 2026 OpenKey</p></footer>
+      <footer className="mx-auto flex max-w-[1440px] flex-col justify-between gap-5 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-7 lg:px-10">
+        <div className="flex items-center gap-2 text-foreground">
+          <KeyRound className="size-5 text-primary" />
+          <span className="font-display text-lg">OpenKey</span>
+        </div>
+        <p>Open property listings, published directly.</p>
+        <p>© 2026 OpenKey</p>
+      </footer>
 
       <ContactOwnerDialog
         open={dialog === "contact"}
@@ -254,7 +387,6 @@ function Index() {
         onClose={() => setDialog(null)}
         onSignIn={() => void navigate({ to: "/login" })}
       />
-
     </div>
   );
 }
