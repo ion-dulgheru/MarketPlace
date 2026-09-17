@@ -20,4 +20,5 @@ public class DataContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DataContext).Assembly);
     }
+    public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
 }

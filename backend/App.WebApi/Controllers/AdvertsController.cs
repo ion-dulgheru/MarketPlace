@@ -15,6 +15,7 @@ using App.Application.UseCases.Adverts.GetMyAdverts;
 using App.Application.UseCases.Adverts.GetAdvertById;
 using App.Application.UseCases.Adverts.AddAdvertPhoto;
 using App.Application.UseCases.Adverts.DeleteAdvertPhoto;
+using App.Application.UseCases.Adverts.SendContactRequest;
 
 namespace App.WebApi.Controllers;
 
@@ -177,4 +178,21 @@ public class AdvertsController(ISender sender) : BaseController
             ? HandleFailure(result)
             : NoContent();
     }
+    [HttpPost("{uuid:guid}/contact-requests")]
+    [SwaggerResponse(201, "Contact request sent.")]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found or not active.", typeof(ErrorDetails))]
+    public async Task<IActionResult> SendContactRequest(
+        Guid uuid,
+        [FromBody] SendContactRequestRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(
+            new SendContactRequestCommand(uuid, request.Message, UserUuid),
+            ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : StatusCode(StatusCodes.Status201Created, result.Value);
+}
 }
