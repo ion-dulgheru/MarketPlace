@@ -214,6 +214,11 @@ function MyListingsPage() {
                       </span>
                     </div>
                     <div className="mt-3 flex items-center justify-end gap-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to="/editadvert/$listingId" params={{ listingId: advert.guid }}>
+                          Edit
+                        </Link>
+                      </Button>
                       {advert.status === "Active" ? (
                         <Button
                           size="sm"
