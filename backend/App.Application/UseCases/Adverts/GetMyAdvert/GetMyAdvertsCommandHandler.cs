@@ -39,7 +39,7 @@ public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
                 advert.Photos
                     .OrderByDescending(p => p.IsPrimary)
                     .Take(1)
-                    .Select(p => new AdvertPhotoResponse(p.PhotoUrl, p.IsPrimary))
+                    .Select(p => new AdvertPhotoResponse(p.Guid, p.PhotoUrl, p.IsPrimary))
                     .ToList()))
             .ToList();
 
