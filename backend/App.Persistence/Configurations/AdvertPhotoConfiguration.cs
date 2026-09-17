@@ -22,5 +22,7 @@ public class AdvertPhotoConfiguration : IEntityTypeConfiguration<AdvertPhoto>
             
         builder.Property(x => x.CreatedDate)
             .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+        builder.HasQueryFilter(x => x.Advert.IsActive);
     }
 }
