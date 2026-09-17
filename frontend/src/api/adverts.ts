@@ -38,7 +38,9 @@ export async function setAdvertFavorite(uuid: string, isFavorite: boolean): Prom
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Failed to update favorite status" }));
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Failed to update favorite status" }));
     throw new Error((error as { message?: string }).message ?? "Failed to update favorite status");
   }
 }
@@ -136,4 +138,16 @@ export async function getAdverts(params: GetAdvertsParams = {}): Promise<GetAdve
 
 export function getAdvertPhotoUrl(photoUrl: string): string {
   return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
+}
+
+export async function getAdvertById(guid: string): Promise<Advert | null> {
+  const response = await apiFetch(`/api/adverts/${guid}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error("Failed to load advert");
+  }
+
+  return (await response.json()) as Advert;
 }
