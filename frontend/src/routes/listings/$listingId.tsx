@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, Bath, BedDouble, Check, Heart, MapPin, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listingDetails } from "@/data/listing-details";
+import DOMPurify from "dompurify";
 
 export const Route = createFileRoute("/listings/$listingId")({
   head: () => ({
@@ -133,7 +134,12 @@ function ListingDetailsPage() {
 
             <div className="mt-7">
               <h2 className="font-display text-2xl">About this property</h2>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">{listing.description}</p>
+              <div
+                className="mt-3 text-sm leading-7 text-muted-foreground [&_p]:mb-3 [&_strong]:font-semibold [&_strong]:text-foreground [&_em]:italic [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-3"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(listing.description),
+                }}
+              />
             </div>
 
             <div className="mt-7">

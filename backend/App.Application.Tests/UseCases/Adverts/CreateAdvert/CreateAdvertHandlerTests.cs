@@ -1,3 +1,4 @@
+using App.Application.Abstractions.Interfaces;
 using Moq;
 using Xunit;
 using App.Application.UseCases.Adverts.CreateAdvert;
@@ -15,8 +16,10 @@ public class CreateAdvertHandlerTests
         // 1. Arrange (Set up mocks and dependencies)
         var mockRepository = new Mock<IAdvertRepository>();
         var mockUnitOfWork = new Mock<IUnitOfWork>();
+        var mockSanitizer = new Mock<IHtmlSanitizerService>();
+        mockSanitizer.Setup(x => x.Sanitize(It.IsAny<string>())).Returns<string>(s => s);
 
-        var handler = new CreateAdvertHandler(mockRepository.Object, mockUnitOfWork.Object);
+        var handler = new CreateAdvertHandler(mockRepository.Object, mockUnitOfWork.Object, mockSanitizer.Object);
 
         var request = new CreateAdvertRequest(
             "Cozy Studio", 
