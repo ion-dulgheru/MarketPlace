@@ -1,3 +1,4 @@
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.Messaging;
 using App.Domain.Errors;
 using App.Domain.Repositories;
@@ -8,7 +9,8 @@ namespace App.Application.UseCases.Adverts.UpdateAdvert;
 
 public class UpdateAdvertCommandHandler(
     IAdvertRepository advertRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IHtmlSanitizerService htmlSanitizerService)
     : ICommandHandler<UpdateAdvertCommand>
 {
     public async Task<Result> Handle(UpdateAdvertCommand command, CancellationToken ct)
@@ -47,9 +49,13 @@ public class UpdateAdvertCommandHandler(
             address = addressResult.Value;
         }
 
+        var description = command.Request.Description is not null
+            ? htmlSanitizerService.Sanitize(command.Request.Description)
+            : advert.Description;
+
         advert.Update(
             command.Request.Title ?? advert.Title,
-            command.Request.Description ?? advert.Description,
+            description,
             command.Request.Price ?? advert.Price,
             command.Request.SurfaceArea ?? advert.SurfaceArea,
             command.Request.Rooms ?? advert.Rooms,

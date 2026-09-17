@@ -4,6 +4,7 @@ import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createAdvert } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 export const Route = createFileRoute("/createadvert")({
   head: () => ({
@@ -22,6 +23,7 @@ function CreateAdvertPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState("");
 
   // Doar userii logați pot publica un anunț
   useEffect(() => {
@@ -39,10 +41,17 @@ function CreateAdvertPage() {
     const get = (name: string) =>
       (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
 
+    const strippedText = description.replace(/<[^>]*>/g, "").trim();
+    if (!strippedText) {
+      setError("Description is required.");
+      setLoading(false);
+      return;
+    }
+
     try {
       await createAdvert({
         title: get("title"),
-        description: get("description"),
+        description: description,
         price: Number(get("price")),
         surfaceArea: Number(get("surfaceArea")),
         rooms: Number(get("rooms")),
@@ -106,10 +115,10 @@ function CreateAdvertPage() {
               <input name="title" required maxLength={200} placeholder="Bright two-bedroom apartment" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
 
-            <label className="grid gap-1.5 text-sm font-medium">
-              Description
-              <textarea name="description" required maxLength={4000} rows={3} placeholder="Describe the property..." className="rounded-md border border-input bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring resize-none" />
-            </label>
+            <div className="grid gap-1.5 text-sm font-medium">
+              <span>Description</span>
+              <RichTextEditor value={description} onChange={setDescription} />
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">

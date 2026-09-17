@@ -1,3 +1,4 @@
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.Messaging;
 using App.Domain.Entities;
 using App.Domain.Errors;
@@ -9,7 +10,8 @@ namespace App.Application.UseCases.Adverts.CreateAdvert;
 
 public class CreateAdvertHandler(
     IAdvertRepository advertRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IHtmlSanitizerService htmlSanitizerService)
     : ICommandHandler<CreateAdvertCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateAdvertCommand command, CancellationToken ct)
@@ -27,11 +29,12 @@ public class CreateAdvertHandler(
         }
 
         var type = Enum.Parse<AdvertType>(command.Request.Type, ignoreCase: true);
+        var sanitizedDescription = htmlSanitizerService.Sanitize(command.Request.Description);
 
         var advert = Advert.Create(
             command.UserUuid,
             command.Request.Title,
-            command.Request.Description,
+            sanitizedDescription,
             command.Request.Price,
             command.Request.SurfaceArea,
             command.Request.Rooms,
