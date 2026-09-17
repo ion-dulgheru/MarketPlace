@@ -141,6 +141,28 @@ export function getAdvertPhotoUrl(photoUrl: string): string {
   return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
 }
 
+export interface UpdateAdvertRequest {
+  title: string;
+  description: string;
+  price: number;
+  surfaceArea: number;
+  rooms: number;
+  floor: number;
+  address: CreateAdvertAddress;
+}
+
+export async function updateAdvert(guid: string, data: UpdateAdvertRequest): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${guid}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to update advert" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to update advert");
+  }
+}
+
 export async function updateAdvertStatus(
   guid: string,
   status: "Active" | "Sold" | "Rented",
