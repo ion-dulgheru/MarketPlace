@@ -14,6 +14,7 @@ using App.Application.UseCases.Adverts.UpdateAdvert;
 using App.Application.UseCases.Adverts.GetMyAdverts;
 using App.Application.UseCases.Adverts.GetAdvertById;
 using App.Application.UseCases.Adverts.AddAdvertPhoto;
+using App.Application.UseCases.Adverts.DeleteAdvertPhoto;
 
 namespace App.WebApi.Controllers;
 
@@ -159,5 +160,21 @@ public class AdvertsController(ISender sender) : BaseController
         return result.IsFailure
             ? HandleFailure(result)
             : StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    [HttpDelete("{uuid:guid}/photos/{photoUuid:guid}")]
+    [SwaggerResponse(204, "Photo deleted.")]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert or photo not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> DeletePhoto(
+        Guid uuid,
+        Guid photoUuid,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new DeleteAdvertPhotoCommand(uuid, photoUuid, UserUuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : NoContent();
     }
 }

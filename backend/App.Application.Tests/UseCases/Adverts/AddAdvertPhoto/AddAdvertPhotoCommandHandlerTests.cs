@@ -98,6 +98,7 @@ public class AddAdvertPhotoCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
+        Assert.NotEqual(Guid.Empty, result.Value.Uuid);
         Assert.Equal("/uploads/adverts/unique-file.jpg", result.Value.PhotoUrl);
         Assert.True(result.Value.IsPrimary);
         Assert.Single(advert.Photos);

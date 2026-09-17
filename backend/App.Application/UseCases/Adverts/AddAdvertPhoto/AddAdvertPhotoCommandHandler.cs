@@ -32,6 +32,6 @@ public class AddAdvertPhotoCommandHandler(
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(new AdvertPhotoResponse(photo.PhotoUrl, photo.IsPrimary));
+        return Result.Success(new AdvertPhotoResponse(photo.Guid, photo.PhotoUrl, photo.IsPrimary));
     }
 }

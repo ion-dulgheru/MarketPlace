@@ -70,6 +70,18 @@ public class Advert : PublicEntity, ISoftDeletable
         _photos.Add(photo);
     }
 
+    public bool RemovePhoto(Guid photoGuid)
+    {
+        var photo = _photos.FirstOrDefault(p => p.Guid == photoGuid);
+        if (photo is null)
+        {
+            return false;
+        }
+
+        _photos.Remove(photo);
+        return true;
+    }
+
     public void Update(
         string title,
         string description,
