@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, API_URL } from "@/lib/api-client";
 
 export interface CreateAdvertAddress {
   country: string;
@@ -64,4 +64,76 @@ export async function getFavoriteAdverts(page = 1, pageSize = 20): Promise<GetFa
 export async function getFavoriteAdvertIds(): Promise<string[]> {
   const data = await getFavoriteAdverts(1, 100);
   return data.items.map((item) => item.guid);
+}
+
+export interface AdvertAddress {
+  country: string;
+  city: string;
+  region: string;
+  streetAddress: string;
+  streetNumber: string;
+}
+
+export interface AdvertPhoto {
+  guid: string;
+  photoUrl: string;
+  isPrimary: boolean;
+}
+
+export interface Advert {
+  guid: string;
+  title: string;
+  description: string;
+  price: number;
+  surfaceArea: number;
+  rooms: number;
+  floor: number;
+  status: "Active" | "Sold" | "Rented";
+  type: "Sale" | "Rent";
+  createdDate: string;
+  address: AdvertAddress;
+  photos: AdvertPhoto[];
+}
+
+export interface GetAdvertsResponse {
+  items: Advert[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface GetAdvertsParams {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string | undefined;
+  type?: "Sale" | "Rent" | undefined;
+  city?: string | undefined;
+  minPrice?: number | undefined;
+  maxPrice?: number | undefined;
+  minSurfaceArea?: number | undefined;
+  maxSurfaceArea?: number | undefined;
+  rooms?: number | undefined;
+  sortBy?: "date" | "price" | "surfacearea";
+  sortDescending?: boolean;
+}
+
+export async function getAdverts(params: GetAdvertsParams = {}): Promise<GetAdvertsResponse> {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key.charAt(0).toUpperCase() + key.slice(1), String(value));
+    }
+  }
+
+  const response = await apiFetch(`/api/adverts?${searchParams.toString()}`);
+  if (!response.ok) {
+    throw new Error("Failed to load adverts");
+  }
+
+  return (await response.json()) as GetAdvertsResponse;
+}
+
+export function getAdvertPhotoUrl(photoUrl: string): string {
+  return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
 }
