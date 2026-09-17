@@ -2,7 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BedDouble, KeyRound, Layers, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getAdverts, getAdvertPhotoUrl, type Advert } from "@/api/adverts";
+import {
+  getAdverts,
+  getAdvertPhotoUrl,
+  updateAdvertStatus,
+  deleteAdvert,
+  type Advert,
+} from "@/api/adverts";
 import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { isLoggedIn } from "@/lib/tokens";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
@@ -25,6 +31,8 @@ function MyListingsPage() {
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -48,6 +56,36 @@ function MyListingsPage() {
       cancelled = true;
     };
   }, [navigate]);
+
+  const handleMarkStatus = async (advert: Advert, status: "Active" | "Sold" | "Rented") => {
+    setPendingId(advert.guid);
+    setActionError(null);
+    try {
+      await updateAdvertStatus(advert.guid, status);
+      setAdverts((current) =>
+        current.map((item) => (item.guid === advert.guid ? { ...item, status } : item)),
+      );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const handleDelete = async (advert: Advert) => {
+    if (!window.confirm(`Delete "${advert.title}"? This can't be undone.`)) {
+      return;
+    }
+    setPendingId(advert.guid);
+    setActionError(null);
+    try {
+      await deleteAdvert(advert.guid);
+      setAdverts((current) => current.filter((item) => item.guid !== advert.guid));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to delete listing");
+      setPendingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -83,6 +121,12 @@ function MyListingsPage() {
             </Link>
           </Button>
         </div>
+
+        {actionError && (
+          <p className="mb-5 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {actionError}
+          </p>
+        )}
 
         {error ? (
           <div className="border-y border-border py-20 text-center">
@@ -168,6 +212,41 @@ function MyListingsPage() {
                         <Layers className="size-4" />
                         Floor {advert.floor}
                       </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                      {advert.status === "Active" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={pendingId === advert.guid}
+                          onClick={() =>
+                            void handleMarkStatus(
+                              advert,
+                              advert.type === "Sale" ? "Sold" : "Rented",
+                            )
+                          }
+                        >
+                          Mark as {advert.type === "Sale" ? "sold" : "rented"}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={pendingId === advert.guid}
+                          onClick={() => void handleMarkStatus(advert, "Active")}
+                        >
+                          Reactivate
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        disabled={pendingId === advert.guid}
+                        onClick={() => void handleDelete(advert)}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </article>
