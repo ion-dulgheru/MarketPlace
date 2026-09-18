@@ -43,7 +43,13 @@ public class GetAdvertByIdQueryHandler(IAdvertRepository advertRepository)
             advert.Photos
                 .OrderByDescending(p => p.IsPrimary)
                 .Select(p => new AdvertPhotoResponse(p.Guid, p.PhotoUrl, p.IsPrimary))
-                .ToList());
+                .ToList(),
+            advert.BuildingType.ToString(),
+            advert.Levels,
+            advert.ApartmentFloor,
+            advert.ApartmentNumber,
+            advert.ApartmentBlock,
+            advert.GardenSquareMeters);
 
         return Result.Success(response);
     }

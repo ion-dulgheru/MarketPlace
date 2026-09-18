@@ -14,8 +14,14 @@ export interface CreateAdvertRequest {
   price: number;
   surfaceArea: number;
   rooms: number;
-  floor: number;
+  floor?: number;
   type: "Sale" | "Rent";
+  buildingType: "Apartment" | "House";
+  levels: number;
+  apartmentFloor?: number;
+  apartmentNumber?: string;
+  apartmentBlock?: string;
+  gardenSquareMeters?: number;
   address: CreateAdvertAddress;
 }
 
@@ -119,6 +125,12 @@ export interface Advert {
   floor: number;
   status: "Active" | "Sold" | "Rented";
   type: "Sale" | "Rent";
+  buildingType?: "Apartment" | "House";
+  levels?: number;
+  apartmentFloor?: number | null;
+  apartmentNumber?: string | null;
+  apartmentBlock?: string | null;
+  gardenSquareMeters?: number | null;
   createdDate: string;
   address: AdvertAddress;
   photos: AdvertPhoto[];

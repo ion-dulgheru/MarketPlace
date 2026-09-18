@@ -15,6 +15,12 @@ public class Advert : PublicEntity, ISoftDeletable
     public int Floor { get; private set; }
     public AdvertStatus Status { get; private set; }
     public AdvertType Type { get; private set; }
+    public BuildingType BuildingType { get; private set; }
+    public int Levels { get; private set; }
+    public int? ApartmentFloor { get; private set; }
+    public string? ApartmentNumber { get; private set; }
+    public string? ApartmentBlock { get; private set; }
+    public decimal? GardenSquareMeters { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public Guid UserUuid { get; private set; }
     public Address Address { get; private set; } = null!;
@@ -35,8 +41,17 @@ public class Advert : PublicEntity, ISoftDeletable
         int floor,
         AdvertType type,
         Address address,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        BuildingType buildingType = BuildingType.Apartment,
+        int? levels = null,
+        int? apartmentFloor = null,
+        string? apartmentNumber = null,
+        string? apartmentBlock = null,
+        decimal? gardenSquareMeters = null)
     {
+        var computedLevels = levels.HasValue && levels.Value > 0 ? levels.Value : (floor > 0 ? floor : 1);
+        var computedFloor = apartmentFloor ?? floor;
+
         return new Advert
         {
             UserUuid = userUuid,
@@ -45,8 +60,14 @@ public class Advert : PublicEntity, ISoftDeletable
             Price = price,
             SurfaceArea = surfaceArea,
             Rooms = rooms,
-            Floor = floor,
+            Floor = computedFloor,
             Type = type,
+            BuildingType = buildingType,
+            Levels = computedLevels,
+            ApartmentFloor = apartmentFloor ?? (buildingType == BuildingType.Apartment ? computedFloor : null),
+            ApartmentNumber = apartmentNumber,
+            ApartmentBlock = apartmentBlock,
+            GardenSquareMeters = gardenSquareMeters,
             ExpiresAt = expiresAt,
             Status = AdvertStatus.Active,
             Address = address,
@@ -89,7 +110,12 @@ public class Advert : PublicEntity, ISoftDeletable
         decimal surfaceArea,
         int rooms,
         int floor,
-        Address address
+        Address address,
+        int? levels = null,
+        int? apartmentFloor = null,
+        string? apartmentNumber = null,
+        string? apartmentBlock = null,
+        decimal? gardenSquareMeters = null
     )
     {
         Title = title;
@@ -97,7 +123,32 @@ public class Advert : PublicEntity, ISoftDeletable
         Price = price;
         SurfaceArea = surfaceArea;
         Rooms = rooms;
-        Floor = floor;
+        Floor = apartmentFloor ?? floor;
         Address = address;
+
+        if (levels.HasValue && levels.Value > 0)
+        {
+            Levels = levels.Value;
+        }
+
+        if (apartmentFloor.HasValue)
+        {
+            ApartmentFloor = apartmentFloor.Value;
+        }
+
+        if (apartmentNumber is not null)
+        {
+            ApartmentNumber = apartmentNumber;
+        }
+
+        if (apartmentBlock is not null)
+        {
+            ApartmentBlock = apartmentBlock;
+        }
+
+        if (gardenSquareMeters.HasValue)
+        {
+            GardenSquareMeters = gardenSquareMeters.Value;
+        }
     }
 }

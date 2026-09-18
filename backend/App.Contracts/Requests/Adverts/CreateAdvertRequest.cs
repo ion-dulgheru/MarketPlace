@@ -9,5 +9,11 @@ public record CreateAdvertRequest(
     int Floor,
     string Type,
     AddressRequest Address,
-    List<AdvertPhotoRequest>? Photos = null
+    List<AdvertPhotoRequest>? Photos = null,
+    string BuildingType = "Apartment",
+    int Levels = 1,
+    int? ApartmentFloor = null,
+    string? ApartmentNumber = null,
+    string? ApartmentBlock = null,
+    decimal? GardenSquareMeters = null
 );

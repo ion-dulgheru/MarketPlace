@@ -17,6 +17,26 @@ public class CreateAdvertCommandValidator : AbstractValidator<CreateAdvertComman
             .Must(type => Enum.TryParse<AdvertType>(type, true, out _))
             .WithMessage(AdvertErrors.InvalidType.Message);
 
+        RuleFor(x => x.Request.BuildingType)
+            .NotEmpty()
+            .Must(bType => Enum.TryParse<BuildingType>(bType, true, out _))
+            .WithMessage("Invalid building type. Supported types: Apartment, House.");
+
+        RuleFor(x => x.Request.Levels)
+            .GreaterThan(0).WithMessage("Levels must be greater than 0.");
+
+        When(x => x.Request.ApartmentFloor.HasValue, () =>
+        {
+            RuleFor(x => x.Request.ApartmentFloor!.Value)
+                .GreaterThanOrEqualTo(0).WithMessage("Apartment floor must be 0 or greater.");
+        });
+
+        When(x => x.Request.GardenSquareMeters.HasValue, () =>
+        {
+            RuleFor(x => x.Request.GardenSquareMeters!.Value)
+                .GreaterThanOrEqualTo(0).WithMessage("Garden square meters must be 0 or greater.");
+        });
+
         RuleFor(x => x.Request.Price)
             .GreaterThan(0).WithMessage(AdvertErrors.PriceMustBePositive.Message);
 
