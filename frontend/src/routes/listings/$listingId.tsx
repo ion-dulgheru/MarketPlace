@@ -78,12 +78,9 @@ function ListingDetailsPage() {
     }
   };
 
-  const handleContact = () => {
-    if (!isLoggedIn()) {
-      setDialogOpen(true);
-      return;
-    }
-  };
+ const handleContact = () => {
+  setDialogOpen(true);
+};
 
   if (advert === undefined) {
     return (
@@ -238,6 +235,7 @@ function ListingDetailsPage() {
 
       <ContactOwnerDialog
         open={dialogOpen}
+        advertUuid={advert.guid}
         sellerName="the owner"
         listingTitle={advert.title}
         onClose={() => setDialogOpen(false)}
