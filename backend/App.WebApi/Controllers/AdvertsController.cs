@@ -245,9 +245,3 @@ public class AdvertsController(ISender sender) : BaseController
             : Ok(result.Value);
     }
 }
-
-        return result.IsFailure
-            ? HandleFailure(result)
-            : Ok(result.Value);
-    }
-}
