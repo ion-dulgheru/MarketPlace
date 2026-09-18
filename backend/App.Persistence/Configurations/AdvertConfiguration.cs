@@ -44,6 +44,31 @@ public class AdvertConfiguration : IEntityTypeConfiguration<Advert>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.BuildingType)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .HasDefaultValue(BuildingType.Apartment)
+            .IsRequired();
+
+        builder.Property(x => x.Levels)
+            .HasDefaultValue(1)
+            .IsRequired();
+
+        builder.Property(x => x.ApartmentFloor)
+            .IsRequired(false);
+
+        builder.Property(x => x.ApartmentNumber)
+            .HasMaxLength(50)
+            .IsRequired(false);
+
+        builder.Property(x => x.ApartmentBlock)
+            .HasMaxLength(50)
+            .IsRequired(false);
+
+        builder.Property(x => x.GardenSquareMeters)
+            .HasPrecision(10, 2)
+            .IsRequired(false);
+
         builder.Property(x => x.UserUuid)
             .IsRequired();
 

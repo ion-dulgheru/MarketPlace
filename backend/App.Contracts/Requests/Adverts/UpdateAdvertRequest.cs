@@ -7,5 +7,10 @@ public record UpdateAdvertRequest(
     decimal? SurfaceArea,
     int? Rooms,
     int? Floor,
-    AddressRequest? Address
+    AddressRequest? Address,
+    int? Levels = null,
+    int? ApartmentFloor = null,
+    string? ApartmentNumber = null,
+    string? ApartmentBlock = null,
+    decimal? GardenSquareMeters = null
 );

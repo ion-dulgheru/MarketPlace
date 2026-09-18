@@ -29,6 +29,9 @@ public class CreateAdvertHandler(
         }
 
         var type = Enum.Parse<AdvertType>(command.Request.Type, ignoreCase: true);
+        var buildingType = Enum.TryParse<BuildingType>(command.Request.BuildingType, true, out var parsedBuildingType)
+            ? parsedBuildingType
+            : BuildingType.Apartment;
         var sanitizedDescription = htmlSanitizerService.Sanitize(command.Request.Description);
 
         var advert = Advert.Create(
@@ -41,7 +44,13 @@ public class CreateAdvertHandler(
             command.Request.Floor,
             type,
             addressResult.Value,
-            DateTime.UtcNow.AddDays(30));
+            DateTime.UtcNow.AddDays(30),
+            buildingType,
+            command.Request.Levels,
+            command.Request.ApartmentFloor,
+            command.Request.ApartmentNumber,
+            command.Request.ApartmentBlock,
+            command.Request.GardenSquareMeters);
 
         if (command.Request.Photos != null)
         {

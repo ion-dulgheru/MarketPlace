@@ -12,5 +12,11 @@ public record AdvertResponse(
     string Type,
     DateTime CreatedDate,
     AddressResponse Address,
-    List<AdvertPhotoResponse> Photos
+    List<AdvertPhotoResponse> Photos,
+    string BuildingType = "Apartment",
+    int Levels = 1,
+    int? ApartmentFloor = null,
+    string? ApartmentNumber = null,
+    string? ApartmentBlock = null,
+    decimal? GardenSquareMeters = null
 );

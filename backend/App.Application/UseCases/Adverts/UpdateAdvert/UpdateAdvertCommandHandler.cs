@@ -60,7 +60,12 @@ public class UpdateAdvertCommandHandler(
             command.Request.SurfaceArea ?? advert.SurfaceArea,
             command.Request.Rooms ?? advert.Rooms,
             command.Request.Floor ?? advert.Floor,
-            address);
+            address,
+            command.Request.Levels,
+            command.Request.ApartmentFloor,
+            command.Request.ApartmentNumber,
+            command.Request.ApartmentBlock,
+            command.Request.GardenSquareMeters);
 
         await unitOfWork.SaveChangesAsync(ct);
 

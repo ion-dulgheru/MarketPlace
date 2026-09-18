@@ -40,7 +40,13 @@ public class GetFavoriteAdvertsQueryHandler(IFavoriteAdvertRepository favoriteRe
                     .OrderByDescending(p => p.IsPrimary)
                     .Take(1)
                     .Select(p => new AdvertPhotoResponse(p.Guid, p.PhotoUrl, p.IsPrimary))
-                    .ToList()))
+                    .ToList(),
+                advert.BuildingType.ToString(),
+                advert.Levels,
+                advert.ApartmentFloor,
+                advert.ApartmentNumber,
+                advert.ApartmentBlock,
+                advert.GardenSquareMeters))
             .ToList();
 
         return Result.Success(new GetAdvertsResponse(response, query.Page, query.PageSize, totalCount));

@@ -40,7 +40,13 @@ public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
                     .OrderByDescending(p => p.IsPrimary)
                     .Take(1)
                     .Select(p => new AdvertPhotoResponse(p.Guid, p.PhotoUrl, p.IsPrimary))
-                    .ToList()))
+                    .ToList(),
+                advert.BuildingType.ToString(),
+                advert.Levels,
+                advert.ApartmentFloor,
+                advert.ApartmentNumber,
+                advert.ApartmentBlock,
+                advert.GardenSquareMeters))
             .ToList();
 
         return new GetAdvertsResponse(response, query.Request.Page, query.Request.PageSize);
