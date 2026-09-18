@@ -8,7 +8,6 @@ import {
   MapPin,
   Plus,
   Search,
-  Sparkles,
   Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,8 @@ function Index() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"all" | "sale" | "rent">("all");
   const [query, setQuery] = useState("");
+  const [propertyType, setPropertyType] = useState("Apartment");
+  const [priceRange, setPriceRange] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("date");
 
@@ -148,50 +149,70 @@ function Index() {
       <Header />
 
       <main id="top">
-        <section className="border-b border-border bg-[#f5f9fa]">
-          <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-7 sm:py-16 lg:px-10 flex flex-col items-center">
-            <div className="max-w-4xl w-full text-center">
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
-                <Sparkles className="size-4" /> New homes appear the moment they’re published
-              </p>
-              <h1 className="max-w-3xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">
+        <section className="border-b border-border bg-[#f4f8f9]">
+          <div className="mx-auto flex max-w-[1440px] flex-col items-center px-4 py-14 sm:px-7 sm:py-20 lg:px-10">
+            <div className="w-full max-w-3xl text-center">
+              <h1 className="font-sans text-4xl font-bold leading-[1.04] tracking-tight sm:text-5xl lg:text-[4.25rem]">
                 Find a place you'll love to call home.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                Open listings from owners and agencies. Browse freely, contact directly, and skip
-                the waiting list.
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-5 text-muted-foreground sm:text-base">
+                Browse homes, apartments, land, and commercial properties for sale or rent,
+                directly from owners and agencies.
               </p>
             </div>
 
-            <div className="mt-9 w-full max-w-6xl border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
-              <div className="mb-3 flex w-fit gap-1 rounded-md bg-muted p-1">
-                {(["all", "sale", "rent"] as const).map((item) => (
-                  <Button
-                    key={item}
-                    size="sm"
-                    variant={mode === item ? "default" : "ghost"}
-                    onClick={() => setMode(item)}
+            <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
+              <div className="grid gap-3 md:grid-cols-[0.9fr_0.8fr_1.5fr_auto] md:items-end">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Looking for</span>
+                  <select
+                    value={mode}
+                    onChange={(event) => setMode(event.target.value as "all" | "sale" | "rent")}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
                   >
-                    {item === "all" ? "All homes" : item === "sale" ? "For sale" : "For rent"}
-                  </Button>
-                ))}
-              </div>
-              <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-                <label className="flex h-12 items-center gap-3 rounded-md border border-input bg-background px-4">
-                  <MapPin className="size-5 text-primary" />
-                  <span className="sr-only">Search adverts</span>
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search by title or description"
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  />
+                    <option value="all">All</option>
+                    <option value="rent">Rent</option>
+                    <option value="sale">Buy</option>
+                  </select>
                 </label>
-                <Button className="h-12 px-6">
-                  <Search /> Search homes
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Property type</span>
+                  <select
+                    value={propertyType}
+                    onChange={(event) => setPropertyType(event.target.value)}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option>Apartment</option>
+                    <option>House</option>
+                    <option>Place</option>
+                    </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Location</span>
+                  <span className="flex h-11 items-center gap-2 rounded-md border border-input bg-background px-3">
+                    <MapPin className="size-4 text-muted-foreground" />
+                    <span className="sr-only">Search adverts</span>
+                    <input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="City, neighborhood or area"
+                      className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </span>
+                </label>
+            
+                <Button
+                  size="icon"
+                  className="h-11 w-11"
+                  aria-label="Search properties"
+                  title="Search properties"
+                  onClick={() => document.getElementById("listings")?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  <Search />
                 </Button>
               </div>
             </div>
+            <p className="mt-4 text-xs text-muted-foreground">Thousands of properties. No commissions for buyers.</p>
           </div>
         </section>
 
@@ -362,11 +383,7 @@ function Index() {
                 done.
               </p>
             </div>
-            <Button variant="secondary" size="lg" asChild>
-              <Link to="/createadvert">
-                <Plus /> Publish a property
-              </Link>
-            </Button>
+            
           </div>
         </section>
       </main>
