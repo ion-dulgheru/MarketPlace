@@ -151,7 +151,8 @@ export async function getAdverts(params: GetAdvertsParams = {}): Promise<GetAdve
 }
 
 export function getAdvertPhotoUrl(photoUrl: string): string {
-  return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
+  const normalized = photoUrl.replace("/uploads/adverts/", "/uploads/listings/");
+  return normalized.startsWith("http") ? normalized : `${API_URL}${normalized}`;
 }
 
 export async function addAdvertPhoto(
