@@ -13,12 +13,12 @@ public class LocalFileStorageService : IFileStorageService
         var configuredFolder = configuration["Storage:UploadFolder"];
         _uploadFolder = !string.IsNullOrWhiteSpace(configuredFolder)
             ? configuredFolder
-            : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "adverts");
+            : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "listings");
 
         var configuredPrefix = configuration["Storage:UrlPrefix"];
         _urlPrefix = !string.IsNullOrWhiteSpace(configuredPrefix)
             ? configuredPrefix.TrimEnd('/')
-            : "/uploads/adverts";
+            : "/uploads/listings";
     }
 
     public async Task<string> SaveFileAsync(Stream stream, string fileName, CancellationToken ct = default)
@@ -46,6 +46,15 @@ public class LocalFileStorageService : IFileStorageService
         if (File.Exists(physicalPath))
         {
             File.Delete(physicalPath);
+        }
+        else
+        {
+            // Fallback for legacy adverts folder
+            var legacyPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "adverts", fileName);
+            if (File.Exists(legacyPath))
+            {
+                File.Delete(legacyPath);
+            }
         }
 
         return Task.CompletedTask;
