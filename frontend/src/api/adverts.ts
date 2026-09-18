@@ -81,6 +81,20 @@ export async function getFavoriteAdvertIds(): Promise<string[]> {
   return data.items.map((item) => item.guid);
 }
 
+export async function sendContactRequest(uuid: string, message: string): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${uuid}/contact-requests`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Failed to send contact request" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to send contact request");
+  }
+}
+
 export interface AdvertAddress {
   country: string;
   city: string;
