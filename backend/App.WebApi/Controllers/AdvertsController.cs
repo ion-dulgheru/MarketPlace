@@ -27,7 +27,7 @@ namespace App.WebApi.Controllers;
 public class AdvertsController(ISender sender) : BaseController
 {
     [HttpPost]
-    [SwaggerResponse(204, "Advert created.")]
+    [SwaggerResponse(201, "Advert created.", typeof(CreateAdvertResponse))]
     [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
     public async Task<IActionResult> Create(
         [FromBody] CreateAdvertRequest request,
@@ -37,7 +37,7 @@ public class AdvertsController(ISender sender) : BaseController
 
         return result.IsFailure
             ? HandleFailure(result)
-            : NoContent();
+            : CreatedAtAction(nameof(GetById), new { uuid = result.Value }, new CreateAdvertResponse(result.Value));
     }
 
     [AllowAnonymous]
