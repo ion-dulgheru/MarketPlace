@@ -222,6 +222,11 @@ export interface UpdateAdvertRequest {
   rooms: number;
   floor: number;
   address: CreateAdvertAddress;
+  levels?: number;
+  apartmentFloor?: number;
+  apartmentNumber?: string;
+  apartmentBlock?: string;
+  gardenSquareMeters?: number;
 }
 
 export async function updateAdvert(guid: string, data: UpdateAdvertRequest): Promise<void> {

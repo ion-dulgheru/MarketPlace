@@ -171,9 +171,15 @@ function ListingDetailsPage() {
           <section>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-xs font-bold uppercase text-primary">
-                  {advert.type === "Sale" ? "For sale" : "For rent"}
-                </span>
+                {advert.status !== "Active" ? (
+                  <span className="rounded-sm bg-status px-2.5 py-1 text-xs font-bold uppercase text-status-foreground">
+                    {advert.status}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold uppercase text-primary">
+                    {advert.type === "Sale" ? "For sale" : "For rent"}
+                  </span>
+                )}
                 <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">
                   {advert.title}
                 </h1>

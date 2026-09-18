@@ -170,10 +170,11 @@ function MyListingsPage() {
                       className="listing-image size-full object-cover"
                     />
                     <div className="absolute left-3 top-3 flex gap-2">
-                      <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
-                        {advert.type === "Sale" ? "For sale" : "For rent"}
-                      </span>
-                      {advert.status !== "Active" && (
+                      {advert.status === "Active" ? (
+                        <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                          {advert.type === "Sale" ? "For sale" : "For rent"}
+                        </span>
+                      ) : (
                         <span className="rounded-sm bg-status px-2.5 py-1 text-xs font-bold uppercase text-status-foreground">
                           {statusLabel[advert.status]}
                         </span>
