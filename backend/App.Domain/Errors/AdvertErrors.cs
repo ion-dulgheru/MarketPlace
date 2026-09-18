@@ -48,6 +48,9 @@ public static class AdvertErrors
     public static readonly Error CannotFavoriteOwnAdvert =
         Error.Validation("Advert.CannotFavoriteOwnAdvert", "You cannot favorite your own advert.");
 
+    public static readonly Error CannotContactOwnAdvert =
+        Error.Validation("Advert.CannotContactOwnAdvert", "You cannot send a contact request to your own advert.");
+
     public static readonly Error NotActive =
         Error.NotFound("Advert.NotActive", "Listing is not active.");
 }

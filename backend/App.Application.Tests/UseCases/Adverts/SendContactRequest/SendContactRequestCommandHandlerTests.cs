@@ -115,4 +115,34 @@ public class SendContactRequestCommandHandlerTests
             Times.Once);
         unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Handle_WhenUserIsAdvertOwner_ReturnsCannotContactOwnAdvert()
+    {
+        // 1. Arrange
+        var ownerUuid = Guid.NewGuid();
+        var advert = CreateSampleAdvert(ownerUuid, AdvertStatus.Active);
+
+        var advertRepositoryMock = new Mock<IAdvertRepository>();
+        advertRepositoryMock
+            .Setup(r => r.GetByUuidAsync(advert.Uuid, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(advert);
+
+        var contactRequestRepositoryMock = new Mock<IContactRequestRepository>();
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+        var handler = new SendContactRequestCommandHandler(
+            advertRepositoryMock.Object, contactRequestRepositoryMock.Object, unitOfWorkMock.Object);
+
+        var command = new SendContactRequestCommand(advert.Uuid, "Contacting myself?", ownerUuid);
+
+        // 2. Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // 3. Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Advert.CannotContactOwnAdvert", result.Error.Code);
+        contactRequestRepositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<ContactRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

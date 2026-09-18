@@ -20,12 +20,22 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
        await context.Users.AddAsync(user, ct);
     }
     public async Task<User?> GetByIdAsync(long id, CancellationToken ct)
-{
-    return await context.Users.FirstOrDefaultAsync(x => x.Id == id, ct);
-}
+    {
+        return await context.Users.FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
+
+    public async Task<User?> GetByUuidAsync(Guid uuid, CancellationToken ct)
+    {
+        return await context.Users.FirstOrDefaultAsync(x => x.Guid == uuid, ct);
+    }
 
     public async Task AddDetailsAsync(UserDetails details, CancellationToken ct)
     {
         await context.UserDetails.AddAsync(details, ct);
+    }
+
+    public async Task<UserDetails?> GetDetailsByUserIdAsync(long userId, CancellationToken ct)
+    {
+        return await context.UserDetails.FirstOrDefaultAsync(x => x.UserId == userId, ct);
     }
 }

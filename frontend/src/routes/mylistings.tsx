@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, KeyRound, Layers, Plus, Square } from "lucide-react";
+import { ArrowLeft, BedDouble, KeyRound, Layers, MessageSquare, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getAdverts,
@@ -11,6 +11,7 @@ import {
 } from "@/api/adverts";
 import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { isLoggedIn } from "@/lib/tokens";
+import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/mylistings")({
@@ -33,6 +34,10 @@ function MyListingsPage() {
   const [error, setError] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeInquiryAdvert, setActiveInquiryAdvert] = useState<{
+    guid: string;
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -214,7 +219,18 @@ function MyListingsPage() {
                         Floor {advert.floor}
                       </span>
                     </div>
-                    <div className="mt-3 flex items-center justify-end gap-2">
+                    <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() =>
+                          setActiveInquiryAdvert({ guid: advert.guid, title: advert.title })
+                        }
+                      >
+                        <MessageSquare className="size-3.5 text-primary" />
+                        Inquiries
+                      </Button>
                       <Button size="sm" variant="outline" asChild>
                         <Link to="/editadvert/$listingId" params={{ listingId: advert.guid }}>
                           Edit
@@ -259,6 +275,15 @@ function MyListingsPage() {
               );
             })}
           </div>
+        )}
+
+        {activeInquiryAdvert && (
+          <AdvertContactRequestsDialog
+            open={!!activeInquiryAdvert}
+            advertUuid={activeInquiryAdvert.guid}
+            advertTitle={activeInquiryAdvert.title}
+            onClose={() => setActiveInquiryAdvert(null)}
+          />
         )}
       </main>
     </div>

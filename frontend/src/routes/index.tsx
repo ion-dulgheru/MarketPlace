@@ -405,6 +405,7 @@ function Index() {
 
       <ContactOwnerDialog
         open={dialog === "contact"}
+        advertUuid={selected?.guid ?? ""}
         sellerName="the owner"
         listingTitle={selected?.title}
         onClose={() => setDialog(null)}

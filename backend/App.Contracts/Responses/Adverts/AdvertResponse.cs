@@ -18,5 +18,6 @@ public record AdvertResponse(
     int? ApartmentFloor = null,
     string? ApartmentNumber = null,
     string? ApartmentBlock = null,
-    decimal? GardenSquareMeters = null
+    decimal? GardenSquareMeters = null,
+    Guid? UserUuid = null
 );
