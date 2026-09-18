@@ -17,6 +17,8 @@ using App.Application.UseCases.Adverts.AddAdvertPhoto;
 using App.Application.UseCases.Adverts.DeleteAdvertPhoto;
 using App.Application.UseCases.Adverts.FavoriteAdvert;
 using App.Application.UseCases.Adverts.GetFavoriteAdverts;
+using App.Application.UseCases.Adverts.SendContactRequest;
+using App.Application.UseCases.Adverts.GetAdvertContactRequests;
 
 namespace App.WebApi.Controllers;
 
@@ -179,6 +181,36 @@ public class AdvertsController(ISender sender) : BaseController
             ? HandleFailure(result)
             : NoContent();
     }
+    [HttpPost("{uuid:guid}/contact-requests")]
+    [SwaggerResponse(201, "Contact request sent.")]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found or not active.", typeof(ErrorDetails))]
+    public async Task<IActionResult> SendContactRequest(
+        Guid uuid,
+        [FromBody] SendContactRequestRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(
+            new SendContactRequestCommand(uuid, request.Message, UserUuid),
+            ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    [HttpGet("{uuid:guid}/contact-requests")]
+    [SwaggerResponse(200, "Contact requests for this advert.", typeof(IReadOnlyList<ContactRequestResponse>))]
+    [SwaggerResponse(400, "Invalid identifier.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> GetContactRequests(Guid uuid, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetAdvertContactRequestsQuery(uuid, UserUuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
+    }
 
     [HttpPost("{uuid:guid}/favorite")]
     [SwaggerResponse(204, "Advert favorite status updated.")]
@@ -207,6 +239,12 @@ public class AdvertsController(ISender sender) : BaseController
         CancellationToken ct = default)
     {
         var result = await sender.Send(new GetFavoriteAdvertsQuery(UserUuid, page, pageSize), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
+    }
+}
 
         return result.IsFailure
             ? HandleFailure(result)

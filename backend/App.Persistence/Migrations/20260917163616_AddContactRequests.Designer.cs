@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using App.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace App.Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260917163616_AddContactRequests")]
+    partial class AddContactRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,43 +174,6 @@ namespace App.Persistence.Migrations
                     b.ToTable("AdvertPhotos", (string)null);
                 });
 
-            modelBuilder.Entity("App.Domain.Entities.FavoriteAdvert", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("AdvertId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserUuid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdvertId");
-
-                    b.HasIndex("UserUuid");
-
-                    b.HasIndex("UserUuid", "AdvertId")
-                        .IsUnique();
-
-                    b.ToTable("FavoriteAdverts", (string)null);
-                });
-
             modelBuilder.Entity("App.Domain.Entities.ContactRequest", b =>
                 {
                     b.Property<long>("Id")
@@ -244,7 +210,6 @@ namespace App.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ContactRequests");
-                });
                 });
 
             modelBuilder.Entity("App.Domain.Entities.User", b =>
@@ -374,17 +339,6 @@ namespace App.Persistence.Migrations
                 {
                     b.HasOne("App.Domain.Entities.Advert", "Advert")
                         .WithMany("Photos")
-                        .HasForeignKey("AdvertId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Advert");
-                });
-
-            modelBuilder.Entity("App.Domain.Entities.FavoriteAdvert", b =>
-                {
-                    b.HasOne("App.Domain.Entities.Advert", "Advert")
-                        .WithMany()
                         .HasForeignKey("AdvertId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

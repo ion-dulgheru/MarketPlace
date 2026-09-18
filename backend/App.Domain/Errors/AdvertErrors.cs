@@ -45,7 +45,9 @@ public static class AdvertErrors
 
     public static readonly Error PhotoNotFound =
         Error.NotFound("Advert.PhotoNotFound", "Photo not found.");
-
     public static readonly Error CannotFavoriteOwnAdvert =
         Error.Validation("Advert.CannotFavoriteOwnAdvert", "You cannot favorite your own advert.");
+
+    public static readonly Error NotActive =
+        Error.NotFound("Advert.NotActive", "Listing is not active.");
 }
