@@ -101,6 +101,40 @@ export async function sendContactRequest(uuid: string, message: string): Promise
   }
 }
 
+export interface ContactRequest {
+  uuid: string;
+  fromUserUuid: string;
+  message: string;
+  status: "Unread" | "Read";
+  createdDate: string;
+  senderName?: string | null;
+  senderEmail?: string | null;
+  senderPhone?: string | null;
+}
+
+export async function getAdvertContactRequests(uuid: string): Promise<ContactRequest[]> {
+  const response = await apiFetch(`/api/adverts/${uuid}/contact-requests`);
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Failed to load contact requests" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to load contact requests");
+  }
+  return (await response.json()) as ContactRequest[];
+}
+
+export async function markContactRequestAsRead(uuid: string): Promise<void> {
+  const response = await apiFetch(`/api/contact-requests/${uuid}/status`, {
+    method: "PUT",
+  });
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Failed to mark contact request as read" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to mark contact request as read");
+  }
+}
+
 export interface AdvertAddress {
   country: string;
   city: string;
@@ -134,6 +168,7 @@ export interface Advert {
   createdDate: string;
   address: AdvertAddress;
   photos: AdvertPhoto[];
+  userUuid?: string;
 }
 
 export interface GetAdvertsResponse {
@@ -222,6 +257,11 @@ export interface UpdateAdvertRequest {
   rooms: number;
   floor: number;
   address: CreateAdvertAddress;
+  levels?: number;
+  apartmentFloor?: number;
+  apartmentNumber?: string;
+  apartmentBlock?: string;
+  gardenSquareMeters?: number;
 }
 
 export async function updateAdvert(guid: string, data: UpdateAdvertRequest): Promise<void> {

@@ -560,7 +560,7 @@ function CreateAdvertPage() {
                     </p>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="grid gap-1.5 text-sm font-medium">
-                        Levels (instead of floors)
+                        Levels
                         <input
                           name="levels"
                           required
@@ -872,10 +872,11 @@ function CreateAdvertPage() {
                       min={1}
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
                       placeholder="485000"
-                      className="h-12 w-full rounded-md border border-input bg-background px-4 text-lg font-bold outline-none focus:ring-2 focus:ring-ring"
+                      className="h-12 w-full rounded-md border border-input bg-background pl-4 pr-16 text-lg font-bold outline-none focus:ring-2 focus:ring-ring no-spin [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
                       MDL
                     </span>
                   </div>

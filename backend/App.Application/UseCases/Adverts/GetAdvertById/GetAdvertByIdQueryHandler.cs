@@ -49,7 +49,8 @@ public class GetAdvertByIdQueryHandler(IAdvertRepository advertRepository)
             advert.ApartmentFloor,
             advert.ApartmentNumber,
             advert.ApartmentBlock,
-            advert.GardenSquareMeters);
+            advert.GardenSquareMeters,
+            advert.UserUuid);
 
         return Result.Success(response);
     }

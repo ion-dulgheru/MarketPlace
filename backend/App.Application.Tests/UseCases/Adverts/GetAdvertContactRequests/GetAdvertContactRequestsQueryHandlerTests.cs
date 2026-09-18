@@ -72,4 +72,50 @@ public class GetAdvertContactRequestsQueryHandlerTests
         Assert.Equal("Interested!", result.Value[0].Message);
         Assert.Equal("Unread", result.Value[0].Status);
     }
+
+    [Fact]
+    public async Task Handle_WhenOwnerWithUserDetails_ReturnsMappedContactRequestsWithSenderInfo()
+    {
+        // 1. Arrange
+        var ownerUuid = Guid.NewGuid();
+        var advert = CreateSampleAdvert(ownerUuid);
+        var senderUser = User.Create("buyer@example.com", "hash");
+        var senderDetails = UserDetails.Create(senderUser.Id, "John", "Doe", null, "+37369123456");
+        var contactRequest = ContactRequest.Create(advert.Uuid, senderUser.Guid, "Can I visit tomorrow?");
+
+        var advertRepositoryMock = new Mock<IAdvertRepository>();
+        advertRepositoryMock
+            .Setup(r => r.GetByUuidForOwnerAsync(advert.Uuid, ownerUuid, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(advert);
+
+        var contactRequestRepositoryMock = new Mock<IContactRequestRepository>();
+        contactRequestRepositoryMock
+            .Setup(r => r.GetByAdvertUuidAsync(advert.Uuid, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ContactRequest> { contactRequest });
+
+        var userRepositoryMock = new Mock<IUserRepository>();
+        userRepositoryMock
+            .Setup(r => r.GetByUuidAsync(senderUser.Guid, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(senderUser);
+        userRepositoryMock
+            .Setup(r => r.GetDetailsByUserIdAsync(senderUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(senderDetails);
+
+        var handler = new GetAdvertContactRequestsQueryHandler(
+            advertRepositoryMock.Object, contactRequestRepositoryMock.Object, userRepositoryMock.Object);
+
+        var query = new GetAdvertContactRequestsQuery(advert.Uuid, ownerUuid);
+
+        // 2. Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // 3. Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value);
+        var first = result.Value[0];
+        Assert.Equal("Can I visit tomorrow?", first.Message);
+        Assert.Equal("buyer@example.com", first.SenderEmail);
+        Assert.Equal("John Doe", first.SenderName);
+        Assert.Equal("+37369123456", first.SenderPhone);
+    }
 }

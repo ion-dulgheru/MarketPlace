@@ -8,7 +8,8 @@ namespace App.Application.UseCases.Adverts.GetAdvertContactRequests;
 
 public class GetAdvertContactRequestsQueryHandler(
     IAdvertRepository advertRepository,
-    IContactRequestRepository contactRequestRepository)
+    IContactRequestRepository contactRequestRepository,
+    IUserRepository? userRepository = null)
     : IQueryHandler<GetAdvertContactRequestsQuery, IReadOnlyList<ContactRequestResponse>>
 {
     public async Task<Result<IReadOnlyList<ContactRequestResponse>>> Handle(
@@ -29,14 +30,40 @@ public class GetAdvertContactRequestsQueryHandler(
 
         var contactRequests = await contactRequestRepository.GetByAdvertUuidAsync(advert.Uuid, ct);
 
-        var response = contactRequests
-            .Select(cr => new ContactRequestResponse(
+        var response = new List<ContactRequestResponse>();
+
+        foreach (var cr in contactRequests)
+        {
+            string? senderEmail = null;
+            string? senderName = null;
+            string? senderPhone = null;
+
+            if (userRepository is not null)
+            {
+                var user = await userRepository.GetByUuidAsync(cr.FromUserUuid, ct);
+                if (user is not null)
+                {
+                    senderEmail = user.Email;
+                    var details = await userRepository.GetDetailsByUserIdAsync(user.Id, ct);
+                    if (details is not null)
+                    {
+                        var fullName = $"{details.FirstName} {details.LastName}".Trim();
+                        senderName = string.IsNullOrWhiteSpace(fullName) ? null : fullName;
+                        senderPhone = details.PhoneNumber;
+                    }
+                }
+            }
+
+            response.Add(new ContactRequestResponse(
                 cr.Uuid,
                 cr.FromUserUuid,
                 cr.Message,
                 cr.Status.ToString(),
-                cr.CreatedDate))
-            .ToList();
+                cr.CreatedDate,
+                senderName,
+                senderEmail,
+                senderPhone));
+        }
 
         return Result.Success<IReadOnlyList<ContactRequestResponse>>(response);
     }

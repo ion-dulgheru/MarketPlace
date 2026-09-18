@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, KeyRound, Layers, Plus, Square } from "lucide-react";
+import { ArrowLeft, BedDouble, KeyRound, Layers, MessageSquare, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getAdverts,
@@ -11,6 +11,7 @@ import {
 } from "@/api/adverts";
 import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { isLoggedIn } from "@/lib/tokens";
+import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/mylistings")({
@@ -33,6 +34,10 @@ function MyListingsPage() {
   const [error, setError] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeInquiryAdvert, setActiveInquiryAdvert] = useState<{
+    guid: string;
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -170,10 +175,11 @@ function MyListingsPage() {
                       className="listing-image size-full object-cover"
                     />
                     <div className="absolute left-3 top-3 flex gap-2">
-                      <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
-                        {advert.type === "Sale" ? "For sale" : "For rent"}
-                      </span>
-                      {advert.status !== "Active" && (
+                      {advert.status === "Active" ? (
+                        <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                          {advert.type === "Sale" ? "For sale" : "For rent"}
+                        </span>
+                      ) : (
                         <span className="rounded-sm bg-status px-2.5 py-1 text-xs font-bold uppercase text-status-foreground">
                           {statusLabel[advert.status]}
                         </span>
@@ -213,7 +219,18 @@ function MyListingsPage() {
                         Floor {advert.floor}
                       </span>
                     </div>
-                    <div className="mt-3 flex items-center justify-end gap-2">
+                    <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() =>
+                          setActiveInquiryAdvert({ guid: advert.guid, title: advert.title })
+                        }
+                      >
+                        <MessageSquare className="size-3.5 text-primary" />
+                        Inquiries
+                      </Button>
                       <Button size="sm" variant="outline" asChild>
                         <Link to="/editadvert/$listingId" params={{ listingId: advert.guid }}>
                           Edit
@@ -258,6 +275,15 @@ function MyListingsPage() {
               );
             })}
           </div>
+        )}
+
+        {activeInquiryAdvert && (
+          <AdvertContactRequestsDialog
+            open={!!activeInquiryAdvert}
+            advertUuid={activeInquiryAdvert.guid}
+            advertTitle={activeInquiryAdvert.title}
+            onClose={() => setActiveInquiryAdvert(null)}
+          />
         )}
       </main>
     </div>

@@ -32,6 +32,11 @@ public class SendContactRequestCommandHandler(
             return Result.Failure<Guid>(AdvertErrors.NotActive);
         }
 
+        if (advert.UserUuid == command.UserUuid)
+        {
+            return Result.Failure<Guid>(AdvertErrors.CannotContactOwnAdvert);
+        }
+
         var contactRequest = ContactRequest.Create(advert.Uuid, command.UserUuid, command.Message);
 
         await contactRequestRepository.AddAsync(contactRequest, ct);

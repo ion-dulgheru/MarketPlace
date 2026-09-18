@@ -19,7 +19,7 @@ public class ContactRequestRepository(DataContext context) : IContactRequestRepo
             .ToListAsync(ct);
     }
     public async Task<ContactRequest?> GetByUuidAsync(Guid uuid, CancellationToken ct)
-{
-    return await context.ContactRequests.FirstOrDefaultAsync(x => x.Uuid == uuid, ct);
-}
+    {
+        return await context.ContactRequests.FirstOrDefaultAsync(x => x.Guid == uuid, ct);
+    }
 }

@@ -5,5 +5,8 @@ public record ContactRequestResponse(
     Guid FromUserUuid,
     string Message,
     string Status,
-    DateTime CreatedDate
+    DateTime CreatedDate,
+    string? SenderName = null,
+    string? SenderEmail = null,
+    string? SenderPhone = null
 );

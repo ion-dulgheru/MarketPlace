@@ -77,7 +77,13 @@ export function AddPropertyDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">
                 Price
-                <input required type="number" placeholder="485000" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+                <input
+                  required
+                  type="number"
+                  placeholder="485000"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring no-spin [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
                 Size in m²

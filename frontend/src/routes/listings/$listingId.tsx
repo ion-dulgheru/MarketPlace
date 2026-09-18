@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, Heart, Layers, MapPin, Square } from "lucide-react";
+import { ArrowLeft, BedDouble, Heart, Layers, MapPin, MessageSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getAdvertById,
@@ -11,8 +11,9 @@ import {
   type Advert,
 } from "@/api/adverts";
 import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
-import { isLoggedIn } from "@/lib/tokens";
+import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
+import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 import DOMPurify from "dompurify";
 
@@ -31,6 +32,14 @@ function ListingDetailsPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [inquiriesOpen, setInquiriesOpen] = useState(false);
+
+  const currentUserUuid = getCurrentUserUuid();
+  const isOwner = Boolean(
+    currentUserUuid &&
+      advert?.userUuid &&
+      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -78,9 +87,10 @@ function ListingDetailsPage() {
     }
   };
 
- const handleContact = () => {
-  setDialogOpen(true);
-};
+  const handleContact = () => {
+    if (isOwner) return;
+    setDialogOpen(true);
+  };
 
   if (advert === undefined) {
     return (
@@ -171,9 +181,15 @@ function ListingDetailsPage() {
           <section>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-xs font-bold uppercase text-primary">
-                  {advert.type === "Sale" ? "For sale" : "For rent"}
-                </span>
+                {advert.status !== "Active" ? (
+                  <span className="rounded-sm bg-status px-2.5 py-1 text-xs font-bold uppercase text-status-foreground">
+                    {advert.status}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold uppercase text-primary">
+                    {advert.type === "Sale" ? "For sale" : "For rent"}
+                  </span>
+                )}
                 <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">
                   {advert.title}
                 </h1>
@@ -215,9 +231,27 @@ function ListingDetailsPage() {
               <p className="text-sm text-muted-foreground">
                 Posted {formatPostedDate(advert.createdDate)}
               </p>
-              <Button disabled={unavailable} onClick={handleContact}>
-                {unavailable ? "Unavailable" : "Contact seller"}
-              </Button>
+              {isOwner ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => setInquiriesOpen(true)}
+                  >
+                    <MessageSquare className="size-4 text-primary" />
+                    Inquiries
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/editadvert/$listingId" params={{ listingId: advert.guid }}>
+                      Edit listing
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button disabled={unavailable} onClick={handleContact}>
+                  {unavailable ? "Unavailable" : "Contact seller"}
+                </Button>
+              )}
             </div>
 
             <div className="mt-7">
@@ -241,6 +275,15 @@ function ListingDetailsPage() {
         onClose={() => setDialogOpen(false)}
         onSignIn={() => void navigate({ to: "/login" })}
       />
+
+      {inquiriesOpen && advert && (
+        <AdvertContactRequestsDialog
+          open={inquiriesOpen}
+          advertUuid={advert.guid}
+          advertTitle={advert.title}
+          onClose={() => setInquiriesOpen(false)}
+        />
+      )}
     </div>
   );
 }

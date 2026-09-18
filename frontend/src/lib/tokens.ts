@@ -28,3 +28,17 @@ export function clearTokens() {
 export function isLoggedIn(): boolean {
   return getAccessToken() !== null;
 }
+
+// Extrage UUID-ul utilizatorului logat din JWT access token
+export function getCurrentUserUuid(): string | null {
+  const token = getAccessToken();
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return (payload.sub ?? payload.nameid ?? payload.userId ?? null) as string | null;
+  } catch {
+    return null;
+  }
+}

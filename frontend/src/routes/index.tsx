@@ -295,9 +295,15 @@ function Index() {
                           />
                         </Link>
                         <div className="absolute left-3 top-3 flex gap-2">
-                          <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
-                            {advert.type === "Sale" ? "For sale" : "For rent"}
-                          </span>
+                          {advert.status === "Active" ? (
+                            <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                              {advert.type === "Sale" ? "For sale" : "For rent"}
+                            </span>
+                          ) : (
+                            <span className="rounded-sm bg-status px-2.5 py-1 text-xs font-bold uppercase text-status-foreground">
+                              {advert.status}
+                            </span>
+                          )}
                         </div>
                         <Button
                           size="icon"
@@ -399,6 +405,7 @@ function Index() {
 
       <ContactOwnerDialog
         open={dialog === "contact"}
+        advertUuid={selected?.guid ?? ""}
         sellerName="the owner"
         listingTitle={selected?.title}
         onClose={() => setDialog(null)}
