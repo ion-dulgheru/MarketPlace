@@ -1,6 +1,6 @@
-import { KeyRound, Menu, Plus, UserRound } from "lucide-react";
+import { Bell, KeyRound, LogOut, Menu, Plus, UserRound } from "lucide-react";
 import { Button } from "../ui/button";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
@@ -22,28 +22,25 @@ export default function Header() {
           <span className="font-display text-2xl">OpenKey</span>
         </a>
 
-        <nav
-          className="hidden items-center gap-8 text-sm font-medium lg:flex"
-          aria-label="Main navigation"
-        >
-          <a href="#listings" className="border-b-2 border-primary py-6">
-            Browse homes
-          </a>
-          {loggedIn && (
-            <Link to="/mylistings" className="py-6 text-muted-foreground hover:text-foreground">
-              My listings
-            </Link>
-          )}
-        </nav>
-
         <div className="flex items-center gap-2">
           {loggedIn ? (
-            // Userul e logat → arată "Sign out" care apelează logout()
-            <Button variant="ghost" className="hidden sm:inline-flex" onClick={handleLogout}>
-              <UserRound /> Sign out
-            </Button>
+            <div className="hidden items-center gap-1 sm:flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell />
+              </Button>
+              <Button variant="ghost" onClick={() => void navigate({ to: "/account" })}>
+                <UserRound /> Account
+              </Button>
+              <Button variant="ghost" onClick={handleLogout}>
+                <LogOut /> Sign out
+              </Button>
+            </div>
           ) : (
-            // Userul nu e logat → arată "Sign in" care navighează la /login
             <Button
               variant="ghost"
               className="hidden sm:inline-flex"
