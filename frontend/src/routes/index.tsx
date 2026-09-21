@@ -6,13 +6,14 @@ import {
   KeyRound,
   Layers,
   MapPin,
+  MessageCircle,
   Plus,
   Search,
   Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
-import { isLoggedIn } from "@/lib/tokens";
+import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import {
   getAdverts,
   getAdvertPhotoUrl,
@@ -28,6 +29,51 @@ import Header from "@/components/Navigation/header";
 const PAGE_SIZE = 9;
 
 type SortOption = "date" | "price-asc" | "price-desc";
+type LocationScope = "all" | "chisinau" | (typeof MOLDOVA_DISTRICTS)[number];
+
+const MOLDOVA_DISTRICTS = [
+  "Anenii Noi",
+  "Basarabeasca",
+  "Briceni",
+  "Cahul",
+  "Cantemir",
+  "Călărași",
+  "Căușeni",
+  "Cimișlia",
+  "Criuleni",
+  "Dondușeni",
+  "Drochia",
+  "Dubăsari",
+  "Edineț",
+  "Fălești",
+  "Florești",
+  "Glodeni",
+  "Hîncești",
+  "Ialoveni",
+  "Leova",
+  "Nisporeni",
+  "Ocnița",
+  "Orhei",
+  "Rezina",
+  "Rîșcani",
+  "Sîngerei",
+  "Soroca",
+  "Strășeni",
+  "Șoldănești",
+  "Ștefan Vodă",
+  "Taraclia",
+  "Telenești",
+  "Ungheni",
+];
+
+const CHISINAU_REGIONS = [
+  "Botanica",
+  "Buiucani",
+  "Centru",
+  "Ciocana",
+  "Râșcani",
+  "Telecentru",
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,8 +102,11 @@ function Index() {
   const [mode, setMode] = useState<"all" | "sale" | "rent">("all");
   const [query, setQuery] = useState("");
   const [propertyType, setPropertyType] = useState("Apartment");
+  const [roomCount, setRoomCount] = useState("Any");
   const [priceRange, setPriceRange] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [locationScope, setLocationScope] = useState<LocationScope>("all");
+  const [chisinauDistrict, setChisinauDistrict] = useState("All Chișinău");
   const [sort, setSort] = useState<SortOption>("date");
 
   const [adverts, setAdverts] = useState<Advert[]>([]);
@@ -76,9 +125,20 @@ function Index() {
     return () => clearTimeout(timeout);
   }, [query]);
 
+  const locationSearchTerm =
+    locationScope === "all"
+      ? ""
+      : locationScope === "chisinau"
+        ? chisinauDistrict === "All Chișinău"
+          ? "Chișinău"
+          : chisinauDistrict
+        : locationScope;
+
+  const effectiveSearchTerm = [debouncedQuery, locationSearchTerm].filter(Boolean).join(" ");
+
   useEffect(() => {
     setPage(1);
-  }, [mode, debouncedQuery, sort]);
+  }, [mode, effectiveSearchTerm, sort]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,10 +156,10 @@ function Index() {
     getAdverts({
       page,
       pageSize: PAGE_SIZE,
-      searchTerm: debouncedQuery || undefined,
       type: mode === "all" ? undefined : mode === "sale" ? "Sale" : "Rent",
       sortBy,
       sortDescending,
+      searchTerm: effectiveSearchTerm || undefined,
     })
       .then((response) => {
         if (cancelled) return;
@@ -119,7 +179,7 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [mode, debouncedQuery, sort, page]);
+  }, [mode, effectiveSearchTerm, sort, page]);
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -127,7 +187,15 @@ function Index() {
     }
   }, []);
 
+  const currentUserUuid = getCurrentUserUuid();
+
   const openContact = (advert: Advert) => {
+    const isOwner = Boolean(
+      currentUserUuid &&
+        advert.userUuid &&
+        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+    );
+    if (isOwner) return;
     setSelected(advert);
     setDialog("contact");
   };
@@ -137,6 +205,14 @@ function Index() {
       void navigate({ to: "/login" });
       return;
     }
+    const advert = adverts.find((a) => a.guid === guid);
+    const isOwner = Boolean(
+      currentUserUuid &&
+        advert?.userUuid &&
+        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+    );
+    if (isOwner) return;
+
     const nextSaved = !savedIds.includes(guid);
     setSavedIds((ids) => (nextSaved ? [...ids, guid] : ids.filter((id) => id !== guid)));
     void (nextSaved ? favoriteAdvert(guid) : unfavoriteAdvert(guid));
@@ -162,7 +238,7 @@ function Index() {
             </div>
 
             <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
-              <div className="grid gap-3 md:grid-cols-[0.9fr_0.8fr_1.5fr_auto] md:items-end">
+              <div className="grid gap-3 md:grid-flow-col md:grid-cols-[0.55fr_0.75fr_0.7fr_1.3fr_auto] md:items-end">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-foreground">Looking for</span>
                   <select
@@ -184,22 +260,67 @@ function Index() {
                   >
                     <option>Apartment</option>
                     <option>House</option>
-                    <option>Place</option>
                     </select>
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Location</span>
-                  <span className="flex h-11 items-center gap-2 rounded-md border border-input bg-background px-3">
-                    <MapPin className="size-4 text-muted-foreground" />
-                    <span className="sr-only">Search adverts</span>
-                    <input
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="City, neighborhood or area"
-                      className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    />
-                  </span>
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">How many rooms</span>
+                  <select
+                    value={roomCount}
+                    onChange={(event) => setRoomCount(event.target.value)}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="Any">Any</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5+">5+</option>
+                  </select>
                 </label>
+                <div
+                  className={
+                    locationScope === "chisinau"
+                      ? "grid min-w-0 grid-cols-[minmax(0,1fr)_7rem] items-end gap-2"
+                      : "min-w-0"
+                  }
+                >
+                  <label className="block min-w-0">
+                    <span className="mb-1.5 block text-xs font-semibold text-foreground">Location</span>
+                    <span className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3">
+                      <MapPin className="size-4 text-muted-foreground" />
+                      <select
+                        value={locationScope}
+                        onChange={(event) => setLocationScope(event.target.value as LocationScope)}
+                        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                      >
+                        <option value="all">All of Moldova</option>
+                        <option value="chisinau">Chișinău</option>
+                        {MOLDOVA_DISTRICTS.map((district) => (
+                          <option key={district} value={district}>
+                            {district}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
+                  </label>
+
+                  {locationScope === "chisinau" && (
+                    <label className="block min-w-0">
+                      <span className="mb-1.5 block text-xs font-semibold text-foreground">Region</span>
+                      <select
+                        value={chisinauDistrict}
+                        onChange={(event) => setChisinauDistrict(event.target.value)}
+                        className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                      >
+                        {CHISINAU_REGIONS.map((region) => (
+                          <option key={region} value={region}>
+                            {region}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
             
                 <Button
                   size="icon"
@@ -228,18 +349,14 @@ function Index() {
                 {loading ? "Loading listings…" : `${totalCount} listings match your search`}
               </p>
             </div>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              Sort by{" "}
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortOption)}
-                className="rounded-md border border-input bg-background px-3 py-2 font-medium text-foreground outline-none"
-              >
-                <option value="date">Newest first</option>
-                <option value="price-asc">Price: low to high</option>
-                <option value="price-desc">Price: high to low</option>
-              </select>
-            </label>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Open chat"
+              className="ml-auto flex size-16 items-center justify-center rounded-[1.25rem] border-[2px] border-[#cfc9c2] bg-[#f3f2f0] text-foreground shadow-sm hover:bg-[#ece9e6]"
+            >
+              <MessageCircle className="size-8" />
+            </Button>
           </div>
 
           {error ? (
@@ -274,6 +391,11 @@ function Index() {
                     .filter(Boolean)
                     .join(", ");
                   const saved = savedIds.includes(advert.guid);
+                  const isOwner = Boolean(
+                    currentUserUuid &&
+                      advert.userUuid &&
+                      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+                  );
                   return (
                     <article key={advert.guid} className="group min-w-0">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
@@ -305,15 +427,21 @@ function Index() {
                             </span>
                           )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="absolute right-3 top-3 rounded-full"
-                          onClick={() => toggleSaved(advert.guid)}
-                          aria-label={saved ? "Remove from saved" : "Save listing"}
-                        >
-                          <Heart className={saved ? "fill-primary text-primary" : ""} />
-                        </Button>
+                        {isOwner ? (
+                          <span className="absolute right-3 top-3 rounded-sm bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
+                            Your listing
+                          </span>
+                        ) : (
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="absolute right-3 top-3 rounded-full"
+                            onClick={() => toggleSaved(advert.guid)}
+                            aria-label={saved ? "Remove from saved" : "Save listing"}
+                          >
+                            <Heart className={saved ? "fill-primary text-primary" : ""} />
+                          </Button>
+                        )}
                       </div>
                       <div className="pt-4">
                         <div className="flex items-start justify-between gap-3">
@@ -348,14 +476,16 @@ function Index() {
                           </span>
                           <span className="flex items-center gap-1.5">
                             <Layers className="size-4" />
-                            Floor {advert.floor}
+                            Floors {advert.floor}
                           </span>
                         </div>
-                        <div className="mt-3 flex items-center justify-end gap-3">
-                          <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
-                            Contact
-                          </Button>
-                        </div>
+                        {!isOwner && (
+                          <div className="mt-3 flex items-center justify-end gap-3">
+                            <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
+                              Contact
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </article>
                   );

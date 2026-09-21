@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Heart,
   KeyRound,
+  LogOut,
   Mail,
   Phone,
   ShieldCheck,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Navigation/header";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { changePassword, getCurrentUser, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
@@ -26,11 +28,17 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [listingCount, setListingCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    void navigate({ to: "/login" });
+  };
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -96,8 +104,17 @@ function AccountPage() {
                     <p className="mt-1 text-sm text-muted-foreground">Buyer and seller profile</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                  <ShieldCheck className="size-5" /> Verified account
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <ShieldCheck className="size-5" /> Verified account
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-1.5 border-red-200 bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="size-4" /> Sign out
+                  </Button>
                 </div>
               </div>
             </div>
@@ -116,21 +133,44 @@ function AccountPage() {
               <div className="border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                 <h2 className="font-display text-2xl">Your activity</h2>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <ActivityStat icon={Store} value={listingCount} label="Published listings" />
-                  <ActivityStat icon={Heart} value={savedCount} label="Saved homes" />
+                  <ActivityStat icon={Store} value={listingCount} label="Published listings" to="/mylistings" />
+                  <ActivityStat icon={Heart} value={savedCount} label="Saved listings" to="/savedhomes" />
                 </div>
-                <Link
-                  to="/mylistings"
-                  className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  View my active listings
-                  <ArrowRight className="size-4" />
-                </Link>
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    to="/mylistings"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    <Store className="size-4" />
+                    View my listings
+                  </Link>
+                  <Link
+                    to="/savedhomes"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <Heart className="size-4 text-primary" />
+                    View saved listings
+                  </Link>
+                </div>
                 <div className="mt-5 flex items-start gap-3 rounded-md bg-muted p-4 text-sm">
                   <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" />
                   <p className="text-muted-foreground">Use this account to publish homes as a seller and save or contact listings as a buyer.</p>
                 </div>
               </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4 sm:px-10">
+              <p className="text-xs text-muted-foreground">
+                Signed in as <span className="font-semibold text-foreground">{user.email}</span>
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="size-4" /> Sign out
+              </Button>
             </div>
           </section>
         )}
@@ -242,14 +282,45 @@ function InfoItem({ icon: Icon, label, value, compact = false }: { icon: typeof 
   );
 }
 
-function ActivityStat({ icon: Icon, value, label }: { icon: typeof Store; value: number; label: string }) {
-  return (
-    <div className="rounded-md border border-border p-4">
-      <Icon className="size-5 text-primary" />
+function ActivityStat({
+  icon: Icon,
+  value,
+  label,
+  to,
+}: {
+  icon: typeof Store;
+  value: number;
+  label: string;
+  to?: string;
+}) {
+  const content = (
+    <div
+      className={`group rounded-md border border-border p-4 transition-all duration-200 ${
+        to
+          ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm"
+          : ""
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <Icon className="size-5 text-primary" />
+        {to && (
+          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+        )}
+      </div>
       <p className="mt-3 text-3xl font-bold">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
+
+  if (to) {
+    return (
+      <Link to={to as any} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 function formatDate(value: string | null) {

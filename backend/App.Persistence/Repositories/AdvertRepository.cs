@@ -92,12 +92,19 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
         return (items, totalCount);
     }
 
-    public async Task<IReadOnlyList<Advert>> GetByUserAsync(Guid userUuid, int page, int pageSize, CancellationToken ct)
+    public async Task<(IReadOnlyList<Advert> Items, int TotalCount)> GetByUserAsync(Guid userUuid, int page, int pageSize, CancellationToken ct)
     {
-        return await context.Adverts.Include(x => x.Photos)
+        var query = context.Adverts.Include(x => x.Photos)
             .Where(x => x.UserUuid == userUuid)
-            .OrderByDescending(x => x.CreatedDate)
+            .OrderByDescending(x => x.CreatedDate);
+
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
+
+        return (items, totalCount);
     }
 
     public async Task AddAsync(Advert advert, CancellationToken ct)
