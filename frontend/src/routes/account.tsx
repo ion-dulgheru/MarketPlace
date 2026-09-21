@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
   CheckCircle2,
   Heart,
+  KeyRound,
   Mail,
   Phone,
   ShieldCheck,
@@ -13,7 +14,8 @@ import {
   UserRound,
 } from "lucide-react";
 import Header from "@/components/Navigation/header";
-import { getCurrentUser, type CurrentUser } from "@/api/users";
+import { Button } from "@/components/ui/button";
+import { changePassword, getCurrentUser, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 
@@ -132,8 +134,99 @@ function AccountPage() {
             </div>
           </section>
         )}
+
+        {!loading && user && <ChangePasswordSection />}
       </main>
     </div>
+  );
+}
+
+function ChangePasswordSection() {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    const form = event.currentTarget;
+    const currentPassword = (form.elements.namedItem("currentPassword") as HTMLInputElement).value;
+    const newPassword = (form.elements.namedItem("newPassword") as HTMLInputElement).value;
+    const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
+
+    if (newPassword !== confirmPassword) {
+      setError("New passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setSuccess(true);
+      form.reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="mt-8 rounded-lg border border-border bg-card p-6 sm:p-10">
+      <div className="flex items-center gap-2">
+        <KeyRound className="size-5 text-primary" />
+        <h2 className="font-display text-2xl">Change password</h2>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Update the password you use to log in to OpenKey.
+      </p>
+
+      <form className="mt-6 grid max-w-md gap-4" onSubmit={handleSubmit}>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Current password
+          <input
+            name="currentPassword"
+            required
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          New password
+          <input
+            name="newPassword"
+            required
+            minLength={8}
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Confirm new password
+          <input
+            name="confirmPassword"
+            required
+            minLength={8}
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        {error && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+        )}
+        {success && (
+          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">Password updated successfully.</p>
+        )}
+        <Button type="submit" disabled={loading} className="mt-2 w-full sm:w-auto">
+          {loading ? "Saving…" : "Update password"}
+        </Button>
+      </form>
+    </section>
   );
 }
 

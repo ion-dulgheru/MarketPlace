@@ -72,6 +72,9 @@ function LoginPage() {
               Password
               <input name="password" required type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
             </label>
+            <Link to="/forgot-password" className="-mt-1 justify-self-end text-sm font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
             {error && (
               <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
             )}
