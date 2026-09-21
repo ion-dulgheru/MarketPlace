@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Heart,
+  LogOut,
   Mail,
   Phone,
   ShieldCheck,
@@ -13,6 +14,8 @@ import {
   UserRound,
 } from "lucide-react";
 import Header from "@/components/Navigation/header";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { getCurrentUser, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
@@ -24,11 +27,17 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [listingCount, setListingCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    void navigate({ to: "/login" });
+  };
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -94,8 +103,17 @@ function AccountPage() {
                     <p className="mt-1 text-sm text-muted-foreground">Buyer and seller profile</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                  <ShieldCheck className="size-5" /> Verified account
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <ShieldCheck className="size-5" /> Verified account
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-1.5 border-red-200 bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="size-4" /> Sign out
+                  </Button>
                 </div>
               </div>
             </div>
@@ -138,6 +156,20 @@ function AccountPage() {
                   <p className="text-muted-foreground">Use this account to publish homes as a seller and save or contact listings as a buyer.</p>
                 </div>
               </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4 sm:px-10">
+              <p className="text-xs text-muted-foreground">
+                Signed in as <span className="font-semibold text-foreground">{user.email}</span>
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="size-4" /> Sign out
+              </Button>
             </div>
           </section>
         )}

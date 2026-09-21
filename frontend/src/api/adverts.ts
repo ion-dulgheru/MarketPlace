@@ -110,6 +110,16 @@ export interface ContactRequest {
   senderName?: string | null;
   senderEmail?: string | null;
   senderPhone?: string | null;
+  advertUuid?: string | null;
+  advertTitle?: string | null;
+}
+
+export async function getReceivedContactRequests(): Promise<ContactRequest[]> {
+  const response = await apiFetch("/api/contact-requests");
+  if (!response.ok) {
+    return [];
+  }
+  return (await response.json()) as ContactRequest[];
 }
 
 export async function getAdvertContactRequests(uuid: string): Promise<ContactRequest[]> {

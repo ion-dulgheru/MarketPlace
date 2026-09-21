@@ -15,6 +15,9 @@ import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactR
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/mylistings")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    inquiries: typeof search.inquiries === "string" ? search.inquiries : undefined,
+  }),
   head: () => ({
     meta: [{ title: "My listings | OpenKey" }],
   }),
@@ -29,6 +32,7 @@ const statusLabel: Record<Advert["status"], string> = {
 
 function MyListingsPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -61,6 +65,19 @@ function MyListingsPage() {
       cancelled = true;
     };
   }, [navigate]);
+
+  useEffect(() => {
+    if (search.inquiries && adverts.length > 0) {
+      const match = adverts.find(
+        (a) => a.guid.toLowerCase() === (search.inquiries as string).toLowerCase(),
+      );
+      if (match) {
+        setActiveInquiryAdvert({ guid: match.guid, title: match.title });
+      } else {
+        setActiveInquiryAdvert({ guid: search.inquiries, title: "Your listing" });
+      }
+    }
+  }, [search.inquiries, adverts]);
 
   const handleMarkStatus = async (advert: Advert, status: "Active" | "Sold" | "Rented") => {
     setPendingId(advert.guid);
