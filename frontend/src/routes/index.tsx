@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
-import { isLoggedIn } from "@/lib/tokens";
+import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import {
   getAdverts,
   getAdvertPhotoUrl,
@@ -187,7 +187,15 @@ function Index() {
     }
   }, []);
 
+  const currentUserUuid = getCurrentUserUuid();
+
   const openContact = (advert: Advert) => {
+    const isOwner = Boolean(
+      currentUserUuid &&
+        advert.userUuid &&
+        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+    );
+    if (isOwner) return;
     setSelected(advert);
     setDialog("contact");
   };
@@ -197,6 +205,14 @@ function Index() {
       void navigate({ to: "/login" });
       return;
     }
+    const advert = adverts.find((a) => a.guid === guid);
+    const isOwner = Boolean(
+      currentUserUuid &&
+        advert?.userUuid &&
+        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+    );
+    if (isOwner) return;
+
     const nextSaved = !savedIds.includes(guid);
     setSavedIds((ids) => (nextSaved ? [...ids, guid] : ids.filter((id) => id !== guid)));
     void (nextSaved ? favoriteAdvert(guid) : unfavoriteAdvert(guid));
@@ -375,6 +391,11 @@ function Index() {
                     .filter(Boolean)
                     .join(", ");
                   const saved = savedIds.includes(advert.guid);
+                  const isOwner = Boolean(
+                    currentUserUuid &&
+                      advert.userUuid &&
+                      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+                  );
                   return (
                     <article key={advert.guid} className="group min-w-0">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
@@ -406,15 +427,21 @@ function Index() {
                             </span>
                           )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="absolute right-3 top-3 rounded-full"
-                          onClick={() => toggleSaved(advert.guid)}
-                          aria-label={saved ? "Remove from saved" : "Save listing"}
-                        >
-                          <Heart className={saved ? "fill-primary text-primary" : ""} />
-                        </Button>
+                        {isOwner ? (
+                          <span className="absolute right-3 top-3 rounded-sm bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
+                            Your listing
+                          </span>
+                        ) : (
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="absolute right-3 top-3 rounded-full"
+                            onClick={() => toggleSaved(advert.guid)}
+                            aria-label={saved ? "Remove from saved" : "Save listing"}
+                          >
+                            <Heart className={saved ? "fill-primary text-primary" : ""} />
+                          </Button>
+                        )}
                       </div>
                       <div className="pt-4">
                         <div className="flex items-start justify-between gap-3">
@@ -452,11 +479,13 @@ function Index() {
                             Floor {advert.floor}
                           </span>
                         </div>
-                        <div className="mt-3 flex items-center justify-end gap-3">
-                          <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
-                            Contact
-                          </Button>
-                        </div>
+                        {!isOwner && (
+                          <div className="mt-3 flex items-center justify-end gap-3">
+                            <Button size="sm" variant="outline" onClick={() => openContact(advert)}>
+                              Contact
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </article>
                   );
