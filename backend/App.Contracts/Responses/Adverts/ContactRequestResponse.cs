@@ -8,5 +8,7 @@ public record ContactRequestResponse(
     DateTime CreatedDate,
     string? SenderName = null,
     string? SenderEmail = null,
-    string? SenderPhone = null
+    string? SenderPhone = null,
+    Guid? AdvertUuid = null,
+    string? AdvertTitle = null
 );

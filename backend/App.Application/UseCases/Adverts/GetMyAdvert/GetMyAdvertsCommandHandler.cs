@@ -12,7 +12,7 @@ public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
         GetMyAdvertsCommand query,
         CancellationToken ct)
     {
-        var adverts = await advertRepository.GetByUserAsync(
+        var (adverts, totalCount) = await advertRepository.GetByUserAsync(
             query.UserUuid,
             query.Request.Page,
             query.Request.PageSize,
@@ -50,6 +50,6 @@ public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
                 advert.UserUuid))
             .ToList();
 
-        return new GetAdvertsResponse(response, query.Request.Page, query.Request.PageSize);
+        return new GetAdvertsResponse(response, query.Request.Page, query.Request.PageSize, totalCount);
     }
 }

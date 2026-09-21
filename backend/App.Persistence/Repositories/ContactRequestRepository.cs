@@ -18,6 +18,27 @@ public class ContactRequestRepository(DataContext context) : IContactRequestRepo
             .OrderByDescending(x => x.CreatedDate)
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<(ContactRequest Request, string AdvertTitle)>> GetReceivedByOwnerUserUuidAsync(Guid ownerUserUuid, CancellationToken ct)
+    {
+        var ownerAdverts = await context.Adverts
+            .Where(a => a.UserUuid == ownerUserUuid)
+            .Select(a => new { a.Uuid, a.Title })
+            .ToListAsync(ct);
+
+        var advertTitleMap = ownerAdverts.ToDictionary(a => a.Uuid, a => a.Title);
+        var ownerAdvertUuids = advertTitleMap.Keys.ToList();
+
+        var requests = await context.ContactRequests
+            .Where(cr => ownerAdvertUuids.Contains(cr.AdvertUuid))
+            .OrderByDescending(cr => cr.CreatedDate)
+            .ToListAsync(ct);
+
+        return requests
+            .Select(r => (r, advertTitleMap.TryGetValue(r.AdvertUuid, out var title) ? title : string.Empty))
+            .ToList();
+    }
+
     public async Task<ContactRequest?> GetByUuidAsync(Guid uuid, CancellationToken ct)
     {
         return await context.ContactRequests.FirstOrDefaultAsync(x => x.Guid == uuid, ct);

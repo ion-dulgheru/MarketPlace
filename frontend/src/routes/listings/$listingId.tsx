@@ -74,6 +74,7 @@ function ListingDetailsPage() {
       void navigate({ to: "/login" });
       return;
     }
+    if (isOwner) return;
     const nextSaved = !saved;
     setSaved(nextSaved);
     try {
@@ -194,15 +195,17 @@ function ListingDetailsPage() {
                   {advert.title}
                 </h1>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                className="shrink-0 rounded-full"
-                onClick={handleToggleFavorite}
-                aria-label={saved ? "Remove from saved" : "Save listing"}
-              >
-                <Heart className={saved ? "fill-primary text-primary" : ""} />
-              </Button>
+              {!isOwner && (
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="shrink-0 rounded-full"
+                  onClick={handleToggleFavorite}
+                  aria-label={saved ? "Remove from saved" : "Save listing"}
+                >
+                  <Heart className={saved ? "fill-primary text-primary" : ""} />
+                </Button>
+              )}
             </div>
             {location && (
               <p className="mt-5 flex items-center gap-2 text-muted-foreground">
@@ -223,7 +226,7 @@ function ListingDetailsPage() {
               </span>
               <span className="flex items-center gap-2">
                 <Layers className="size-4" />
-                Floor {advert.floor}
+                Floors {advert.floor}
               </span>
             </div>
 
