@@ -18,10 +18,10 @@ export interface CreateAdvertRequest {
   type: "Sale" | "Rent";
   buildingType: "Apartment" | "House";
   levels: number;
-  apartmentFloor?: number;
-  apartmentNumber?: string;
-  apartmentBlock?: string;
-  gardenSquareMeters?: number;
+  apartmentFloor?: number | undefined;
+  apartmentNumber?: string | undefined;
+  apartmentBlock?: string | undefined;
+  gardenSquareMeters?: number | undefined;
   address: CreateAdvertAddress;
 }
 
@@ -258,10 +258,10 @@ export interface UpdateAdvertRequest {
   floor: number;
   address: CreateAdvertAddress;
   levels?: number;
-  apartmentFloor?: number;
-  apartmentNumber?: string;
-  apartmentBlock?: string;
-  gardenSquareMeters?: number;
+  apartmentFloor?: number | undefined;
+  apartmentNumber?: string | undefined;
+  apartmentBlock?: string | undefined;
+  gardenSquareMeters?: number | undefined;
 }
 
 export async function updateAdvert(guid: string, data: UpdateAdvertRequest): Promise<void> {
