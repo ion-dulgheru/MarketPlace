@@ -9,4 +9,6 @@ public record RegisterUserCommand(
     string FirstName,
     string LastName,
     DateTime? DateOfBirth,
-    string? PhoneNumber) : ICommand<SignInResponse>;
+    string? PhoneNumber,
+    string CaptchaToken
+    ) : ICommand<SignInResponse>;

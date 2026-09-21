@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Email;
 using App.Infrastructure.Email;
+using App.Application.Abstractions.Captcha;
+using App.Infrastructure.Captcha;
 using Resend;
 namespace App.Infrastructure;
 
@@ -19,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
+        services.AddHttpClient<GoogleRecaptchaVerifier>();
+services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         services.AddHttpClient<ResendClient>();
 services.Configure<ResendClientOptions>(o =>
 {

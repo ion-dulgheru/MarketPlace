@@ -9,6 +9,7 @@ export interface RegisterRequest {
   lastName: string;
   dateOfBirth?: string | null;
   phoneNumber?: string | null;
+  captchaToken: string;
 }
 
 export interface AuthTokensResponse {

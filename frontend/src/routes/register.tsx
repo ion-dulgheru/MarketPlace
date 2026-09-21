@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerUser } from "@/api/auth";
+import { getCaptchaToken } from "@/lib/recaptcha";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -36,6 +37,7 @@ function RegisterPage() {
     const phoneNumber = (form.elements.namedItem("phoneNumber") as HTMLInputElement).value;
 
     try {
+      const captchaToken = await getCaptchaToken("register");
       await registerUser({
         email,
         password,
@@ -43,6 +45,7 @@ function RegisterPage() {
         lastName,
         dateOfBirth: dateOfBirth || null,
         phoneNumber: phoneNumber || null,
+        captchaToken,
       });
       void navigate({ to: "/" });
     } catch (err) {
