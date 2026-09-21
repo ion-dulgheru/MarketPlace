@@ -1,6 +1,6 @@
-import { Bell, KeyRound, LogOut, Menu, Plus, UserRound } from "lucide-react";
+import { Bell, Heart, KeyRound, LogOut, Menu, Plus, UserRound } from "lucide-react";
 import { Button } from "../ui/button";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
@@ -15,12 +15,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40  border-border bg-[#f5f9fa] backdrop-blur">
       <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-4 sm:px-7 lg:px-10">
-        <a href="#top" className="flex items-center gap-2" aria-label="OpenKey home">
+        <Link to="/" className="flex items-center gap-2" aria-label="OpenKey home">
           <span className="grid size-9 place-items-center rounded-md  text-black">
             <KeyRound className="size-5" />
           </span>
           <span className="font-display text-2xl">OpenKey</span>
-        </a>
+        </Link>
 
         <div className="flex items-center gap-2">
           {loggedIn ? (
@@ -32,6 +32,9 @@ export default function Header() {
                 title="Notifications"
               >
                 <Bell />
+              </Button>
+              <Button variant="ghost" onClick={() => void navigate({ to: "/savedhomes" })}>
+                <Heart className="size-4 text-primary" /> Saved listings
               </Button>
               <Button variant="ghost" onClick={() => void navigate({ to: "/account" })}>
                 <UserRound /> Account

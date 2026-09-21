@@ -114,16 +114,25 @@ function AccountPage() {
               <div className="border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                 <h2 className="font-display text-2xl">Your activity</h2>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <ActivityStat icon={Store} value={listingCount} label="Published listings" />
-                  <ActivityStat icon={Heart} value={savedCount} label="Saved homes" />
+                  <ActivityStat icon={Store} value={listingCount} label="Published listings" to="/mylistings" />
+                  <ActivityStat icon={Heart} value={savedCount} label="Saved listings" to="/savedhomes" />
                 </div>
-                <Link
-                  to="/mylistings"
-                  className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  View my active listings
-                  <ArrowRight className="size-4" />
-                </Link>
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    to="/mylistings"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    <Store className="size-4" />
+                    View my listings
+                  </Link>
+                  <Link
+                    to="/savedhomes"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <Heart className="size-4 text-primary" />
+                    View saved listings
+                  </Link>
+                </div>
                 <div className="mt-5 flex items-start gap-3 rounded-md bg-muted p-4 text-sm">
                   <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" />
                   <p className="text-muted-foreground">Use this account to publish homes as a seller and save or contact listings as a buyer.</p>
@@ -149,14 +158,45 @@ function InfoItem({ icon: Icon, label, value, compact = false }: { icon: typeof 
   );
 }
 
-function ActivityStat({ icon: Icon, value, label }: { icon: typeof Store; value: number; label: string }) {
-  return (
-    <div className="rounded-md border border-border p-4">
-      <Icon className="size-5 text-primary" />
+function ActivityStat({
+  icon: Icon,
+  value,
+  label,
+  to,
+}: {
+  icon: typeof Store;
+  value: number;
+  label: string;
+  to?: string;
+}) {
+  const content = (
+    <div
+      className={`group rounded-md border border-border p-4 transition-all duration-200 ${
+        to
+          ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm"
+          : ""
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <Icon className="size-5 text-primary" />
+        {to && (
+          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+        )}
+      </div>
       <p className="mt-3 text-3xl font-bold">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
+
+  if (to) {
+    return (
+      <Link to={to as any} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 function formatDate(value: string | null) {

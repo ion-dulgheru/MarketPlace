@@ -68,7 +68,7 @@ export const favoriteAdvert = (uuid: string) => setAdvertFavorite(uuid, true);
 export const unfavoriteAdvert = (uuid: string) => setAdvertFavorite(uuid, false);
 
 export interface GetFavoritesResponse {
-  items: Array<{ guid: string; [key: string]: unknown }>;
+  items: Advert[];
   page: number;
   pageSize: number;
   totalCount: number;
