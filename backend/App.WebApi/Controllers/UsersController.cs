@@ -1,13 +1,15 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App.Domain.Repositories;
 using App.Contracts.Requests.Users;
+using App.Application.UseCases.Users.ChangePassword;
 
 namespace App.WebApi.Controllers;
 
 [Authorize]
 [Route("api/users")]
-public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfWork) : BaseController
+public class UsersController(IUserRepository userRepository, ISender sender) : BaseController
 {
     [HttpGet("me")]
     public async Task<IActionResult> GetMe(CancellationToken ct = default)
@@ -36,16 +38,10 @@ public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfW
         [FromBody] ChangePasswordRequest request,
         CancellationToken ct = default)
     {
-        var user = await userRepository.GetByUuidAsync(UserUuid, ct);
+        var result = await sender.Send(
+            new ChangePasswordCommand(UserUuid, request.CurrentPassword, request.NewPassword),
+            ct);
 
-        if (user is null || !BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
-        {
-            return BadRequest("Current password is incorrect.");
-        }
-
-        user.ResetPassword(BCrypt.Net.BCrypt.HashPassword(request.NewPassword));
-        await unitOfWork.SaveChangesAsync(ct);
-
-        return NoContent();
+        return result.IsFailure ? HandleFailure(result) : NoContent();
     }
 }
