@@ -12,24 +12,25 @@ namespace App.WebApi.Controllers;
 public class AuthController(ISender sender) : BaseController
 {
     [HttpPost("register")]
-    public async Task<IActionResult> Register(
-        [FromBody] RegisterUserRequest request,
-        CancellationToken ct = default)
-    {
-        var result = await sender.Send(
-            new RegisterUserCommand(
-                request.Email,
-                request.Password,
-                request.FirstName,
-                request.LastName,
-                request.DateOfBirth,
-                request.PhoneNumber),
-            ct);
+public async Task<IActionResult> Register(
+    [FromBody] RegisterUserRequest request,
+    CancellationToken ct = default)
+{
+    var result = await sender.Send(
+        new RegisterUserCommand(
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName,
+            request.DateOfBirth,
+            request.PhoneNumber,
+            request.CaptchaToken),
+        ct);
 
-        return result.IsFailure
-            ? HandleFailure(result)
-            : Ok(result.Value);
-    }
+    return result.IsFailure
+        ? HandleFailure(result)
+        : Ok(result.Value);
+}
       [HttpPost("login")]
 public async Task<IActionResult> Login(
     [FromBody] LoginRequest request,
