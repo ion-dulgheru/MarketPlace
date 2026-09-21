@@ -6,4 +6,5 @@ public record RegisterUserRequest(
     string FirstName,
     string LastName,
     DateTime? DateOfBirth,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string CaptchaToken);

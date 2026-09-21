@@ -1,3 +1,4 @@
+using App.Application.Abstractions.Captcha;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
 using App.Application.UseCases.Users.SignIn;
@@ -12,13 +13,35 @@ public class RegisterUserCommandHandler(
     IUserSessionRepository userSessionRepository,
     IJwtTokenGenerator jwtTokenGenerator,
     IRefreshTokenGenerator refreshTokenGenerator,
+    ICaptchaVerifier captchaVerifier,
     IUnitOfWork unitOfWork)
     : ICommandHandler<RegisterUserCommand, SignInResponse>
 {
     private const int RefreshTokenExpiryDays = 30;
+    private const double MinimumCaptchaScore = 0.5;
 
     public async Task<Result<SignInResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.CaptchaToken))
+        {
+            return Result.Failure<SignInResponse>(Error.Validation(
+                "Captcha.TokenMissing", "Captcha token is required."));
+        }
+
+        var captcha = await captchaVerifier.VerifyAsync(request.CaptchaToken, cancellationToken);
+
+        if (!captcha.Success)
+        {
+            return Result.Failure<SignInResponse>(Error.Validation(
+                "Captcha.InvalidToken", "Captcha token is invalid or expired."));
+        }
+
+        if (captcha.Score is null || captcha.Score < MinimumCaptchaScore)
+        {
+            return Result.Failure<SignInResponse>(Error.Forbidden(
+                "Captcha.ScoreTooLow", "Captcha verification failed."));
+        }
+
         var emailExists = await userRepository.EmailExistsAsync(request.Email, cancellationToken);
         if (emailExists)
         {
