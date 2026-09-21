@@ -219,7 +219,7 @@ function SavedHomesPage() {
                       {advert.floor ? (
                         <span className="flex items-center gap-1">
                           <Layers className="size-4 text-foreground" />
-                          Floor {advert.floor}
+                          Floors {advert.floor}
                         </span>
                       ) : null}
                     </div>

@@ -233,7 +233,7 @@ function MyListingsPage() {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Layers className="size-4" />
-                        Floor {advert.floor}
+                        Floors {advert.floor}
                       </span>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center justify-end gap-2">

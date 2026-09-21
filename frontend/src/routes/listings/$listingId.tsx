@@ -226,7 +226,7 @@ function ListingDetailsPage() {
               </span>
               <span className="flex items-center gap-2">
                 <Layers className="size-4" />
-                Floor {advert.floor}
+                Floors {advert.floor}
               </span>
             </div>
 

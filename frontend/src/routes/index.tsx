@@ -476,7 +476,7 @@ function Index() {
                           </span>
                           <span className="flex items-center gap-1.5">
                             <Layers className="size-4" />
-                            Floor {advert.floor}
+                            Floors {advert.floor}
                           </span>
                         </div>
                         {!isOwner && (
