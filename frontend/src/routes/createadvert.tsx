@@ -115,6 +115,8 @@ function CreateAdvertPage() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (!file) continue;
+
       if (!file.type.startsWith("image/")) {
         setPhotoError("Only image files (JPEG, PNG, WebP, etc.) are supported.");
         continue;
@@ -151,8 +153,9 @@ function CreateAdvertPage() {
         URL.revokeObjectURL(target.previewUrl);
       }
       const updated = current.filter((p) => p.id !== id);
-      if (target?.isPrimary && updated.length > 0) {
-        updated[0] = { ...updated[0], isPrimary: true };
+      const first = updated[0];
+      if (target?.isPrimary && first) {
+        updated[0] = { ...first, isPrimary: true };
       }
       return updated;
     });
@@ -288,9 +291,11 @@ function CreateAdvertPage() {
 
       if (advertId && photos.length > 0) {
         for (let i = 0; i < photos.length; i++) {
+          const photo = photos[i];
+          if (!photo) continue;
           setStatusMessage(`Uploading photo ${i + 1} of ${photos.length}…`);
           try {
-            await addAdvertPhoto(advertId, photos[i].file, photos[i].isPrimary);
+            await addAdvertPhoto(advertId, photo.file, photo.isPrimary);
           } catch (photoErr) {
             console.error(`Failed to upload photo ${i + 1}:`, photoErr);
           }

@@ -1,0 +1,12 @@
+using FluentValidation;
+
+namespace App.Application.UseCases.Users.ResetPassword;
+
+public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
+{
+    public ResetPasswordCommandValidator()
+    {
+        RuleFor(x => x.Token).NotEmpty();
+        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8); // aliniază la regula voastră reală de la Register
+    }
+}

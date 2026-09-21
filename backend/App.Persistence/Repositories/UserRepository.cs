@@ -38,4 +38,9 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
     {
         return await context.UserDetails.FirstOrDefaultAsync(x => x.UserId == userId, ct);
     }
+    public async Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default)
+{
+    return await context.Users
+        .FirstOrDefaultAsync(u => u.PasswordResetTokenHash == tokenHash, ct);
+}
 }

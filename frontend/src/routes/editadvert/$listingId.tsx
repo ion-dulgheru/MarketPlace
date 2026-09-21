@@ -161,6 +161,8 @@ function EditAdvertPage() {
     const validFiles: File[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (!file) continue;
+
       if (!file.type.startsWith("image/")) {
         setPhotoError("Only image files (JPEG, PNG, WebP, etc.) are supported.");
         continue;

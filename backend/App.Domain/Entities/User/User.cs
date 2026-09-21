@@ -12,6 +12,8 @@ public class User : PublicEntity
     public bool EmailVerification { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockedUntil { get; private set; }
+    public string? PasswordResetTokenHash { get; private set; }
+public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     private User() { }
 
@@ -41,4 +43,16 @@ public class User : PublicEntity
         FailedLoginAttempts = 0;
         LockedUntil = null;
     }
+    public void SetPasswordResetToken(string tokenHash, DateTime expiresAt)
+{
+    PasswordResetTokenHash = tokenHash;
+    PasswordResetTokenExpiry = expiresAt;
+}
+
+public void ResetPassword(string newPasswordHash)
+{
+    PasswordHash = newPasswordHash;
+    PasswordResetTokenHash = null;
+    PasswordResetTokenExpiry = null;
+}
 }
