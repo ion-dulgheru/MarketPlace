@@ -17,3 +17,20 @@ export async function getCurrentUser(): Promise<CurrentUser> {
 
   return (await response.json()) as CurrentUser;
 }
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+  const response = await apiFetch("/api/users/me/password", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to change password" }));
+    throw new Error((error as { message?: string })?.message ?? "Failed to change password");
+  }
+}
