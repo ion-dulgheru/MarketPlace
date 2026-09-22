@@ -141,7 +141,9 @@ export async function markContactRequestAsRead(uuid: string): Promise<void> {
     const error = await response
       .json()
       .catch(() => ({ message: "Failed to mark contact request as read" }));
-    throw new Error((error as { message?: string }).message ?? "Failed to mark contact request as read");
+    throw new Error(
+      (error as { message?: string }).message ?? "Failed to mark contact request as read",
+    );
   }
 }
 

@@ -2,11 +2,24 @@ using App.Application;
 using App.Infrastructure;
 using App.Persistence;
 using System.Text;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Cryptography.X509Certificates;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Load Azure Key Vault if configured (via Managed Identity or local Azure CLI credential)
+var keyVaultUri = builder.Configuration["KeyVault:Uri"] ?? builder.Configuration["KeyVault__Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    var clientId = builder.Configuration["AZURE_CLIENT_ID"] ?? builder.Configuration["Azure:ClientId"];
+    var credential = !string.IsNullOrWhiteSpace(clientId)
+        ? new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId })
+        : new DefaultAzureCredential();
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), credential);
+}
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -56,14 +69,25 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
-
 builder.Services.AddCors(options =>
 {
+    var frontendBaseUrl = builder.Configuration["Frontend:BaseUrl"];
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins("http://localhost:5173", "http://localhost:8080")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+                if (uri.Host.EndsWith(".azurestaticapps.net", StringComparison.OrdinalIgnoreCase)) return true;
+                if (!string.IsNullOrWhiteSpace(frontendBaseUrl) &&
+                    origin.TrimEnd('/').Equals(frontendBaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -86,5 +110,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapGet("/health/ready", () => Results.Ok(new { status = "ready" }));
+app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 
 app.Run();
+

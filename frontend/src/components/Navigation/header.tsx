@@ -113,7 +113,10 @@ export default function Header() {
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-80 sm:w-96 p-0 shadow-lg border border-border bg-card rounded-lg overflow-hidden">
+                <PopoverContent
+                  align="end"
+                  className="w-80 sm:w-96 p-0 shadow-lg border border-border bg-card rounded-lg overflow-hidden"
+                >
                   <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/40">
                     <div className="flex items-center gap-2">
                       <Bell className="size-4 text-primary" />

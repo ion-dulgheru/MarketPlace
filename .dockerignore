@@ -1,0 +1,11 @@
+**/.git
+**/.github
+**/.vscode
+**/.agents
+**/bin
+**/obj
+**/node_modules
+**/.output
+frontend/
+docs/
+*.md
