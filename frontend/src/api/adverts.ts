@@ -108,9 +108,7 @@ export async function reportAdvert(uuid: string, reason: string): Promise<void> 
   });
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Failed to submit report" }));
+    const error = await response.json().catch(() => ({ message: "Failed to submit report" }));
     throw new Error((error as { message?: string }).message ?? "Failed to submit report");
   }
 }
@@ -155,7 +153,9 @@ export async function markContactRequestAsRead(uuid: string): Promise<void> {
     const error = await response
       .json()
       .catch(() => ({ message: "Failed to mark contact request as read" }));
-    throw new Error((error as { message?: string }).message ?? "Failed to mark contact request as read");
+    throw new Error(
+      (error as { message?: string }).message ?? "Failed to mark contact request as read",
+    );
   }
 }
 

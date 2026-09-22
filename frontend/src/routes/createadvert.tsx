@@ -262,7 +262,8 @@ function CreateAdvertPage() {
     setStatusMessage("Creating listing…");
 
     try {
-      const computedFloor = buildingType === "Apartment" && apartmentFloor ? Number(apartmentFloor) : Number(levels);
+      const computedFloor =
+        buildingType === "Apartment" && apartmentFloor ? Number(apartmentFloor) : Number(levels);
 
       const created = await createAdvert({
         title: title.trim(),
@@ -277,7 +278,8 @@ function CreateAdvertPage() {
         apartmentFloor: apartmentFloor ? Number(apartmentFloor) : undefined,
         apartmentNumber: apartmentNumber.trim() || undefined,
         apartmentBlock: apartmentBlock.trim() || undefined,
-        gardenSquareMeters: buildingType === "House" && gardenSquareMeters ? Number(gardenSquareMeters) : undefined,
+        gardenSquareMeters:
+          buildingType === "House" && gardenSquareMeters ? Number(gardenSquareMeters) : undefined,
         address: {
           country: country.trim(),
           city: city.trim(),
@@ -318,7 +320,11 @@ function CreateAdvertPage() {
 
   const stepsMeta = [
     { num: 1, title: "Advert Type", desc: "Type & building" },
-    { num: 2, title: "Property Details", desc: buildingType === "Apartment" ? "Apartment details" : "House details" },
+    {
+      num: 2,
+      title: "Property Details",
+      desc: buildingType === "Apartment" ? "Apartment details" : "House details",
+    },
     { num: 3, title: "Address", desc: "Location & street" },
     { num: 4, title: "Price", desc: "Pricing & publish" },
   ];
@@ -413,7 +419,9 @@ function CreateAdvertPage() {
 
                 {/* Listing Type: Sale or Rent */}
                 <div>
-                  <span className="mb-2 block text-xs font-semibold text-foreground">Listing type</span>
+                  <span className="mb-2 block text-xs font-semibold text-foreground">
+                    Listing type
+                  </span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -444,7 +452,9 @@ function CreateAdvertPage() {
 
                 {/* Building Type: Apartment or House */}
                 <div>
-                  <span className="mb-2 block text-xs font-semibold text-foreground">Building type</span>
+                  <span className="mb-2 block text-xs font-semibold text-foreground">
+                    Building type
+                  </span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -457,7 +467,9 @@ function CreateAdvertPage() {
                     >
                       <Building2 className="size-7" />
                       <span className="text-sm font-semibold">Apartment</span>
-                      <span className="text-xs text-muted-foreground">Flat in a residential block</span>
+                      <span className="text-xs text-muted-foreground">
+                        Flat in a residential block
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -470,7 +482,9 @@ function CreateAdvertPage() {
                     >
                       <Home className="size-7" />
                       <span className="text-sm font-semibold">House</span>
-                      <span className="text-xs text-muted-foreground">Individual house or villa</span>
+                      <span className="text-xs text-muted-foreground">
+                        Individual house or villa
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -734,7 +748,11 @@ function CreateAdvertPage() {
                       onChange={(e) => handleAddFiles(e.target.files)}
                     />
                     <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
-                      {photos.length > 0 ? <ImageIcon className="size-5" /> : <Upload className="size-5" />}
+                      {photos.length > 0 ? (
+                        <ImageIcon className="size-5" />
+                      ) : (
+                        <Upload className="size-5" />
+                      )}
                     </div>
                     <p className="mt-2 text-sm font-medium">
                       {photos.length > 0 ? "Add more photos" : "Choose photos or drag & drop"}
@@ -894,7 +912,9 @@ function CreateAdvertPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-xs text-muted-foreground block">Listing & Building</span>
+                      <span className="text-xs text-muted-foreground block">
+                        Listing & Building
+                      </span>
                       <span className="font-medium text-foreground">
                         {listingType === "Sale" ? "For Sale" : "For Rent"} • {buildingType}
                       </span>
@@ -903,7 +923,9 @@ function CreateAdvertPage() {
                       <span className="text-xs text-muted-foreground block">Dimensions</span>
                       <span className="font-medium text-foreground">
                         {surfaceArea} m² • {rooms} rooms • {levels} levels
-                        {buildingType === "House" && gardenSquareMeters && ` • ${gardenSquareMeters} m² garden`}
+                        {buildingType === "House" &&
+                          gardenSquareMeters &&
+                          ` • ${gardenSquareMeters} m² garden`}
                       </span>
                     </div>
                     <div className="col-span-2">

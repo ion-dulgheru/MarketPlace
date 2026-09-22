@@ -50,7 +50,10 @@ function ForgotPasswordPage() {
             </span>
             <span className="font-display text-2xl">OpenKey</span>
           </Link>
-          <Link to="/login" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="size-4" /> Back to login
           </Link>
         </header>
@@ -70,10 +73,18 @@ function ForgotPasswordPage() {
             <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
               <label className="grid gap-1.5 text-sm font-medium">
                 Email
-                <input name="email" required type="email" placeholder="you@example.com" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+                <input
+                  name="email"
+                  required
+                  type="email"
+                  placeholder="you@example.com"
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+                />
               </label>
               {error && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
               )}
               <Button type="submit" disabled={loading} className="mt-2 w-full">
                 {loading ? "Sending…" : "Send reset link"}

@@ -91,11 +91,7 @@ export function ReportAdvertDialog({
               <Button variant="outline" onClick={handleClose} disabled={sending}>
                 Cancel
               </Button>
-              <Button
-                variant="destructive"
-                onClick={() => void handleSubmit()}
-                disabled={sending}
-              >
+              <Button variant="destructive" onClick={() => void handleSubmit()} disabled={sending}>
                 {sending && <Loader2 className="animate-spin" />}
                 Submit report
               </Button>

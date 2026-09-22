@@ -23,9 +23,10 @@ function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const token = typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("token") ?? ""
-    : "";
+  const token =
+    typeof window !== "undefined"
+      ? (new URLSearchParams(window.location.search).get("token") ?? "")
+      : "";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -67,7 +68,10 @@ function ResetPasswordPage() {
             </span>
             <span className="font-display text-2xl">OpenKey</span>
           </Link>
-          <Link to="/login" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="size-4" /> Back to login
           </Link>
         </header>
@@ -90,14 +94,30 @@ function ResetPasswordPage() {
             <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
               <label className="grid gap-1.5 text-sm font-medium">
                 New password
-                <input name="newPassword" required minLength={8} type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+                <input
+                  name="newPassword"
+                  required
+                  minLength={8}
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+                />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
                 Confirm new password
-                <input name="confirmPassword" required minLength={8} type="password" placeholder="••••••••" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+                <input
+                  name="confirmPassword"
+                  required
+                  minLength={8}
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+                />
               </label>
               {error && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
               )}
               <Button type="submit" disabled={loading} className="mt-2 w-full">
                 {loading ? "Saving…" : "Reset password"}

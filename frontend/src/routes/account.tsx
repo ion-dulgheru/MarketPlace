@@ -72,14 +72,22 @@ function AccountPage() {
 
   const fullName = user ? [user.firstName, user.lastName].filter(Boolean).join(" ") : "";
   const initials = fullName
-    ? fullName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()
+    ? fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "OK";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Back to browse
         </Link>
 
@@ -88,7 +96,9 @@ function AccountPage() {
         ) : error || !user ? (
           <div className="mt-12 rounded-lg border border-border bg-card p-8 text-center">
             <h1 className="font-display text-3xl">Account unavailable</h1>
-            <p className="mt-2 text-sm text-muted-foreground">We could not load your account details.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We could not load your account details.
+            </p>
           </div>
         ) : (
           <section className="mt-8 overflow-hidden rounded-lg border border-border bg-card">
@@ -99,7 +109,9 @@ function AccountPage() {
                     {initials}
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">OpenKey member</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                      OpenKey member
+                    </p>
                     <h1 className="mt-1 font-display text-4xl">{fullName || "Your account"}</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Buyer and seller profile</p>
                   </div>
@@ -125,7 +137,11 @@ function AccountPage() {
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <InfoItem icon={Mail} label="Email" value={user.email} />
                   <InfoItem icon={Phone} label="Phone" value={user.phoneNumber || "Not provided"} />
-                  <InfoItem icon={CalendarDays} label="Date of birth" value={formatDate(user.dateOfBirth)} />
+                  <InfoItem
+                    icon={CalendarDays}
+                    label="Date of birth"
+                    value={formatDate(user.dateOfBirth)}
+                  />
                   <InfoItem icon={UserRound} label="Account ID" value={user.uuid} compact />
                 </div>
               </div>
@@ -133,8 +149,18 @@ function AccountPage() {
               <div className="border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                 <h2 className="font-display text-2xl">Your activity</h2>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <ActivityStat icon={Store} value={listingCount} label="Published listings" to="/mylistings" />
-                  <ActivityStat icon={Heart} value={savedCount} label="Saved listings" to="/savedhomes" />
+                  <ActivityStat
+                    icon={Store}
+                    value={listingCount}
+                    label="Published listings"
+                    to="/mylistings"
+                  />
+                  <ActivityStat
+                    icon={Heart}
+                    value={savedCount}
+                    label="Saved listings"
+                    to="/savedhomes"
+                  />
                 </div>
                 <div className="mt-5 flex flex-col sm:flex-row gap-3">
                   <Link
@@ -154,7 +180,10 @@ function AccountPage() {
                 </div>
                 <div className="mt-5 flex items-start gap-3 rounded-md bg-muted p-4 text-sm">
                   <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" />
-                  <p className="text-muted-foreground">Use this account to publish homes as a seller and save or contact listings as a buyer.</p>
+                  <p className="text-muted-foreground">
+                    Use this account to publish homes as a seller and save or contact listings as a
+                    buyer.
+                  </p>
                 </div>
               </div>
             </div>
@@ -260,7 +289,9 @@ function ChangePasswordSection() {
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
         )}
         {success && (
-          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">Password updated successfully.</p>
+          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            Password updated successfully.
+          </p>
         )}
         <Button type="submit" disabled={loading} className="mt-2 w-full sm:w-auto">
           {loading ? "Saving…" : "Update password"}
@@ -270,13 +301,29 @@ function ChangePasswordSection() {
   );
 }
 
-function InfoItem({ icon: Icon, label, value, compact = false }: { icon: typeof Mail; label: string; value: string; compact?: boolean }) {
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+  compact = false,
+}: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
   return (
     <div className="flex min-w-0 gap-3 rounded-md border border-border p-4">
       <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={compact ? "mt-1 break-all text-xs font-medium" : "mt-1 break-words text-sm font-medium"}>{value}</p>
+        <p
+          className={
+            compact ? "mt-1 break-all text-xs font-medium" : "mt-1 break-words text-sm font-medium"
+          }
+        >
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -296,9 +343,7 @@ function ActivityStat({
   const content = (
     <div
       className={`group rounded-md border border-border p-4 transition-all duration-200 ${
-        to
-          ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm"
-          : ""
+        to ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm" : ""
       }`}
     >
       <div className="flex items-center justify-between">
