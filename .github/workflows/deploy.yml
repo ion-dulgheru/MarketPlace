@@ -1,0 +1,387 @@
+name: Deploy MarketPlace to Azure
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: marketplace-dev
+  AZURE_LOCATION: westeurope
+  ENVIRONMENT_NAME: dev
+
+jobs:
+  build:
+    name: 1. Build & Test
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_tag.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/RealEstateMarketplace.slnx
+
+      - name: Build backend
+        run: dotnet build backend/RealEstateMarketplace.slnx --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test backend/RealEstateMarketplace.slnx --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Set image tag
+        id: set_tag
+        run: |
+          TAG=$(git rev-parse --short=8 HEAD)
+          echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Computed commit tag: ${TAG}"
+
+  infra:
+    name: 2. Infrastructure as Code (Bicep)
+    runs-on: ubuntu-latest
+    outputs:
+      acr_login_server: ${{ steps.deploy_bicep.outputs.acrLoginServer }}
+      acr_name: ${{ steps.deploy_bicep.outputs.acrName }}
+      key_vault_name: ${{ steps.deploy_bicep.outputs.keyVaultName }}
+      postgres_fqdn: ${{ steps.deploy_bicep.outputs.postgresServerFqdn }}
+      postgres_server_name: ${{ steps.deploy_bicep.outputs.postgresServerName }}
+      container_app_name: ${{ steps.deploy_bicep.outputs.containerAppName }}
+      static_web_app_name: ${{ steps.deploy_bicep.outputs.staticWebAppName }}
+      static_web_app_hostname: ${{ steps.deploy_bicep.outputs.staticWebAppDefaultHostname }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Azure Infrastructure via Bicep
+        id: deploy_bicep
+        uses: azure/arm-deploy@v2
+        with:
+          scope: subscription
+          region: ${{ env.AZURE_LOCATION }}
+          template: ./.infra/main.bicep
+          parameters: >
+            environmentName=${{ env.ENVIRONMENT_NAME }}
+            location=${{ env.AZURE_LOCATION }}
+            dbAdminPassword="${{ secrets.DB_ADMIN_PASSWORD }}"
+
+  image:
+    name: 3. Container Image (Docker & Trivy)
+    runs-on: ubuntu-latest
+    needs: [build, infra]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name ${{ needs.infra.outputs.acr_name }}
+
+      - name: Build Docker container image
+        env:
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          docker build -t ${ACR_SERVER}/marketplace-api:${TAG} -t ${ACR_SERVER}/marketplace-api:latest -f backend/Dockerfile backend
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.infra.outputs.acr_login_server }}/marketplace-api:${{ needs.build.outputs.image_tag }}
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Docker container image
+        env:
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          docker push ${ACR_SERVER}/marketplace-api:${TAG}
+          docker push ${ACR_SERVER}/marketplace-api:latest
+
+  migrate:
+    name: 4. Database Migrations
+    runs-on: ubuntu-latest
+    needs: [build, infra]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef --version 10.*
+
+      - name: Build self-contained migration bundle
+        run: |
+          dotnet ef migrations bundle \
+            --project backend/App.Persistence \
+            --startup-project backend/App.WebApi \
+            --output ./efbundle \
+            --self-contained -r linux-x64
+          chmod +x ./efbundle
+
+      - name: Whitelist GitHub Runner IP in PostgreSQL Firewall
+        id: whitelist_ip
+        env:
+          PG_SERVER: ${{ needs.infra.outputs.postgres_server_name }}
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "runner_ip=${RUNNER_IP}" >> "$GITHUB_OUTPUT"
+          RULE_NAME="AllowRunner-${{ github.run_id }}"
+          echo "rule_name=${RULE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Adding temporary firewall rule ${RULE_NAME} for IP ${RUNNER_IP}..."
+          az postgres flexible-server firewall-rule create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "$PG_SERVER" \
+            --rule-name "$RULE_NAME" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+
+      - name: Apply EF Core Migrations
+        env:
+          PG_FQDN: ${{ needs.infra.outputs.postgres_fqdn }}
+          DB_PASS: ${{ secrets.DB_ADMIN_PASSWORD }}
+        run: |
+          CONN_STR="Host=${PG_FQDN};Port=5432;Database=marketplace_db;Username=psqladmin;Password=${DB_PASS};Ssl Mode=Require;Trust Server Certificate=true"
+          echo "Executing efbundle against ${PG_FQDN}..."
+          ./efbundle --connection "$CONN_STR"
+
+      - name: Store connection string in Azure Key Vault
+        env:
+          KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
+          PG_FQDN: ${{ needs.infra.outputs.postgres_fqdn }}
+          DB_PASS: ${{ secrets.DB_ADMIN_PASSWORD }}
+        run: |
+          CONN_STR="Host=${PG_FQDN};Port=5432;Database=marketplace_db;Username=psqladmin;Password=${DB_PASS};Ssl Mode=Require;Trust Server Certificate=true"
+          az keyvault secret set --vault-name "$KV_NAME" --name "ConnectionStrings--Default" --value "$CONN_STR"
+
+      - name: Store JWT signing certificate in Azure Key Vault
+        env:
+          KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
+          JWT_CERT_BASE64: ${{ secrets.JWT_SIGNING_CERTIFICATE_BASE64 }}
+          JWT_CERT_PASSWORD: ${{ secrets.JWT_CERTIFICATE_PASSWORD }}
+        run: |
+          az keyvault secret set --vault-name "$KV_NAME" --name "Jwt--CertificateBase64" --value "$JWT_CERT_BASE64"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Jwt--CertificatePassword" --value "$JWT_CERT_PASSWORD"
+
+      - name: Store Email, Captcha and Frontend settings in Azure Key Vault
+        env:
+          KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+          STATIC_WEB_APP_HOSTNAME: ${{ needs.infra.outputs.static_web_app_hostname }}
+        run: |
+          az keyvault secret set --vault-name "$KV_NAME" --name "Resend--ApiKey" --value "$RESEND_API_KEY"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Recaptcha--SecretKey" --value "$RECAPTCHA_SECRET_KEY"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${STATIC_WEB_APP_HOSTNAME}"
+
+      - name: Remove Runner IP from PostgreSQL Firewall
+        if: always()
+        env:
+          PG_SERVER: ${{ needs.infra.outputs.postgres_server_name }}
+          RULE_NAME: ${{ steps.whitelist_ip.outputs.rule_name }}
+        run: |
+          if [ -n "$RULE_NAME" ]; then
+            echo "Deleting temporary firewall rule ${RULE_NAME}..."
+            az postgres flexible-server firewall-rule delete \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name "$PG_SERVER" \
+              --rule-name "$RULE_NAME" \
+              --yes || true
+          fi
+
+  deploy-api:
+    name: 5. Deploy API (Zero-Downtime Blue/Green)
+    runs-on: ubuntu-latest
+    needs: [build, infra, image, migrate]
+    outputs:
+      api_fqdn: ${{ steps.get_fqdn.outputs.api_fqdn }}
+    steps:
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy new Container App revision
+        env:
+          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          IMAGE_URI="${ACR_SERVER}/marketplace-api:${TAG}"
+          echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI} with revision suffix ${TAG}..."
+          az containerapp update \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image "$IMAGE_URI" \
+            --revision-suffix "$TAG"
+
+      - name: Monitor revision health (Readiness Probe)
+        env:
+          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          REVISION_NAME="${APP_NAME}--${TAG}"
+          echo "Monitoring readiness probe for revision ${REVISION_NAME}..."
+          READY=false
+          for i in {1..30}; do
+            RUNNING_STATE=$(az containerapp revision show \
+              --name "$APP_NAME" \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --revision "$REVISION_NAME" \
+              --query "properties.runningState" -o tsv 2>/dev/null || echo "Starting")
+            HEALTH_STATE=$(az containerapp revision show \
+              --name "$APP_NAME" \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --revision "$REVISION_NAME" \
+              --query "properties.healthState" -o tsv 2>/dev/null || echo "Unknown")
+            echo "Attempt $i/30: State=${RUNNING_STATE}, Health=${HEALTH_STATE}"
+            if [ "$RUNNING_STATE" = "Running" ]; then
+              echo "Revision is running and passed readiness checks!"
+              READY=true
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "$READY" != "true" ]; then
+            echo "Revision ${REVISION_NAME} failed readiness probe! Aborting traffic shift."
+            az containerapp revision show \
+              --name "$APP_NAME" \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --revision "$REVISION_NAME"
+            exit 1
+          fi
+
+      - name: Shift 100% traffic to new revision
+        env:
+          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          REVISION_NAME="${APP_NAME}--${TAG}"
+          echo "Switching 100% traffic to healthy revision ${REVISION_NAME}..."
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --revision-weight "${REVISION_NAME}=100"
+
+      - name: Capture API FQDN
+        id: get_fqdn
+        env:
+          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+        run: |
+          FQDN=$(az containerapp show \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "api_fqdn=${FQDN}" >> "$GITHUB_OUTPUT"
+          echo "API FQDN: https://${FQDN}"
+
+  deploy-web:
+    name: 6. Deploy Web Frontend (Static Web Apps)
+    runs-on: ubuntu-latest
+    needs: [infra, deploy-api]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve Static Web App deployment token
+        id: swa_token
+        env:
+          SITE_NAME: ${{ needs.infra.outputs.static_web_app_name }}
+        run: |
+          TOKEN=$(az staticwebapp secrets list \
+            --name "$SITE_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Build frontend bundle with API URL
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://${{ needs.deploy-api.outputs.api_fqdn }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend"
+          output_location: ".output/public"
+          skip_app_build: true
+
+  verify:
+    name: 7. Verify & Smoke Test
+    runs-on: ubuntu-latest
+    needs: [deploy-api, infra]
+    steps:
+      - name: Smoke test API health endpoint
+        env:
+          API_URL: https://${{ needs.deploy-api.outputs.api_fqdn }}
+        run: |
+          echo "Probing API at ${API_URL}/health/ready..."
+          curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -i "${API_URL}/health/ready"
+
+      - name: Smoke test Static Web App
+        env:
+          WEB_HOST: ${{ needs.infra.outputs.static_web_app_hostname }}
+        run: |
+          echo "Probing Frontend at https://${WEB_HOST}..."
+          curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -I "https://${WEB_HOST}"
