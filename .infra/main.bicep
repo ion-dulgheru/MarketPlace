@@ -154,10 +154,7 @@ module containerApp 'modules/container-app.bicep' = {
     rg
   ]
 }
-
-// 9. Azure Static Web App (Frontend UI)
-// Static Web Apps is supported in specific regions (e.g. westeurope, northeurope, eastus2)
-var staticSiteLocation = (location == 'westeurope' || location == 'northeurope' || location == 'eastus2' || location == 'westus2') ? location : 'westeurope'
+ var staticSiteLocation = location
 
 module staticSite 'modules/static-site.bicep' = {
   name: 'deploy-static-site'
