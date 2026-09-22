@@ -10,9 +10,6 @@ param location string = 'swedencentral'
 @secure()
 param dbAdminPassword string
 
-@description('Container image tag to deploy')
-param imageTag string = 'latest'
-
 @description('Optional override for backend API container image')
 param apiImage string = ''
 
