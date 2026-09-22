@@ -33,6 +33,21 @@ resource secretsUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
   }
 }
 
+// Key Vault Secrets Officer: b86a8fe4-44ce-4948-aee5-eccb2c155cd7
+// Grants the CI pipeline's own identity (whoever runs this deployment) write
+// access to secrets — needed for the `az keyvault secret set` steps in deploy.yml.
+var keyVaultSecretsOfficerRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
+
+resource secretsOfficerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, deployer().objectId, keyVaultSecretsOfficerRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: keyVaultSecretsOfficerRoleId
+    principalId: deployer().objectId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output id string = keyVault.id
 output name string = keyVault.name
 output vaultUri string = keyVault.properties.vaultUri
