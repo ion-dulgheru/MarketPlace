@@ -250,34 +250,25 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Configure ACR registry credentials
+      - name: Deploy new Container App revision
         env:
           APP_NAME: ${{ needs.infra.outputs.container_app_name }}
           ACR_NAME: ${{ needs.infra.outputs.acr_name }}
           ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
         run: |
           ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query "username" -o tsv)
           ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
           echo "::add-mask::$ACR_PASSWORD"
-          az containerapp registry set \
-            --name "$APP_NAME" \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --server "$ACR_SERVER" \
-            --username "$ACR_USERNAME" \
-            --password "$ACR_PASSWORD"
-
-      - name: Deploy new Container App revision
-        env:
-          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
-          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
-          TAG: ${{ needs.build.outputs.image_tag }}
-        run: |
           IMAGE_URI="${ACR_SERVER}/marketplace-api:${TAG}"
           echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
           az containerapp update \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image "$IMAGE_URI"
+            --image "$IMAGE_URI" \
+            --registry-server "$ACR_SERVER" \
+            --registry-username "$ACR_USERNAME" \
+            --registry-password "$ACR_PASSWORD"
 
       - name: Monitor revision health (Readiness Probe)
         env:
@@ -387,34 +378,25 @@ jobs:
           docker push ${ACR_SERVER}/marketplace-web:${TAG}
           docker push ${ACR_SERVER}/marketplace-web:latest
 
-      - name: Configure ACR registry credentials
+      - name: Deploy new Container App revision
         env:
           APP_NAME: ${{ needs.infra.outputs.frontend_container_app_name }}
           ACR_NAME: ${{ needs.infra.outputs.acr_name }}
           ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
         run: |
           ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query "username" -o tsv)
           ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
           echo "::add-mask::$ACR_PASSWORD"
-          az containerapp registry set \
-            --name "$APP_NAME" \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --server "$ACR_SERVER" \
-            --username "$ACR_USERNAME" \
-            --password "$ACR_PASSWORD"
-
-      - name: Deploy new Container App revision
-        env:
-          APP_NAME: ${{ needs.infra.outputs.frontend_container_app_name }}
-          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
-          TAG: ${{ needs.build.outputs.image_tag }}
-        run: |
           IMAGE_URI="${ACR_SERVER}/marketplace-web:${TAG}"
           echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
           az containerapp update \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image "$IMAGE_URI"
+            --image "$IMAGE_URI" \
+            --registry-server "$ACR_SERVER" \
+            --registry-username "$ACR_USERNAME" \
+            --registry-password "$ACR_PASSWORD"
 
   verify:
     name: 7. Verify & Smoke Test
