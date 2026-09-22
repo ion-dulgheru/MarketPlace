@@ -4,7 +4,7 @@ targetScope = 'subscription'
 param environmentName string = 'dev'
 
 @description('Primary Azure region for all regional resources')
-param location string = 'westeurope'
+param location string = 'germanywestcentral'
 
 @description('Administrator password for Azure PostgreSQL Flexible Server')
 @secure()
@@ -12,6 +12,12 @@ param dbAdminPassword string
 
 @description('Container image tag to deploy')
 param imageTag string = 'latest'
+
+@description('Optional override for backend API container image')
+param apiImage string = ''
+
+@description('Optional override for frontend web container image')
+param webImage string = ''
 
 var baseName = 'marketplace'
 var uniqueSuffix = substring(uniqueString(subscription().id, environmentName), 0, 6)
@@ -135,7 +141,7 @@ module containerAppEnv 'modules/container-app-env.bicep' = {
 // 8. Azure Container App (Backend API)
 // Bootstrap placeholder — ACR has no image on first deploy. The CI pipeline
 // swaps in the real image via `az containerapp update` right after this runs.
-var defaultImage = 'mcr.microsoft.com/k8se/quickstart:latest'
+var defaultImage = !empty(apiImage) ? apiImage : 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerApp 'modules/container-app.bicep' = {
   name: 'deploy-container-app'
@@ -157,7 +163,7 @@ module containerApp 'modules/container-app.bicep' = {
   ]
 }
 // 9. Azure Container App (Frontend SSR server)
-var defaultWebImage = 'mcr.microsoft.com/k8se/quickstart:latest'
+var defaultWebImage = !empty(webImage) ? webImage : 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerAppWeb 'modules/frontend-container-app.bicep' = {
   name: 'deploy-container-app-web'
