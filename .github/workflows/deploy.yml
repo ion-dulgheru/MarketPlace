@@ -190,7 +190,26 @@ jobs:
         run: |
           CONN_STR="Host=${PG_FQDN};Port=5432;Database=marketplace_db;Username=psqladmin;Password=${DB_PASS};Ssl Mode=Require;Trust Server Certificate=true"
           az keyvault secret set --vault-name "$KV_NAME" --name "ConnectionStrings--Default" --value "$CONN_STR"
-          az keyvault secret set --vault-name "$KV_NAME" --name "Jwt--CertificatePassword" --value "o-parola-pentru-fisier"
+
+      - name: Store JWT signing certificate in Azure Key Vault
+        env:
+          KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
+          JWT_CERT_BASE64: ${{ secrets.JWT_SIGNING_CERTIFICATE_BASE64 }}
+          JWT_CERT_PASSWORD: ${{ secrets.JWT_CERTIFICATE_PASSWORD }}
+        run: |
+          az keyvault secret set --vault-name "$KV_NAME" --name "Jwt--CertificateBase64" --value "$JWT_CERT_BASE64"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Jwt--CertificatePassword" --value "$JWT_CERT_PASSWORD"
+
+      - name: Store Email, Captcha and Frontend settings in Azure Key Vault
+        env:
+          KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+          STATIC_WEB_APP_HOSTNAME: ${{ needs.infra.outputs.static_web_app_hostname }}
+        run: |
+          az keyvault secret set --vault-name "$KV_NAME" --name "Resend--ApiKey" --value "$RESEND_API_KEY"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Recaptcha--SecretKey" --value "$RECAPTCHA_SECRET_KEY"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${STATIC_WEB_APP_HOSTNAME}"
 
       - name: Remove Runner IP from PostgreSQL Firewall
         if: always()

@@ -1,5 +1,6 @@
 using App.Application;
 using App.Infrastructure;
+using App.Infrastructure.Auth;
 using App.Persistence;
 using System.Text;
 using Azure.Identity;
@@ -21,15 +22,13 @@ if (!string.IsNullOrWhiteSpace(keyVaultUri))
     builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), credential);
 }
 
+var signingCertificate = JwtCertificateLoader.Load(builder.Configuration);
+builder.Services.AddSingleton(signingCertificate);
+
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 
-var certificatePath = builder.Configuration["Jwt:CertificatePath"]
-    ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
-var certificatePassword = builder.Configuration["Jwt:CertificatePassword"]
-    ?? throw new InvalidOperationException("Jwt:CertificatePassword is not configured.");
-var signingCertificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
