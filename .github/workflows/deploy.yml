@@ -177,8 +177,8 @@ jobs:
           echo "Adding temporary firewall rule ${RULE_NAME} for IP ${RUNNER_IP}..."
           az postgres flexible-server firewall-rule create \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name "$PG_SERVER" \
-            --rule-name "$RULE_NAME" \
+            --server-name "$PG_SERVER" \
+            --name "$RULE_NAME" \
             --start-ip-address "$RUNNER_IP" \
             --end-ip-address "$RUNNER_IP"
 
@@ -230,8 +230,8 @@ jobs:
             echo "Deleting temporary firewall rule ${RULE_NAME}..."
             az postgres flexible-server firewall-rule delete \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --name "$PG_SERVER" \
-              --rule-name "$RULE_NAME" \
+              --server-name "$PG_SERVER" \
+              --name "$RULE_NAME" \
               --yes || true
           fi
 
