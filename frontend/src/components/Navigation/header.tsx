@@ -4,15 +4,15 @@ import {
   BellOff,
   Heart,
   KeyRound,
-  Menu,
   MessageSquare,
   Plus,
+  Settings,
   Store,
   UserRound,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getReceivedContactRequests,
@@ -23,7 +23,9 @@ import { formatPostedDate } from "@/lib/advert-format";
 
 export default function Header() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { loggedIn } = useAuth();
+  const isAccountPage = pathname === "/account";
   const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loadingInquiries, setLoadingInquiries] = useState(false);
@@ -69,7 +71,7 @@ export default function Header() {
         search: { inquiries: item.advertUuid },
       });
     } else {
-      void navigate({ to: "/mylistings" });
+      void navigate({ to: "/mylistings", search: { inquiries: undefined } });
     }
   };
 
@@ -85,16 +87,37 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           {loggedIn ? (
-            <div className="hidden items-center gap-1 sm:flex">
-              <Button variant="ghost" onClick={() => void navigate({ to: "/savedhomes" })}>
-                <Heart className="size-4 text-primary" /> Saved listings
-              </Button>
-              <Button variant="ghost" onClick={() => void navigate({ to: "/mylistings" })}>
-                <Store className="size-4 text-primary" /> My listings
-              </Button>
-              <Button variant="ghost" onClick={() => void navigate({ to: "/account" })}>
-                <UserRound /> Account
-              </Button>
+            <div className="hidden items-center lg:flex">
+              {isAccountPage ? (
+                <Button variant="ghost" onClick={() => void navigate({ to: "/settings" })}>
+                  <Settings className="size-4" /> Settings
+                </Button>
+              ) : (
+                <div className="group relative flex items-center">
+                  <Button variant="ghost" onClick={() => void navigate({ to: "/account" })}>
+                    <UserRound className="size-4" /> Account
+                  </Button>
+
+                  <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-all duration-200 group-hover:max-w-xs group-hover:opacity-100">
+                    <Button
+                      variant="ghost"
+                      className="shrink-0"
+                      onClick={() => void navigate({ to: "/savedhomes" })}
+                    >
+                      <Heart className="size-4 text-primary" /> Saved listings
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="shrink-0"
+                      onClick={() =>
+                        void navigate({ to: "/mylistings", search: { inquiries: undefined } })
+                      }
+                    >
+                      <Store className="size-4 text-primary" /> My listings
+                    </Button>
+                  </div>
+                </div>
+              )}
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -188,7 +211,7 @@ export default function Header() {
                         className="w-full text-xs"
                         onClick={() => {
                           setPopoverOpen(false);
-                          void navigate({ to: "/mylistings" });
+                          void navigate({ to: "/mylistings", search: { inquiries: undefined } });
                         }}
                       >
                         View all in My listings
@@ -201,7 +224,7 @@ export default function Header() {
           ) : (
             <Button
               variant="ghost"
-              className="hidden sm:inline-flex"
+              className="hidden lg:inline-flex"
               onClick={() => void navigate({ to: "/login" })}
             >
               <UserRound /> Sign in
@@ -210,9 +233,6 @@ export default function Header() {
 
           <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
             <Plus /> Publish listing
-          </Button>
-          <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
-            <Menu />
           </Button>
         </div>
       </div>

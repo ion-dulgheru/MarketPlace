@@ -30,4 +30,18 @@ public class UserDetails : PublicEntity
             PhoneNumber = phoneNumber
         };
     }
+
+    public void Update(
+        string firstName,
+        string lastName,
+        DateTime? dateOfBirth,
+        string? phoneNumber)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        DateOfBirth = dateOfBirth is null
+            ? null
+            : DateTime.SpecifyKind(dateOfBirth.Value, DateTimeKind.Utc);
+        PhoneNumber = phoneNumber;
+    }
 }

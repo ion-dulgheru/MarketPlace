@@ -9,7 +9,7 @@ namespace App.WebApi.Controllers;
 
 [Authorize]
 [Route("api/users")]
-public class UsersController(IUserRepository userRepository, ISender sender) : BaseController
+public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfWork, ISender sender) : BaseController
 {
     [HttpGet("me")]
     public async Task<IActionResult> GetMe(CancellationToken ct = default)
@@ -31,6 +31,29 @@ public class UsersController(IUserRepository userRepository, ISender sender) : B
             dateOfBirth = details?.DateOfBirth,
             phoneNumber = details?.PhoneNumber
         });
+    }
+
+    [HttpPatch("me")]
+    public async Task<IActionResult> UpdateMe(
+        [FromBody] UpdateUserRequest request,
+        CancellationToken ct = default)
+    {
+        var user = await userRepository.GetByUuidAsync(UserUuid, ct);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        var details = await userRepository.GetDetailsByUserIdAsync(user.Id, ct);
+        if (details is null)
+        {
+            return NotFound();
+        }
+
+        details.Update(request.FirstName, request.LastName, request.DateOfBirth, request.PhoneNumber);
+        await userRepository.UpdateDetailsAsync(details, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+        return NoContent();
     }
 
     [HttpPatch("me/password")]

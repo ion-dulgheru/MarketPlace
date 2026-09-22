@@ -4,22 +4,26 @@ const REFRESH_TOKEN_KEY = "openkey_refresh_token";
 
 // Salvează ambele token-uri după login / register
 export function saveTokens(accessToken: string, refreshToken: string) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 }
 
 // Citește access token-ul (folosit la fiecare cerere autentificată)
 export function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 // Citește refresh token-ul (folosit când access token-ul a expirat)
 export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 // Șterge token-urile la logout
 export function clearTokens() {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }

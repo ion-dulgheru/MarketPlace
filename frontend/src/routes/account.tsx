@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Heart,
   KeyRound,
-  LogOut,
   Mail,
   Phone,
   ShieldCheck,
@@ -16,8 +15,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Navigation/header";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { changePassword, getCurrentUser, type CurrentUser } from "@/api/users";
+import { getCurrentUser, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 
@@ -28,17 +26,11 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [listingCount, setListingCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    void navigate({ to: "/login" });
-  };
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -105,16 +97,6 @@ function AccountPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                    <ShieldCheck className="size-5" /> Verified account
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="gap-1.5 border-red-200 bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="size-4" /> Sign out
-                  </Button>
                 </div>
               </div>
             </div>
@@ -139,6 +121,7 @@ function AccountPage() {
                 <div className="mt-5 flex flex-col sm:flex-row gap-3">
                   <Link
                     to="/mylistings"
+                    search={{ inquiries: undefined }}
                     className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <Store className="size-4" />
@@ -159,114 +142,10 @@ function AccountPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4 sm:px-10">
-              <p className="text-xs text-muted-foreground">
-                Signed in as <span className="font-semibold text-foreground">{user.email}</span>
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50"
-                onClick={handleLogout}
-              >
-                <LogOut className="size-4" /> Sign out
-              </Button>
-            </div>
           </section>
         )}
-
-        {!loading && user && <ChangePasswordSection />}
       </main>
     </div>
-  );
-}
-
-function ChangePasswordSection() {
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setSuccess(false);
-
-    const form = event.currentTarget;
-    const currentPassword = (form.elements.namedItem("currentPassword") as HTMLInputElement).value;
-    const newPassword = (form.elements.namedItem("newPassword") as HTMLInputElement).value;
-    const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
-
-    if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await changePassword({ currentPassword, newPassword });
-      setSuccess(true);
-      form.reset();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to change password");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <section className="mt-8 rounded-lg border border-border bg-card p-6 sm:p-10">
-      <div className="flex items-center gap-2">
-        <KeyRound className="size-5 text-primary" />
-        <h2 className="font-display text-2xl">Change password</h2>
-      </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Update the password you use to log in to OpenKey.
-      </p>
-
-      <form className="mt-6 grid max-w-md gap-4" onSubmit={handleSubmit}>
-        <label className="grid gap-1.5 text-sm font-medium">
-          Current password
-          <input
-            name="currentPassword"
-            required
-            type="password"
-            placeholder="••••••••"
-            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm font-medium">
-          New password
-          <input
-            name="newPassword"
-            required
-            minLength={8}
-            type="password"
-            placeholder="••••••••"
-            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm font-medium">
-          Confirm new password
-          <input
-            name="confirmPassword"
-            required
-            minLength={8}
-            type="password"
-            placeholder="••••••••"
-            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </label>
-        {error && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
-        )}
-        {success && (
-          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">Password updated successfully.</p>
-        )}
-        <Button type="submit" disabled={loading} className="mt-2 w-full sm:w-auto">
-          {loading ? "Saving…" : "Update password"}
-        </Button>
-      </form>
-    </section>
   );
 }
 
