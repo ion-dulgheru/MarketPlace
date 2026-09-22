@@ -19,7 +19,7 @@ var resourceGroupName = '${baseName}-${environmentName}'
 
 var identityName = '${baseName}-identity-${environmentName}'
 var acrName = '${baseName}acr${uniqueSuffix}${environmentName}'
-var keyVaultName = 'kv-${baseName}-${uniqueSuffix}-${environmentName}'
+var keyVaultName = 'kv-${baseName}-${uniqueSuffix}'
 var storageAccountName = '${baseName}st${uniqueSuffix}'
 var postgresServerName = '${baseName}-psql-${uniqueSuffix}-${environmentName}'
 var containerAppEnvName = '${baseName}-cae-${environmentName}'
@@ -133,7 +133,9 @@ module containerAppEnv 'modules/container-app-env.bicep' = {
 }
 
 // 8. Azure Container App (Backend API)
-var defaultImage = '${acr.outputs.loginServer}/marketplace-api:${imageTag}'
+// Bootstrap placeholder — ACR has no image on first deploy. The CI pipeline
+// swaps in the real image via `az containerapp update` right after this runs.
+var defaultImage = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerApp 'modules/container-app.bicep' = {
   name: 'deploy-container-app'
@@ -155,7 +157,7 @@ module containerApp 'modules/container-app.bicep' = {
   ]
 }
 // 9. Azure Container App (Frontend SSR server)
-var defaultWebImage = '${acr.outputs.loginServer}/marketplace-web:${imageTag}'
+var defaultWebImage = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerAppWeb 'modules/frontend-container-app.bicep' = {
   name: 'deploy-container-app-web'
