@@ -22,4 +22,5 @@ public class DataContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DataContext).Assembly);
     }
     public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
+    public DbSet<AdvertReport> AdvertReports => Set<AdvertReport>();
 }
