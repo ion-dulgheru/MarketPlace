@@ -55,10 +55,10 @@ jobs:
       key_vault_name: ${{ steps.deploy_bicep.outputs.keyVaultName }}
       postgres_fqdn: ${{ steps.deploy_bicep.outputs.postgresServerFqdn }}
       postgres_server_name: ${{ steps.deploy_bicep.outputs.postgresServerName }}
-      container_app_name: ${{ steps.deploy_bicep.outputs.containerAppName }}
-      frontend_container_app_name: ${{ steps.deploy_bicep.outputs.containerAppWebName }}
-      frontend_web_fqdn: ${{ steps.deploy_bicep.outputs.containerAppWebFqdn }}
-      managed_identity_id: ${{ steps.deploy_bicep.outputs.managedIdentityId }}
+      backend_app_name: ${{ steps.deploy_bicep.outputs.webAppApiName }}
+      backend_app_hostname: ${{ steps.deploy_bicep.outputs.webAppApiHostname }}
+      frontend_app_name: ${{ steps.deploy_bicep.outputs.webAppWebName }}
+      frontend_app_hostname: ${{ steps.deploy_bicep.outputs.webAppWebHostname }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -215,11 +215,11 @@ jobs:
           KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
-          FRONTEND_WEB_FQDN: ${{ needs.infra.outputs.frontend_web_fqdn }}
+          FRONTEND_APP_HOSTNAME: ${{ needs.infra.outputs.frontend_app_hostname }}
         run: |
           az keyvault secret set --vault-name "$KV_NAME" --name "Resend--ApiKey" --value "$RESEND_API_KEY"
           az keyvault secret set --vault-name "$KV_NAME" --name "Recaptcha--SecretKey" --value "$RECAPTCHA_SECRET_KEY"
-          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${FRONTEND_WEB_FQDN}"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${FRONTEND_APP_HOSTNAME}"
 
       - name: Remove Runner IP from PostgreSQL Firewall
         if: always()
@@ -240,8 +240,6 @@ jobs:
     name: 5. Deploy API
     runs-on: ubuntu-latest
     needs: [build, infra, image, migrate]
-    outputs:
-      api_fqdn: ${{ steps.get_fqdn.outputs.api_fqdn }}
     steps:
       - name: Log in to Azure (OIDC)
         uses: azure/login@v2
@@ -250,71 +248,36 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy new Container App revision
+      - name: Deploy new image to Web App
         env:
-          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          APP_NAME: ${{ needs.infra.outputs.backend_app_name }}
+          ACR_NAME: ${{ needs.infra.outputs.acr_name }}
           ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
           TAG: ${{ needs.build.outputs.image_tag }}
         run: |
+          ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query "username" -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
           IMAGE_URI="${ACR_SERVER}/marketplace-api:${TAG}"
-          echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
-          az containerapp revision copy \
+          echo "Updating Web App ${APP_NAME} to new image ${IMAGE_URI}..."
+          az webapp config container set \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image "$IMAGE_URI"
+            --container-image-name "$IMAGE_URI" \
+            --container-registry-url "https://${ACR_SERVER}" \
+            --container-registry-user "$ACR_USERNAME" \
+            --container-registry-password "$ACR_PASSWORD"
+          az webapp restart --name "$APP_NAME" --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
 
-      - name: Monitor revision health (Readiness Probe)
+      - name: Wait for API to become healthy
         env:
-          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          APP_HOST: ${{ needs.infra.outputs.backend_app_hostname }}
         run: |
-          echo "Monitoring readiness for ${APP_NAME}..."
-          READY=false
-          for i in {1..30}; do
-            REVISION_NAME=$(az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --query "properties.latestRevisionName" -o tsv 2>/dev/null || echo "")
-            RUNNING_STATE=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --revision "$REVISION_NAME" \
-              --query "properties.runningState" -o tsv 2>/dev/null || echo "Starting")
-            HEALTH_STATE=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --revision "$REVISION_NAME" \
-              --query "properties.healthState" -o tsv 2>/dev/null || echo "Unknown")
-            echo "Attempt $i/30: Revision=${REVISION_NAME}, State=${RUNNING_STATE}, Health=${HEALTH_STATE}"
-            if [ "$RUNNING_STATE" = "Running" ]; then
-              echo "Revision is running and passed readiness checks!"
-              READY=true
-              break
-            fi
-            sleep 10
-          done
-
-          if [ "$READY" != "true" ]; then
-            echo "Revision failed readiness probe!"
-            az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
-            exit 1
-          fi
-
-      - name: Capture API FQDN
-        id: get_fqdn
-        env:
-          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
-        run: |
-          FQDN=$(az containerapp show \
-            --name "$APP_NAME" \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-          echo "api_fqdn=${FQDN}" >> "$GITHUB_OUTPUT"
-          echo "API FQDN: https://${FQDN}"
+          echo "Probing https://${APP_HOST}/health/ready ..."
+          curl --fail --retry 20 --retry-delay 10 --retry-connrefused --retry-all-errors -s -i "https://${APP_HOST}/health/ready"
 
   deploy-web:
-    name: 6. Deploy Web Frontend (Container App)
+    name: 6. Deploy Web Frontend (App Service)
     runs-on: ubuntu-latest
     needs: [build, infra, deploy-api]
     steps:
@@ -341,7 +304,7 @@ jobs:
       - name: Build frontend bundle with API URL
         working-directory: frontend
         env:
-          VITE_API_URL: https://${{ needs.deploy-api.outputs.api_fqdn }}
+          VITE_API_URL: https://${{ needs.infra.outputs.backend_app_hostname }}
         run: |
           npm ci
           npm run build
@@ -371,18 +334,33 @@ jobs:
           docker push ${ACR_SERVER}/marketplace-web:${TAG}
           docker push ${ACR_SERVER}/marketplace-web:latest
 
-      - name: Deploy new Container App revision
+      - name: Deploy new image to Web App
         env:
-          APP_NAME: ${{ needs.infra.outputs.frontend_container_app_name }}
+          APP_NAME: ${{ needs.infra.outputs.frontend_app_name }}
+          ACR_NAME: ${{ needs.infra.outputs.acr_name }}
           ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
           TAG: ${{ needs.build.outputs.image_tag }}
         run: |
+          ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query "username" -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
           IMAGE_URI="${ACR_SERVER}/marketplace-web:${TAG}"
-          echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
-          az containerapp revision copy \
+          echo "Updating Web App ${APP_NAME} to new image ${IMAGE_URI}..."
+          az webapp config container set \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image "$IMAGE_URI"
+            --container-image-name "$IMAGE_URI" \
+            --container-registry-url "https://${ACR_SERVER}" \
+            --container-registry-user "$ACR_USERNAME" \
+            --container-registry-password "$ACR_PASSWORD"
+          az webapp restart --name "$APP_NAME" --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+
+      - name: Wait for frontend to become healthy
+        env:
+          APP_HOST: ${{ needs.infra.outputs.frontend_app_hostname }}
+        run: |
+          echo "Probing https://${APP_HOST}/ ..."
+          curl --fail --retry 20 --retry-delay 10 --retry-connrefused --retry-all-errors -s -I "https://${APP_HOST}/"
 
   verify:
     name: 7. Verify & Smoke Test
@@ -391,14 +369,14 @@ jobs:
     steps:
       - name: Smoke test API health endpoint
         env:
-          API_URL: https://${{ needs.deploy-api.outputs.api_fqdn }}
+          API_URL: https://${{ needs.infra.outputs.backend_app_hostname }}
         run: |
           echo "Probing API at ${API_URL}/health/ready..."
           curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -i "${API_URL}/health/ready"
 
       - name: Smoke test frontend
         env:
-          WEB_HOST: ${{ needs.infra.outputs.frontend_web_fqdn }}
+          WEB_HOST: ${{ needs.infra.outputs.frontend_app_hostname }}
         run: |
           echo "Probing Frontend at https://${WEB_HOST}..."
           curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -I "https://${WEB_HOST}"

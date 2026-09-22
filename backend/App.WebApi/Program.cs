@@ -78,7 +78,7 @@ builder.Services.AddCors(options =>
             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             {
                 if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
-                if (uri.Host.EndsWith(".azurecontainerapps.io", StringComparison.OrdinalIgnoreCase)) return true;
+                if (uri.Host.EndsWith(".azurewebsites.net", StringComparison.OrdinalIgnoreCase)) return true;
                 if (!string.IsNullOrWhiteSpace(frontendBaseUrl) &&
                     origin.TrimEnd('/').Equals(frontendBaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)) return true;
             }
