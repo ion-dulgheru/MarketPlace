@@ -12,7 +12,6 @@ resource staticSite 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {
     allowConfigFileUpdates: true
     stagingEnvironmentPolicy: 'Enabled'
-    skipGithubActionWorkflowGeneration: true
   }
   tags: tags
 }
