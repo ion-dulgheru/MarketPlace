@@ -4,7 +4,7 @@ targetScope = 'subscription'
 param environmentName string = 'dev'
 
 @description('Primary Azure region for all regional resources')
-param location string = 'westeurope'
+param location string = 'swedencentral'
 
 @description('Administrator password for Azure PostgreSQL Flexible Server')
 @secure()
@@ -13,13 +13,19 @@ param dbAdminPassword string
 @description('Container image tag to deploy')
 param imageTag string = 'latest'
 
+@description('Optional override for backend API container image')
+param apiImage string = ''
+
+@description('Optional override for frontend web container image')
+param webImage string = ''
+
 var baseName = 'marketplace'
 var uniqueSuffix = substring(uniqueString(subscription().id, environmentName), 0, 6)
 var resourceGroupName = '${baseName}-${environmentName}'
 
 var identityName = '${baseName}-identity-${environmentName}'
 var acrName = '${baseName}acr${uniqueSuffix}${environmentName}'
-var keyVaultName = 'kv-${baseName}-${uniqueSuffix}-${environmentName}'
+var keyVaultName = 'kv-mkt-${uniqueSuffix}-${environmentName}'
 var storageAccountName = '${baseName}st${uniqueSuffix}'
 var postgresServerName = '${baseName}-psql-${uniqueSuffix}-${environmentName}'
 var containerAppEnvName = '${baseName}-cae-${environmentName}'
@@ -133,7 +139,7 @@ module containerAppEnv 'modules/container-app-env.bicep' = {
 }
 
 // 8. Azure Container App (Backend API)
-var defaultImage = '${acr.outputs.loginServer}/marketplace-api:${imageTag}'
+var defaultImage = !empty(apiImage) ? apiImage : '${acr.outputs.loginServer}/marketplace-api:${imageTag}'
 
 module containerApp 'modules/container-app.bicep' = {
   name: 'deploy-container-app'
@@ -155,7 +161,7 @@ module containerApp 'modules/container-app.bicep' = {
   ]
 }
 // 9. Azure Container App (Frontend SSR server)
-var defaultWebImage = '${acr.outputs.loginServer}/marketplace-web:${imageTag}'
+var defaultWebImage = !empty(webImage) ? webImage : '${acr.outputs.loginServer}/marketplace-web:${imageTag}'
 
 module containerAppWeb 'modules/frontend-container-app.bicep' = {
   name: 'deploy-container-app-web'
