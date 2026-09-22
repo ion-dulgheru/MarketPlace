@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Azure Container Apps runs a plain Node.js server, not Cloudflare Workers —
+  // override the default cloudflare-module preset.
+  nitro: {
+    preset: "node-server",
+  },
 });

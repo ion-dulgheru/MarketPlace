@@ -56,8 +56,8 @@ jobs:
       postgres_fqdn: ${{ steps.deploy_bicep.outputs.postgresServerFqdn }}
       postgres_server_name: ${{ steps.deploy_bicep.outputs.postgresServerName }}
       container_app_name: ${{ steps.deploy_bicep.outputs.containerAppName }}
-      static_web_app_name: ${{ steps.deploy_bicep.outputs.staticWebAppName }}
-      static_web_app_hostname: ${{ steps.deploy_bicep.outputs.staticWebAppDefaultHostname }}
+      frontend_container_app_name: ${{ steps.deploy_bicep.outputs.containerAppWebName }}
+      frontend_web_fqdn: ${{ steps.deploy_bicep.outputs.containerAppWebFqdn }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -205,11 +205,11 @@ jobs:
           KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
-          STATIC_WEB_APP_HOSTNAME: ${{ needs.infra.outputs.static_web_app_hostname }}
+          FRONTEND_WEB_FQDN: ${{ needs.infra.outputs.frontend_web_fqdn }}
         run: |
           az keyvault secret set --vault-name "$KV_NAME" --name "Resend--ApiKey" --value "$RESEND_API_KEY"
           az keyvault secret set --vault-name "$KV_NAME" --name "Recaptcha--SecretKey" --value "$RECAPTCHA_SECRET_KEY"
-          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${STATIC_WEB_APP_HOSTNAME}"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${FRONTEND_WEB_FQDN}"
 
       - name: Remove Runner IP from PostgreSQL Firewall
         if: always()
@@ -316,9 +316,9 @@ jobs:
           echo "API FQDN: https://${FQDN}"
 
   deploy-web:
-    name: 6. Deploy Web Frontend (Static Web Apps)
+    name: 6. Deploy Web Frontend (Container App)
     runs-on: ubuntu-latest
-    needs: [infra, deploy-api]
+    needs: [build, infra, deploy-api]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -337,17 +337,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Retrieve Static Web App deployment token
-        id: swa_token
-        env:
-          SITE_NAME: ${{ needs.infra.outputs.static_web_app_name }}
-        run: |
-          TOKEN=$(az staticwebapp secrets list \
-            --name "$SITE_NAME" \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.apiKey" -o tsv)
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+      - name: Log in to Azure Container Registry
+        run: az acr login --name ${{ needs.infra.outputs.acr_name }}
 
       - name: Build frontend bundle with API URL
         working-directory: frontend
@@ -357,20 +348,48 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Build Docker container image
+        env:
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          docker build -t ${ACR_SERVER}/marketplace-web:${TAG} -t ${ACR_SERVER}/marketplace-web:latest -f frontend/Dockerfile frontend
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
         with:
-          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.token }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "frontend"
-          output_location: ".output/public"
-          skip_app_build: true
+          image-ref: ${{ needs.infra.outputs.acr_login_server }}/marketplace-web:${{ needs.build.outputs.image_tag }}
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Docker container image
+        env:
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          docker push ${ACR_SERVER}/marketplace-web:${TAG}
+          docker push ${ACR_SERVER}/marketplace-web:latest
+
+      - name: Deploy new Container App revision
+        env:
+          APP_NAME: ${{ needs.infra.outputs.frontend_container_app_name }}
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          IMAGE_URI="${ACR_SERVER}/marketplace-web:${TAG}"
+          echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
+          az containerapp update \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image "$IMAGE_URI"
 
   verify:
     name: 7. Verify & Smoke Test
     runs-on: ubuntu-latest
-    needs: [deploy-api, infra]
+    needs: [deploy-api, deploy-web, infra]
     steps:
       - name: Smoke test API health endpoint
         env:
@@ -379,9 +398,9 @@ jobs:
           echo "Probing API at ${API_URL}/health/ready..."
           curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -i "${API_URL}/health/ready"
 
-      - name: Smoke test Static Web App
+      - name: Smoke test frontend
         env:
-          WEB_HOST: ${{ needs.infra.outputs.static_web_app_hostname }}
+          WEB_HOST: ${{ needs.infra.outputs.frontend_web_fqdn }}
         run: |
           echo "Probing Frontend at https://${WEB_HOST}..."
           curl --fail --retry 5 --retry-delay 5 --retry-connrefused -s -I "https://${WEB_HOST}"

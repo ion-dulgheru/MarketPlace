@@ -25,7 +25,7 @@ var postgresServerName = '${baseName}-psql-${uniqueSuffix}-${environmentName}'
 var containerAppEnvName = '${baseName}-cae-${environmentName}'
 var logAnalyticsName = '${baseName}-log-${environmentName}'
 var containerAppName = '${baseName}-api-${environmentName}'
-var staticSiteName = '${baseName}-web-${environmentName}'
+var containerAppWebName = '${baseName}-web-${environmentName}'
 
 var commonTags = {
   Project: 'MarketPlace'
@@ -154,14 +154,19 @@ module containerApp 'modules/container-app.bicep' = {
     rg
   ]
 }
- var staticSiteLocation = location
+// 9. Azure Container App (Frontend SSR server)
+var defaultWebImage = '${acr.outputs.loginServer}/marketplace-web:${imageTag}'
 
-module staticSite 'modules/static-site.bicep' = {
-  name: 'deploy-static-site'
+module containerAppWeb 'modules/frontend-container-app.bicep' = {
+  name: 'deploy-container-app-web'
   scope: resourceGroup(resourceGroupName)
   params: {
-    name: staticSiteName
-    location: staticSiteLocation
+    name: containerAppWebName
+    location: location
+    managedEnvironmentId: containerAppEnv.outputs.id
+    managedIdentityId: identity.outputs.id
+    acrLoginServer: acr.outputs.loginServer
+    image: defaultWebImage
     tags: commonTags
   }
   dependsOn: [
@@ -184,5 +189,5 @@ output postgresServerName string = postgres.outputs.serverName
 output postgresDatabaseName string = postgres.outputs.databaseName
 output containerAppName string = containerApp.outputs.name
 output containerAppFqdn string = containerApp.outputs.fqdn
-output staticWebAppName string = staticSite.outputs.name
-output staticWebAppDefaultHostname string = staticSite.outputs.defaultHostname
+output containerAppWebName string = containerAppWeb.outputs.name
+output containerAppWebFqdn string = containerAppWeb.outputs.fqdn
