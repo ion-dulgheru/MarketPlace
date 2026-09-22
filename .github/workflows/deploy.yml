@@ -58,6 +58,7 @@ jobs:
       container_app_name: ${{ steps.deploy_bicep.outputs.containerAppName }}
       frontend_container_app_name: ${{ steps.deploy_bicep.outputs.containerAppWebName }}
       frontend_web_fqdn: ${{ steps.deploy_bicep.outputs.containerAppWebFqdn }}
+      managed_identity_id: ${{ steps.deploy_bicep.outputs.managedIdentityId }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -249,6 +250,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Re-assert ACR pull identity
+        env:
+          APP_NAME: ${{ needs.infra.outputs.container_app_name }}
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          IDENTITY_ID: ${{ needs.infra.outputs.managed_identity_id }}
+        run: |
+          az containerapp registry set \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server "$ACR_SERVER" \
+            --identity "$IDENTITY_ID"
+
       - name: Deploy new Container App revision
         env:
           APP_NAME: ${{ needs.infra.outputs.container_app_name }}
@@ -369,6 +382,18 @@ jobs:
         run: |
           docker push ${ACR_SERVER}/marketplace-web:${TAG}
           docker push ${ACR_SERVER}/marketplace-web:latest
+
+      - name: Re-assert ACR pull identity
+        env:
+          APP_NAME: ${{ needs.infra.outputs.frontend_container_app_name }}
+          ACR_SERVER: ${{ needs.infra.outputs.acr_login_server }}
+          IDENTITY_ID: ${{ needs.infra.outputs.managed_identity_id }}
+        run: |
+          az containerapp registry set \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server "$ACR_SERVER" \
+            --identity "$IDENTITY_ID"
 
       - name: Deploy new Container App revision
         env:
