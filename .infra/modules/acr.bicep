@@ -31,3 +31,7 @@ resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
 output id string = acr.id
 output name string = acr.name
 output loginServer string = acr.properties.loginServer
+output adminUsername string = acr.listCredentials().username
+
+@secure()
+output adminPassword string = acr.listCredentials().passwords[0].value
