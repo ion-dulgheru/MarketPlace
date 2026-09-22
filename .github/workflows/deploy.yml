@@ -12,7 +12,7 @@ permissions:
 
 env:
   AZURE_RESOURCE_GROUP: marketplace-dev
-  AZURE_LOCATION: germanywestcentral
+  AZURE_LOCATION: swedencentral
   ENVIRONMENT_NAME: dev
 
 jobs:

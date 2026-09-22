@@ -9,6 +9,8 @@ param keyVaultUri string
 param storageBlobEndpoint string
 param tags object = {}
 
+var isQuickstart = contains(image, 'mcr.microsoft.com')
+
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: name
   location: location
@@ -62,7 +64,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: storageBlobEndpoint
             }
           ]
-          probes: [
+          probes: isQuickstart ? [] : [
             {
               type: 'Readiness'
               httpGet: {

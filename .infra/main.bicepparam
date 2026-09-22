@@ -1,5 +1,5 @@
 using 'main.bicep'
 
 param environmentName = 'dev'
-param location = 'germanywestcentral'
+param location = 'swedencentral'
 param imageTag = 'latest'
