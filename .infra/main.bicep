@@ -150,6 +150,8 @@ module containerApp 'modules/container-app.bicep' = {
     managedIdentityId: identity.outputs.id
     managedIdentityClientId: identity.outputs.clientId
     acrLoginServer: acr.outputs.loginServer
+    acrUsername: acr.outputs.adminUsername
+    acrPassword: acr.outputs.adminPassword
     image: defaultImage
     keyVaultUri: keyVault.outputs.vaultUri
     storageBlobEndpoint: storage.outputs.blobEndpoint
@@ -171,6 +173,8 @@ module containerAppWeb 'modules/frontend-container-app.bicep' = {
     managedEnvironmentId: containerAppEnv.outputs.id
     managedIdentityId: identity.outputs.id
     acrLoginServer: acr.outputs.loginServer
+    acrUsername: acr.outputs.adminUsername
+    acrPassword: acr.outputs.adminPassword
     image: defaultWebImage
     tags: commonTags
   }

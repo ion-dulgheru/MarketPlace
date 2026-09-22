@@ -3,6 +3,9 @@ param location string
 param managedEnvironmentId string
 param managedIdentityId string
 param acrLoginServer string
+param acrUsername string
+@secure()
+param acrPassword string
 param image string
 param tags object = {}
 
@@ -25,10 +28,17 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         allowInsecure: false
         transport: 'auto'
       }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acrPassword
+        }
+      ]
       registries: [
         {
           server: acrLoginServer
-          identity: managedIdentityId
+          username: acrUsername
+          passwordSecretRef: 'acr-password'
         }
       ]
     }
