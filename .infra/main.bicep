@@ -4,7 +4,7 @@ targetScope = 'subscription'
 param environmentName string = 'dev'
 
 @description('Primary Azure region for all regional resources')
-param location string = 'germanywestcentral'
+param location string = 'swedencentral'
 
 @description('Administrator password for Azure PostgreSQL Flexible Server')
 @secure()
