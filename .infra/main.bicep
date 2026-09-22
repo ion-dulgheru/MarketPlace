@@ -26,8 +26,8 @@ var keyVaultName = 'kv-${baseName}-${uniqueSuffix}'
 var storageAccountName = '${baseName}st${uniqueSuffix}'
 var postgresServerName = '${baseName}-psql-${uniqueSuffix}-${environmentName}'
 var appServicePlanName = '${baseName}-plan-${environmentName}'
-var webAppApiName = '${baseName}-api-${environmentName}'
-var webAppWebName = '${baseName}-web-${environmentName}'
+var webAppApiName = '${baseName}-api-${uniqueSuffix}-${environmentName}'
+var webAppWebName = '${baseName}-web-${uniqueSuffix}-${environmentName}'
 
 var commonTags = {
   Project: 'MarketPlace'
