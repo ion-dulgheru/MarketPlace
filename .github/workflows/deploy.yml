@@ -153,6 +153,9 @@ jobs:
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef --version 10.*
 
+      - name: Restore dependencies
+        run: dotnet restore backend/RealEstateMarketplace.slnx
+
       - name: Build self-contained migration bundle
         run: |
           dotnet ef migrations bundle \
