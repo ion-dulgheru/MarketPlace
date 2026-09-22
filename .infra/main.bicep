@@ -25,10 +25,9 @@ var acrName = '${baseName}acr${uniqueSuffix}${environmentName}'
 var keyVaultName = 'kv-${baseName}-${uniqueSuffix}'
 var storageAccountName = '${baseName}st${uniqueSuffix}'
 var postgresServerName = '${baseName}-psql-${uniqueSuffix}-${environmentName}'
-var containerAppEnvName = '${baseName}-cae-${environmentName}'
-var logAnalyticsName = '${baseName}-log-${environmentName}'
-var containerAppName = '${baseName}-api-${environmentName}'
-var containerAppWebName = '${baseName}-web-${environmentName}'
+var appServicePlanName = '${baseName}-plan-${environmentName}'
+var webAppApiName = '${baseName}-api-${environmentName}'
+var webAppWebName = '${baseName}-web-${environmentName}'
 
 var commonTags = {
   Project: 'MarketPlace'
@@ -120,13 +119,12 @@ module postgres 'modules/postgres.bicep' = {
   ]
 }
 
-// 7. Container Apps Environment & Log Analytics
-module containerAppEnv 'modules/container-app-env.bicep' = {
-  name: 'deploy-container-app-env'
+// 7. App Service Plan (Linux, container-capable)
+module appServicePlan 'modules/app-service-plan.bicep' = {
+  name: 'deploy-app-service-plan'
   scope: resourceGroup(resourceGroupName)
   params: {
-    name: containerAppEnvName
-    logAnalyticsName: logAnalyticsName
+    name: appServicePlanName
     location: location
     tags: commonTags
   }
@@ -135,18 +133,18 @@ module containerAppEnv 'modules/container-app-env.bicep' = {
   ]
 }
 
-// 8. Azure Container App (Backend API)
+// 8. Backend API Web App
 // Bootstrap placeholder — ACR has no image on first deploy. The CI pipeline
-// swaps in the real image via `az containerapp update` right after this runs.
+// swaps in the real image via `az webapp config container set` right after this runs.
 var defaultImage = !empty(apiImage) ? apiImage : 'mcr.microsoft.com/k8se/quickstart:latest'
 
-module containerApp 'modules/container-app.bicep' = {
-  name: 'deploy-container-app'
+module webAppApi 'modules/backend-webapp.bicep' = {
+  name: 'deploy-webapp-api'
   scope: resourceGroup(resourceGroupName)
   params: {
-    name: containerAppName
+    name: webAppApiName
     location: location
-    managedEnvironmentId: containerAppEnv.outputs.id
+    appServicePlanId: appServicePlan.outputs.id
     managedIdentityId: identity.outputs.id
     managedIdentityClientId: identity.outputs.clientId
     acrLoginServer: acr.outputs.loginServer
@@ -161,17 +159,17 @@ module containerApp 'modules/container-app.bicep' = {
     rg
   ]
 }
-// 9. Azure Container App (Frontend SSR server)
+
+// 9. Frontend Web App (SSR server)
 var defaultWebImage = !empty(webImage) ? webImage : 'mcr.microsoft.com/k8se/quickstart:latest'
 
-module containerAppWeb 'modules/frontend-container-app.bicep' = {
-  name: 'deploy-container-app-web'
+module webAppWeb 'modules/frontend-webapp.bicep' = {
+  name: 'deploy-webapp-web'
   scope: resourceGroup(resourceGroupName)
   params: {
-    name: containerAppWebName
+    name: webAppWebName
     location: location
-    managedEnvironmentId: containerAppEnv.outputs.id
-    managedIdentityId: identity.outputs.id
+    appServicePlanId: appServicePlan.outputs.id
     acrLoginServer: acr.outputs.loginServer
     acrUsername: acr.outputs.adminUsername
     acrPassword: acr.outputs.adminPassword
@@ -197,7 +195,7 @@ output storageBlobEndpoint string = storage.outputs.blobEndpoint
 output postgresServerFqdn string = postgres.outputs.fqdn
 output postgresServerName string = postgres.outputs.serverName
 output postgresDatabaseName string = postgres.outputs.databaseName
-output containerAppName string = containerApp.outputs.name
-output containerAppFqdn string = containerApp.outputs.fqdn
-output containerAppWebName string = containerAppWeb.outputs.name
-output containerAppWebFqdn string = containerAppWeb.outputs.fqdn
+output webAppApiName string = webAppApi.outputs.name
+output webAppApiHostname string = webAppApi.outputs.defaultHostname
+output webAppWebName string = webAppWeb.outputs.name
+output webAppWebHostname string = webAppWeb.outputs.defaultHostname
