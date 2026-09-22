@@ -181,6 +181,7 @@ module containerAppWeb 'modules/frontend-container-app.bicep' = {
 
 // Outputs
 output resourceGroupName string = resourceGroupName
+output managedIdentityId string = identity.outputs.id
 output managedIdentityClientId string = identity.outputs.clientId
 output managedIdentityPrincipalId string = identity.outputs.principalId
 output acrLoginServer string = acr.outputs.loginServer
