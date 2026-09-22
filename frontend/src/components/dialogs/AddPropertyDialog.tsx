@@ -54,13 +54,7 @@ export function AddPropertyDialog({
                   <option>For sale</option><option>For rent</option>
                 </select>
               </label>
-              <label className="grid gap-1.5 text-sm font-medium">
-                Property type
-                <select className="h-11 rounded-md border border-input bg-background px-3">
-                  <option>Apartment</option><option>House</option><option>Studio</option><option>Loft</option>
-                </select>
-              </label>
-            </div>
+              </div>
             <label className="grid gap-1.5 text-sm font-medium">
               Title
               <input required placeholder="Bright two-bedroom apartment" className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />

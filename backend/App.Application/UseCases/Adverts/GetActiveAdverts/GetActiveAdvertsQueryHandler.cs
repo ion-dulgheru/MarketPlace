@@ -20,11 +20,19 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
             advertType = parsedType;
         }
 
+        BuildingType? buildingType = null;
+        if (!string.IsNullOrWhiteSpace(query.Request.BuildingType) &&
+            Enum.TryParse<BuildingType>(query.Request.BuildingType, true, out var parsedBuildingType))
+        {
+            buildingType = parsedBuildingType;
+        }
+
         var criteria = new AdvertSearchCriteria(
             Page: query.Request.Page,
             PageSize: query.Request.PageSize,
             SearchTerm: query.Request.SearchTerm,
             Type: advertType,
+            BuildingType: buildingType,
             City: query.Request.City,
             MinPrice: query.Request.MinPrice,
             MaxPrice: query.Request.MaxPrice,

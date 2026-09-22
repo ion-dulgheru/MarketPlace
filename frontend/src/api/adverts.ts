@@ -194,6 +194,7 @@ export interface GetAdvertsParams {
   mine?: boolean | undefined;
   searchTerm?: string | undefined;
   type?: "Sale" | "Rent" | undefined;
+  buildingType?: "Apartment" | "House" | undefined;
   city?: string | undefined;
   minPrice?: number | undefined;
   maxPrice?: number | undefined;
