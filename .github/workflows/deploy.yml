@@ -74,7 +74,13 @@ jobs:
         uses: azure/arm-deploy@v2
         with:
           scope: subscription
-          region: ${{ env.AZURE_LOCATION }}
+          # Deployment metadata tracking location — pinned to the first region ever
+          # used for a deployment named "main" (azure/arm-deploy defaults the
+          # deployment name to the template filename). This can differ from the
+          # `location` bicep param below, which controls where resources are
+          # actually created. Do not change this unless the "main" deployment is
+          # deleted first, or every future run will fail with InvalidDeploymentLocation.
+          region: swedencentral
           template: ./.infra/main.bicep
           parameters: >
             environmentName=${{ env.ENVIRONMENT_NAME }}
