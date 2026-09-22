@@ -6,7 +6,7 @@ param administratorLoginPassword string
 param databaseName string = 'marketplace_db'
 param tags object = {}
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: name
   location: location
   sku: {
@@ -32,7 +32,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-pr
   tags: tags
 }
 
-resource psqlDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-12-01-preview' = {
+resource psqlDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
   parent: postgresServer
   name: databaseName
   properties: {
@@ -42,7 +42,7 @@ resource psqlDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-
 }
 
 // Allow Azure services to access PostgreSQL (0.0.0.0 - 0.0.0.0)
-resource allowAzureServicesRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-12-01-preview' = {
+resource allowAzureServicesRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
   parent: postgresServer
   name: 'AllowAzureServices'
   properties: {
