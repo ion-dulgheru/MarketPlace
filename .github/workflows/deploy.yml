@@ -258,7 +258,7 @@ jobs:
         run: |
           IMAGE_URI="${ACR_SERVER}/marketplace-api:${TAG}"
           echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
-          az containerapp update \
+          az containerapp revision copy \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --image "$IMAGE_URI"
@@ -379,7 +379,7 @@ jobs:
         run: |
           IMAGE_URI="${ACR_SERVER}/marketplace-web:${TAG}"
           echo "Updating Container App ${APP_NAME} to new image ${IMAGE_URI}..."
-          az containerapp update \
+          az containerapp revision copy \
             --name "$APP_NAME" \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --image "$IMAGE_URI"
