@@ -35,7 +35,6 @@ export async function changePassword(data: ChangePasswordRequest): Promise<void>
   }
 }
 
-
 export interface UpdateUserRequest {
   firstName: string;
   lastName: string;
