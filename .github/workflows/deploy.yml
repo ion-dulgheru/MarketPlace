@@ -305,6 +305,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: https://${{ needs.infra.outputs.backend_app_hostname }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
         run: |
           npm ci
           npm run build
