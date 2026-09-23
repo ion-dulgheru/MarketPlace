@@ -459,7 +459,9 @@ function EditAdvertPage() {
 
                 {/* Listing Type: Sale or Rent */}
                 <div>
-                  <span className="mb-2 block text-xs font-semibold text-foreground">Listing type</span>
+                  <span className="mb-2 block text-xs font-semibold text-foreground">
+                    Listing type
+                  </span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -490,7 +492,9 @@ function EditAdvertPage() {
 
                 {/* Building Type: Apartment or House */}
                 <div>
-                  <span className="mb-2 block text-xs font-semibold text-foreground">Building type</span>
+                  <span className="mb-2 block text-xs font-semibold text-foreground">
+                    Building type
+                  </span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -503,7 +507,9 @@ function EditAdvertPage() {
                     >
                       <Building2 className="size-7" />
                       <span className="text-sm font-semibold">Apartment</span>
-                      <span className="text-xs text-muted-foreground">Flat in a residential block</span>
+                      <span className="text-xs text-muted-foreground">
+                        Flat in a residential block
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -516,7 +522,9 @@ function EditAdvertPage() {
                     >
                       <Home className="size-7" />
                       <span className="text-sm font-semibold">House</span>
-                      <span className="text-xs text-muted-foreground">Individual house or villa</span>
+                      <span className="text-xs text-muted-foreground">
+                        Individual house or villa
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -944,7 +952,9 @@ function EditAdvertPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-xs text-muted-foreground block">Listing & Building</span>
+                      <span className="text-xs text-muted-foreground block">
+                        Listing & Building
+                      </span>
                       <span className="font-medium text-foreground">
                         {listingType === "Sale" ? "For Sale" : "For Rent"} • {buildingType}
                       </span>

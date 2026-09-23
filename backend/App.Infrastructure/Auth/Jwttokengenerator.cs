@@ -8,14 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace App.Infrastructure.Auth;
 
-public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerator
+public class JwtTokenGenerator(IConfiguration configuration, X509Certificate2 signingCertificate) : IJwtTokenGenerator
 {
     public (string Token, string JwtId) GenerateToken(User user)
     {
-        var certificatePath = configuration["Jwt:CertificatePath"]
-            ?? throw new InvalidOperationException("Jwt:CertificatePath is not configured.");
-        var certificatePassword = configuration["Jwt:CertificatePassword"]
-            ?? throw new InvalidOperationException("Jwt:CertificatePassword is not configured.");
         var issuer = configuration["Jwt:Issuer"];
         var audience = configuration["Jwt:Audience"];
         var expiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "15");
@@ -29,8 +25,7 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
             new Claim(JwtRegisteredClaimNames.Jti, jwtId),
         };
 
-        var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
-        var key = new X509SecurityKey(certificate);
+        var key = new X509SecurityKey(signingCertificate);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
         var token = new JwtSecurityToken(

@@ -29,7 +29,7 @@ export async function registerUser(data: RegisterRequest): Promise<AuthTokensRes
     throw new Error((error as { message?: string }).message ?? "Registration failed");
   }
 
-  const tokens = await response.json() as AuthTokensResponse;
+  const tokens = (await response.json()) as AuthTokensResponse;
   // Salvează token-urile în localStorage imediat după înregistrare
   saveTokens(tokens.accessToken, tokens.refreshToken);
   return tokens;
@@ -52,7 +52,7 @@ export async function loginUser(data: LoginRequest): Promise<AuthTokensResponse>
     throw new Error((error as { message?: string }).message ?? "Invalid email or password");
   }
 
-  const tokens = await response.json() as AuthTokensResponse;
+  const tokens = (await response.json()) as AuthTokensResponse;
   // Salvează token-urile în localStorage imediat după login
   saveTokens(tokens.accessToken, tokens.refreshToken);
   return tokens;
@@ -66,7 +66,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Failed to request password reset" }));
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Failed to request password reset" }));
     throw new Error((error as { message?: string }).message ?? "Failed to request password reset");
   }
 }

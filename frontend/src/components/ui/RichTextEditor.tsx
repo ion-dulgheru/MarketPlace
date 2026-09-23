@@ -1,15 +1,7 @@
 import React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import {
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Heading2,
-  Undo,
-  Redo,
-} from "lucide-react";
+import { Bold, Italic, List, ListOrdered, Heading2, Undo, Redo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -20,11 +12,7 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-export function RichTextEditor({
-  value,
-  onChange,
-  className,
-}: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, className }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [StarterKit],
     content: value,
@@ -57,7 +45,7 @@ export function RichTextEditor({
     <div
       className={cn(
         "rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring",
-        className
+        className,
       )}
     >
       {/* Toolbar */}
@@ -68,7 +56,7 @@ export function RichTextEditor({
           size="sm"
           className={cn(
             "h-8 w-8 p-0",
-            editor.isActive("bold") && "bg-muted text-primary font-bold"
+            editor.isActive("bold") && "bg-muted text-primary font-bold",
           )}
           onClick={() => editor.chain().focus().toggleBold().run()}
           title="Bold (Ctrl+B)"
@@ -80,10 +68,7 @@ export function RichTextEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={cn(
-            "h-8 w-8 p-0",
-            editor.isActive("italic") && "bg-muted text-primary italic"
-          )}
+          className={cn("h-8 w-8 p-0", editor.isActive("italic") && "bg-muted text-primary italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           title="Italic (Ctrl+I)"
         >
@@ -96,11 +81,9 @@ export function RichTextEditor({
           size="sm"
           className={cn(
             "h-8 w-8 p-0",
-            editor.isActive("heading", { level: 2 }) && "bg-muted text-primary"
+            editor.isActive("heading", { level: 2 }) && "bg-muted text-primary",
           )}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           title="Subheading"
         >
           <Heading2 className="h-4 w-4" />
@@ -112,10 +95,7 @@ export function RichTextEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={cn(
-            "h-8 w-8 p-0",
-            editor.isActive("bulletList") && "bg-muted text-primary"
-          )}
+          className={cn("h-8 w-8 p-0", editor.isActive("bulletList") && "bg-muted text-primary")}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           title="Bullet List"
         >
@@ -126,10 +106,7 @@ export function RichTextEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={cn(
-            "h-8 w-8 p-0",
-            editor.isActive("orderedList") && "bg-muted text-primary"
-          )}
+          className={cn("h-8 w-8 p-0", editor.isActive("orderedList") && "bg-muted text-primary")}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           title="Numbered List"
         >

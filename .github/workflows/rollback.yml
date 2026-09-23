@@ -1,0 +1,87 @@
+name: Rollback Revision
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_revision:
+        description: 'Target revision name to revert 100% traffic to (leave empty to auto-rollback to previous revision)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: marketplace-dev
+  CONTAINER_APP_NAME: marketplace-api-dev
+
+jobs:
+  rollback:
+    name: 1-Click Blue/Green Rollback
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Determine Target Rollback Revision
+        id: select_revision
+        run: |
+          INPUT_REV="${{ github.event.inputs.target_revision }}"
+
+          if [ -n "$INPUT_REV" ]; then
+            echo "User requested specific target revision: $INPUT_REV"
+            TARGET_REV="$INPUT_REV"
+          else
+            echo "Auto-detecting previous healthy revision..."
+            # Current 100% active revision
+            ACTIVE_REV=$(az containerapp ingress traffic show \
+              --name "${{ env.CONTAINER_APP_NAME }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+              --query "[?weight==\`100\`].revisionName | [0]" -o tsv)
+            echo "Currently active revision: $ACTIVE_REV"
+
+            # Find latest provisioned revision that is not the active one
+            TARGET_REV=$(az containerapp revision list \
+              --name "${{ env.CONTAINER_APP_NAME }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+              --query "reverse(sort_by([?properties.provisioningState=='Succeeded' && name!='$ACTIVE_REV'], &properties.createdTime))[0].name" -o tsv)
+            echo "Identified target rollback revision: $TARGET_REV"
+          fi
+
+          if [ -z "$TARGET_REV" ] || [ "$TARGET_REV" = "null" ]; then
+            echo "Error: No suitable previous revision found to rollback to."
+            exit 1
+          fi
+
+          echo "target_revision=$TARGET_REV" >> "$GITHUB_OUTPUT"
+
+      - name: Shift 100% Traffic to Rollback Revision
+        env:
+          TARGET_REV: ${{ steps.select_revision.outputs.target_revision }}
+        run: |
+          echo "Reverting 100% traffic to $TARGET_REV..."
+          az containerapp ingress traffic set \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --revision-weight "${TARGET_REV}=100"
+
+      - name: Verify Active Traffic
+        run: |
+          echo "Current Traffic Distribution:"
+          az containerapp ingress traffic show \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" -o table
+
+          API_FQDN=$(az containerapp show \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          echo "Verifying health on https://${API_FQDN}/health/ready..."
+          curl --fail --retry 3 --retry-delay 3 -s -i "https://${API_FQDN}/health/ready"
+          echo "Rollback successful!"

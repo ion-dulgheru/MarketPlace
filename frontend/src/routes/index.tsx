@@ -68,14 +68,7 @@ const MOLDOVA_DISTRICTS = [
   "Ungheni",
 ];
 
-const CHISINAU_REGIONS = [
-  "Botanica",
-  "Buiucani",
-  "Centru",
-  "Ciocana",
-  "Râșcani",
-  "Telecentru",
-];
+const CHISINAU_REGIONS = ["Botanica", "Buiucani", "Centru", "Ciocana", "Râșcani", "Telecentru"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -235,8 +228,8 @@ function Index() {
   const openContact = (advert: Advert) => {
     const isOwner = Boolean(
       currentUserUuid &&
-        advert.userUuid &&
-        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+      advert.userUuid &&
+      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
     );
     if (isOwner) return;
     setSelected(advert);
@@ -251,8 +244,8 @@ function Index() {
     const advert = adverts.find((a) => a.guid === guid);
     const isOwner = Boolean(
       currentUserUuid &&
-        advert?.userUuid &&
-        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+      advert?.userUuid &&
+      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
     );
     if (isOwner) return;
 
@@ -275,14 +268,14 @@ function Index() {
                 Find a place you'll love to call home.
               </h1>
               <p className="mx-auto mt-4 max-w-xl text-sm leading-5 text-muted-foreground sm:text-base">
-                Browse homes, apartments, land, and commercial properties for sale or rent,
-                directly from owners and agencies.
+                Browse homes, apartments, land, and commercial properties for sale or rent, directly
+                from owners and agencies.
               </p>
             </div>
 
             <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="grid gap-3 md:grid-flow-col md:grid-cols-[1.3fr_0.75fr_0.7fr_auto_auto] md:items-end">
-                    <div
+                <div
                   className={
                     locationScope === "chisinau"
                       ? "grid min-w-0 grid-cols-[minmax(0,1fr)_7rem] items-end gap-2"
@@ -290,7 +283,9 @@ function Index() {
                   }
                 >
                   <label className="block min-w-0">
-                    <span className="mb-1.5 block text-xs font-semibold text-foreground">Location</span>
+                    <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Location
+                    </span>
                     <span className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3">
                       <MapPin className="size-4 text-muted-foreground" />
                       <select
@@ -311,7 +306,9 @@ function Index() {
 
                   {locationScope === "chisinau" && (
                     <label className="block min-w-0">
-                      <span className="mb-1.5 block text-xs font-semibold text-foreground">Region</span>
+                      <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Region
+                      </span>
                       <select
                         value={chisinauDistrict}
                         onChange={(event) => setChisinauDistrict(event.target.value)}
@@ -327,7 +324,9 @@ function Index() {
                   )}
                 </div>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Property type</span>
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Property type
+                  </span>
                   <select
                     value={propertyType}
                     onChange={(event) => setPropertyType(event.target.value)}
@@ -339,7 +338,9 @@ function Index() {
                   </select>
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">Looking for</span>
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Looking for
+                  </span>
                   <select
                     value={mode}
                     onChange={(event) => setMode(event.target.value as "all" | "sale" | "rent")}
@@ -352,7 +353,11 @@ function Index() {
                 </label>
                 <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-11 gap-1 rounded-full px-2" aria-label="Open filters">
+                    <Button
+                      variant="outline"
+                      className="h-11 gap-1 rounded-full px-2"
+                      aria-label="Open filters"
+                    >
                       <SlidersHorizontal className="size-4" />
                       <span>Filters</span>
                     </Button>
@@ -361,11 +366,17 @@ function Index() {
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-display text-xl">Refine your search</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">Choose the details that matter most.</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Choose the details that matter most.
+                        </p>
                       </div>
                       <label className="block">
                         <span className="mb-1.5 block text-xs font-semibold">Price</span>
-                        <select value={priceRange} onChange={(event) => setPriceRange(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring">
+                        <select
+                          value={priceRange}
+                          onChange={(event) => setPriceRange(event.target.value)}
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                        >
                           <option value="">Any price</option>
                           <option value="under-50000">Under 50,000</option>
                           <option value="50000-100000">50,000 - 100,000</option>
@@ -376,7 +387,11 @@ function Index() {
                       <div className="grid grid-cols-2 gap-3">
                         <label className="block">
                           <span className="mb-1.5 block text-xs font-semibold">Rooms</span>
-                          <select value={roomCount} onChange={(event) => setRoomCount(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring">
+                          <select
+                            value={roomCount}
+                            onChange={(event) => setRoomCount(event.target.value)}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                          >
                             <option value="Any">Any</option>
                             <option value="1">1 room</option>
                             <option value="2">2 rooms</option>
@@ -387,7 +402,11 @@ function Index() {
                         </label>
                         <label className="block">
                           <span className="mb-1.5 block text-xs font-semibold">Surface area</span>
-                          <select value={surfaceRange} onChange={(event) => setSurfaceRange(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring">
+                          <select
+                            value={surfaceRange}
+                            onChange={(event) => setSurfaceRange(event.target.value)}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                          >
                             <option value="">Any size</option>
                             <option value="under-50">Under 50 m²</option>
                             <option value="50-100">50 - 100 m²</option>
@@ -396,30 +415,35 @@ function Index() {
                           </select>
                         </label>
                       </div>
-                      <Button variant="outline" className="w-full" onClick={() => {
-                        setPropertyType("Any");
-                        setPriceRange("");
-                        setRoomCount("Any");
-                        setSurfaceRange("");
-                      }}>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setPropertyType("Any");
+                          setPriceRange("");
+                          setRoomCount("Any");
+                          setSurfaceRange("");
+                        }}
+                      >
                         Clear filters
                       </Button>
                     </div>
                   </PopoverContent>
                 </Popover>
-
                 <Button
                   size="icon"
                   className="h-11 w-11"
                   aria-label="Search properties"
                   title="Search properties"
-                  onClick={() => document.getElementById("listings")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() =>
+                    document.getElementById("listings")?.scrollIntoView({ behavior: "smooth" })
+                  }
                 >
                   <Search />
                 </Button>
               </div>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">Thousands of properties. No commissions for buyers.</p>
+            <p className="mt-4 text-xs text-muted-foreground"></p>
           </div>
         </section>
 
@@ -471,8 +495,8 @@ function Index() {
                   const saved = savedIds.includes(advert.guid);
                   const isOwner = Boolean(
                     currentUserUuid &&
-                      advert.userUuid &&
-                      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+                    advert.userUuid &&
+                    currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
                   );
                   return (
                     <article key={advert.guid} className="group min-w-0">
@@ -597,7 +621,6 @@ function Index() {
                 done.
               </p>
             </div>
-            
           </div>
         </section>
       </main>

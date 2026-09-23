@@ -35,6 +35,7 @@ export async function changePassword(data: ChangePasswordRequest): Promise<void>
   }
 }
 
+
 export interface UpdateUserRequest {
   firstName: string;
   lastName: string;
@@ -53,3 +54,4 @@ export async function updateCurrentUser(data: UpdateUserRequest): Promise<void> 
     throw new Error((error as { message?: string })?.message ?? "Failed to update account");
   }
 }
+

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Navigation/header";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, type CurrentUser } from "@/api/users";
+import { getCurrentUser, changePassword, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
 import { isLoggedIn } from "@/lib/tokens";
 
@@ -64,14 +64,22 @@ function AccountPage() {
 
   const fullName = user ? [user.firstName, user.lastName].filter(Boolean).join(" ") : "";
   const initials = fullName
-    ? fullName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()
+    ? fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "OK";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-7 lg:px-10 lg:py-14">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Back to browse
         </Link>
 
@@ -80,7 +88,9 @@ function AccountPage() {
         ) : error || !user ? (
           <div className="mt-12 rounded-lg border border-border bg-card p-8 text-center">
             <h1 className="font-display text-3xl">Account unavailable</h1>
-            <p className="mt-2 text-sm text-muted-foreground">We could not load your account details.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We could not load your account details.
+            </p>
           </div>
         ) : (
           <section className="mt-8 overflow-hidden rounded-lg border border-border bg-card">
@@ -91,7 +101,9 @@ function AccountPage() {
                     {initials}
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">OpenKey member</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                      OpenKey member
+                    </p>
                     <h1 className="mt-1 font-display text-4xl">{fullName || "Your account"}</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Buyer and seller profile</p>
                   </div>
@@ -107,7 +119,11 @@ function AccountPage() {
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <InfoItem icon={Mail} label="Email" value={user.email} />
                   <InfoItem icon={Phone} label="Phone" value={user.phoneNumber || "Not provided"} />
-                  <InfoItem icon={CalendarDays} label="Date of birth" value={formatDate(user.dateOfBirth)} />
+                  <InfoItem
+                    icon={CalendarDays}
+                    label="Date of birth"
+                    value={formatDate(user.dateOfBirth)}
+                  />
                   <InfoItem icon={UserRound} label="Account ID" value={user.uuid} compact />
                 </div>
               </div>
@@ -115,8 +131,18 @@ function AccountPage() {
               <div className="border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                 <h2 className="font-display text-2xl">Your activity</h2>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <ActivityStat icon={Store} value={listingCount} label="Published listings" to="/mylistings" />
-                  <ActivityStat icon={Heart} value={savedCount} label="Saved listings" to="/savedhomes" />
+                  <ActivityStat
+                    icon={Store}
+                    value={listingCount}
+                    label="Published listings"
+                    to="/mylistings"
+                  />
+                  <ActivityStat
+                    icon={Heart}
+                    value={savedCount}
+                    label="Saved listings"
+                    to="/savedhomes"
+                  />
                 </div>
                 <div className="mt-5 flex flex-col sm:flex-row gap-3">
                   <Link
@@ -137,10 +163,15 @@ function AccountPage() {
                 </div>
                 <div className="mt-5 flex items-start gap-3 rounded-md bg-muted p-4 text-sm">
                   <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" />
-                  <p className="text-muted-foreground">Use this account to publish homes as a seller and save or contact listings as a buyer.</p>
+                  <p className="text-muted-foreground">
+                    Use this account to publish homes as a seller and save or contact listings as a
+                    buyer.
+                  </p>
                 </div>
               </div>
             </div>
+
+            <ChangePasswordSection />
 
           </section>
         )}
@@ -149,13 +180,120 @@ function AccountPage() {
   );
 }
 
-function InfoItem({ icon: Icon, label, value, compact = false }: { icon: typeof Mail; label: string; value: string; compact?: boolean }) {
+function ChangePasswordSection() {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    const form = event.currentTarget;
+    const currentPassword = (form.elements.namedItem("currentPassword") as HTMLInputElement).value;
+    const newPassword = (form.elements.namedItem("newPassword") as HTMLInputElement).value;
+    const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
+
+    if (newPassword !== confirmPassword) {
+      setError("New passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setSuccess(true);
+      form.reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="mt-8 rounded-lg border border-border bg-card p-6 sm:p-10">
+      <div className="flex items-center gap-2">
+        <KeyRound className="size-5 text-primary" />
+        <h2 className="font-display text-2xl">Change password</h2>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Update the password you use to log in to OpenKey.
+      </p>
+
+      <form className="mt-6 grid max-w-md gap-4" onSubmit={handleSubmit}>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Current password
+          <input
+            name="currentPassword"
+            required
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          New password
+          <input
+            name="newPassword"
+            required
+            minLength={8}
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Confirm new password
+          <input
+            name="confirmPassword"
+            required
+            minLength={8}
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        {error && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+        )}
+        {success && (
+          <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            Password updated successfully.
+          </p>
+        )}
+        <Button type="submit" disabled={loading} className="mt-2 w-full sm:w-auto">
+          {loading ? "Saving…" : "Update password"}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+  compact = false,
+}: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
   return (
     <div className="flex min-w-0 gap-3 rounded-md border border-border p-4">
       <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={compact ? "mt-1 break-all text-xs font-medium" : "mt-1 break-words text-sm font-medium"}>{value}</p>
+        <p
+          className={
+            compact ? "mt-1 break-all text-xs font-medium" : "mt-1 break-words text-sm font-medium"
+          }
+        >
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -175,9 +313,7 @@ function ActivityStat({
   const content = (
     <div
       className={`group rounded-md border border-border p-4 transition-all duration-200 ${
-        to
-          ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm"
-          : ""
+        to ? "cursor-pointer hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm" : ""
       }`}
     >
       <div className="flex items-center justify-between">
@@ -193,7 +329,7 @@ function ActivityStat({
 
   if (to) {
     return (
-      <Link to={to as any} className="block">
+      <Link to={to as never} className="block">
         {content}
       </Link>
     );
