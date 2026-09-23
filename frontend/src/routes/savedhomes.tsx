@@ -83,7 +83,9 @@ function SavedHomesPage() {
 
         <div className="mt-6 mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">Your collection</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              Your collection
+            </p>
             <h1 className="mt-1 font-display text-3xl sm:text-4xl">Saved listings</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {loading
@@ -128,7 +130,8 @@ function SavedHomesPage() {
             </div>
             <h2 className="mt-5 font-display text-2xl">No saved listings yet</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Save properties you are interested in by clicking the heart icon on any listing. They will appear here for easy comparison.
+              Save properties you are interested in by clicking the heart icon on any listing. They
+              will appear here for easy comparison.
             </p>
             <Button asChild className="mt-6">
               <Link to="/">Browse available homes</Link>
@@ -153,9 +156,7 @@ function SavedHomesPage() {
                     >
                       <img
                         src={
-                          primaryPhoto
-                            ? getAdvertPhotoUrl(primaryPhoto.photoUrl)
-                            : placeholderImage
+                          primaryPhoto ? getAdvertPhotoUrl(primaryPhoto.photoUrl) : placeholderImage
                         }
                         alt={advert.title}
                         loading="lazy"

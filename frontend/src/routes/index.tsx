@@ -68,14 +68,7 @@ const MOLDOVA_DISTRICTS = [
   "Ungheni",
 ];
 
-const CHISINAU_REGIONS = [
-  "Botanica",
-  "Buiucani",
-  "Centru",
-  "Ciocana",
-  "Râșcani",
-  "Telecentru",
-];
+const CHISINAU_REGIONS = ["Botanica", "Buiucani", "Centru", "Ciocana", "Râșcani", "Telecentru"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -235,8 +228,8 @@ function Index() {
   const openContact = (advert: Advert) => {
     const isOwner = Boolean(
       currentUserUuid &&
-        advert.userUuid &&
-        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+      advert.userUuid &&
+      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
     );
     if (isOwner) return;
     setSelected(advert);
@@ -251,8 +244,8 @@ function Index() {
     const advert = adverts.find((a) => a.guid === guid);
     const isOwner = Boolean(
       currentUserUuid &&
-        advert?.userUuid &&
-        currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+      advert?.userUuid &&
+      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
     );
     if (isOwner) return;
 
@@ -275,14 +268,14 @@ function Index() {
                 Find a place you'll love to call home.
               </h1>
               <p className="mx-auto mt-4 max-w-xl text-sm leading-5 text-muted-foreground sm:text-base">
-                Browse homes, apartments, land, and commercial properties for sale or rent,
-                directly from owners and agencies.
+                Browse homes, apartments, land, and commercial properties for sale or rent, directly
+                from owners and agencies.
               </p>
             </div>
 
-            <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
+                       <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
               <div className="grid gap-3 md:grid-flow-col md:grid-cols-[1.3fr_0.75fr_0.7fr_auto_auto] md:items-end">
-                    <div
+                <div
                   className={
                     locationScope === "chisinau"
                       ? "grid min-w-0 grid-cols-[minmax(0,1fr)_7rem] items-end gap-2"
@@ -290,7 +283,9 @@ function Index() {
                   }
                 >
                   <label className="block min-w-0">
-                    <span className="mb-1.5 block text-xs font-semibold text-foreground">Location</span>
+                    <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Location
+                    </span>
                     <span className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3">
                       <MapPin className="size-4 text-muted-foreground" />
                       <select
@@ -311,7 +306,9 @@ function Index() {
 
                   {locationScope === "chisinau" && (
                     <label className="block min-w-0">
-                      <span className="mb-1.5 block text-xs font-semibold text-foreground">Region</span>
+                      <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Region
+                      </span>
                       <select
                         value={chisinauDistrict}
                         onChange={(event) => setChisinauDistrict(event.target.value)}
@@ -406,20 +403,22 @@ function Index() {
                       </Button>
                     </div>
                   </PopoverContent>
-                </Popover>
-
+                                </Popover>
                 <Button
                   size="icon"
                   className="h-11 w-11"
                   aria-label="Search properties"
                   title="Search properties"
-                  onClick={() => document.getElementById("listings")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() =>
+                    document.getElementById("listings")?.scrollIntoView({ behavior: "smooth" })
+                  }
                 >
                   <Search />
                 </Button>
               </div>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">Thousands of properties. No commissions for buyers.</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+            </p>
           </div>
         </section>
 
@@ -479,8 +478,8 @@ function Index() {
                   const saved = savedIds.includes(advert.guid);
                   const isOwner = Boolean(
                     currentUserUuid &&
-                      advert.userUuid &&
-                      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+                    advert.userUuid &&
+                    currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
                   );
                   return (
                     <article key={advert.guid} className="group min-w-0">
@@ -605,7 +604,6 @@ function Index() {
                 done.
               </p>
             </div>
-            
           </div>
         </section>
       </main>

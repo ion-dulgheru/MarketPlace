@@ -37,8 +37,8 @@ function ListingDetailsPage() {
   const currentUserUuid = getCurrentUserUuid();
   const isOwner = Boolean(
     currentUserUuid &&
-      advert?.userUuid &&
-      currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
+    advert?.userUuid &&
+    currentUserUuid.toLowerCase() === advert.userUuid.toLowerCase(),
   );
 
   useEffect(() => {

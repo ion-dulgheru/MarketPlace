@@ -66,12 +66,10 @@ export function ContactOwnerDialog({
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl">
-              Contact {sellerName}
-            </DialogTitle>
+            <DialogTitle className="font-display text-2xl">Contact {sellerName}</DialogTitle>
             <DialogDescription>
-              Create an account or sign in to contact the owner of “{listingTitle}”.
-              Browsing always stays open.
+              Create an account or sign in to contact the owner of “{listingTitle}”. Browsing always
+              stays open.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
@@ -91,13 +89,9 @@ export function ContactOwnerDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">
-            Contact {sellerName}
-          </DialogTitle>
+          <DialogTitle className="font-display text-2xl">Contact {sellerName}</DialogTitle>
           <DialogDescription>
-            {sent
-              ? "Your message has been sent."
-              : `Send a message about "${listingTitle}".`}
+            {sent ? "Your message has been sent." : `Send a message about "${listingTitle}".`}
           </DialogDescription>
         </DialogHeader>
 
