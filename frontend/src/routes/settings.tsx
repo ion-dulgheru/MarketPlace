@@ -23,7 +23,9 @@ function SettingsPage() {
       return;
     }
 
-    void getCurrentUser().then(setUser).catch(() => void navigate({ to: "/login" }));
+    void getCurrentUser()
+      .then(setUser)
+      .catch(() => void navigate({ to: "/login" }));
   }, [navigate]);
 
   return (
@@ -42,7 +44,9 @@ function SettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-2xl">Sign out</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Sign out of your OpenKey account on this device.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Sign out of your OpenKey account on this device.
+              </p>
             </div>
             <Button
               variant="outline"
@@ -61,7 +65,13 @@ function SettingsPage() {
   );
 }
 
-function EditAccountSection({ user, onSaved }: { user: CurrentUser; onSaved: (user: CurrentUser) => void }) {
+function EditAccountSection({
+  user,
+  onSaved,
+}: {
+  user: CurrentUser;
+  onSaved: (user: CurrentUser) => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,7 +85,8 @@ function EditAccountSection({ user, onSaved }: { user: CurrentUser; onSaved: (us
       firstName: (form.elements.namedItem("firstName") as HTMLInputElement).value.trim(),
       lastName: (form.elements.namedItem("lastName") as HTMLInputElement).value.trim(),
       dateOfBirth: (form.elements.namedItem("dateOfBirth") as HTMLInputElement).value || null,
-      phoneNumber: (form.elements.namedItem("phoneNumber") as HTMLInputElement).value.trim() || null,
+      phoneNumber:
+        (form.elements.namedItem("phoneNumber") as HTMLInputElement).value.trim() || null,
     };
 
     setLoading(true);
@@ -100,22 +111,49 @@ function EditAccountSection({ user, onSaved }: { user: CurrentUser; onSaved: (us
       <form className="mt-6 grid max-w-2xl gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
         <label className="grid gap-1.5 text-sm font-medium">
           First name
-          <input name="firstName" required defaultValue={user.firstName ?? ""} className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            name="firstName"
+            required
+            defaultValue={user.firstName ?? ""}
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           Last name
-          <input name="lastName" required defaultValue={user.lastName ?? ""} className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            name="lastName"
+            required
+            defaultValue={user.lastName ?? ""}
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           Date of birth
-          <input name="dateOfBirth" type="date" defaultValue={user.dateOfBirth?.slice(0, 10) ?? ""} className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            name="dateOfBirth"
+            type="date"
+            defaultValue={user.dateOfBirth?.slice(0, 10) ?? ""}
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           Phone number
-          <input name="phoneNumber" defaultValue={user.phoneNumber ?? ""} className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            name="phoneNumber"
+            defaultValue={user.phoneNumber ?? ""}
+            className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
         </label>
-        {error && <p className="sm:col-span-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-        {success && <p className="sm:col-span-2 rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">Account updated successfully.</p>}
+        {error && (
+          <p className="sm:col-span-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="sm:col-span-2 rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            Account updated successfully.
+          </p>
+        )}
         <Button type="submit" disabled={loading} className="sm:col-span-2 w-full sm:w-auto">
           {loading ? "Saving…" : "Save account"}
         </Button>

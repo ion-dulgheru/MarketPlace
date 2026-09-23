@@ -108,8 +108,7 @@ function AccountPage() {
                     <p className="mt-1 text-sm text-muted-foreground">Buyer and seller profile</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                </div>
+                <div className="flex flex-wrap items-center gap-3"></div>
               </div>
             </div>
 
@@ -172,7 +171,6 @@ function AccountPage() {
             </div>
 
             <ChangePasswordSection />
-
           </section>
         )}
       </main>

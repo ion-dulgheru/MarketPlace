@@ -459,7 +459,7 @@ function Index() {
                 {loading ? "Loading listings…" : `${totalCount} listings match your search`}
               </p>
             </div>
-            </div>
+          </div>
 
           {error ? (
             <div className="border-y border-border py-20 text-center">
