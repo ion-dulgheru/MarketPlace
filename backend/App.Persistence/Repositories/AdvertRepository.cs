@@ -38,6 +38,11 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
             query = query.Where(x => x.Type == criteria.Type.Value);
         }
 
+        if (criteria.BuildingType.HasValue)
+        {
+            query = query.Where(x => x.BuildingType == criteria.BuildingType.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(criteria.City))
         {
             var city = criteria.City.Trim().ToLower();

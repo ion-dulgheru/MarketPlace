@@ -9,9 +9,11 @@ import {
   MessageCircle,
   Plus,
   Search,
+  SlidersHorizontal,
   Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import {
@@ -94,9 +96,11 @@ function Index() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"all" | "sale" | "rent">("all");
   const [query, setQuery] = useState("");
-  const [propertyType, setPropertyType] = useState("Apartment");
+  const [propertyType, setPropertyType] = useState("Any");
   const [roomCount, setRoomCount] = useState("Any");
   const [priceRange, setPriceRange] = useState("");
+  const [surfaceRange, setSurfaceRange] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [locationScope, setLocationScope] = useState<LocationScope>("all");
   const [chisinauDistrict, setChisinauDistrict] = useState("All Chișinău");
@@ -129,9 +133,31 @@ function Index() {
 
   const effectiveSearchTerm = [debouncedQuery, locationSearchTerm].filter(Boolean).join(" ");
 
+  const [minPrice, maxPrice] =
+    priceRange === "under-50000"
+      ? [undefined, 50000]
+      : priceRange === "50000-100000"
+        ? [50000, 100000]
+        : priceRange === "100000-200000"
+          ? [100000, 200000]
+          : priceRange === "over-200000"
+            ? [200000, undefined]
+            : [undefined, undefined];
+
+  const [minSurfaceArea, maxSurfaceArea] =
+    surfaceRange === "under-50"
+      ? [undefined, 50]
+      : surfaceRange === "50-100"
+        ? [50, 100]
+        : surfaceRange === "100-200"
+          ? [100, 200]
+          : surfaceRange === "over-200"
+            ? [200, undefined]
+            : [undefined, undefined];
+
   useEffect(() => {
     setPage(1);
-  }, [mode, effectiveSearchTerm, sort]);
+  }, [mode, effectiveSearchTerm, sort, priceRange, surfaceRange, roomCount, propertyType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +179,12 @@ function Index() {
       sortBy,
       sortDescending,
       searchTerm: effectiveSearchTerm || undefined,
+      minPrice,
+      maxPrice,
+      minSurfaceArea,
+      maxSurfaceArea,
+      rooms: roomCount === "Any" ? undefined : Number(roomCount),
+      buildingType: propertyType === "Any" ? undefined : (propertyType as "Apartment" | "House"),
     })
       .then((response) => {
         if (cancelled) return;
@@ -172,7 +204,18 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [mode, effectiveSearchTerm, sort, page]);
+  }, [
+    mode,
+    effectiveSearchTerm,
+    sort,
+    page,
+    minPrice,
+    maxPrice,
+    minSurfaceArea,
+    maxSurfaceArea,
+    roomCount,
+    propertyType,
+  ]);
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -231,51 +274,7 @@ function Index() {
             </div>
 
             <div className="mt-9 w-full max-w-6xl rounded-lg border border-border bg-card p-3 shadow-[0_18px_50px_-32px_oklch(0.22_0.025_155/0.35)] sm:p-4">
-              <div className="grid gap-3 md:grid-flow-col md:grid-cols-[0.55fr_0.75fr_0.7fr_1.3fr_auto] md:items-end">
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
-                    Looking for
-                  </span>
-                  <select
-                    value={mode}
-                    onChange={(event) => setMode(event.target.value as "all" | "sale" | "rent")}
-                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="all">All</option>
-                    <option value="rent">Rent</option>
-                    <option value="sale">Buy</option>
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
-                    Property type
-                  </span>
-                  <select
-                    value={propertyType}
-                    onChange={(event) => setPropertyType(event.target.value)}
-                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option>Apartment</option>
-                    <option>House</option>
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
-                    How many rooms
-                  </span>
-                  <select
-                    value={roomCount}
-                    onChange={(event) => setRoomCount(event.target.value)}
-                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="Any">Any</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5+">5+</option>
-                  </select>
-                </label>
+              <div className="grid gap-3 md:grid-flow-col md:grid-cols-[1.3fr_0.75fr_0.7fr_auto_auto] md:items-end">
                 <div
                   className={
                     locationScope === "chisinau"
@@ -324,7 +323,113 @@ function Index() {
                     </label>
                   )}
                 </div>
-
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Property type
+                  </span>
+                  <select
+                    value={propertyType}
+                    onChange={(event) => setPropertyType(event.target.value)}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="Any">Any type</option>
+                    <option>Apartment</option>
+                    <option>House</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Looking for
+                  </span>
+                  <select
+                    value={mode}
+                    onChange={(event) => setMode(event.target.value as "all" | "sale" | "rent")}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="all">All</option>
+                    <option value="rent">Rent</option>
+                    <option value="sale">Buy</option>
+                  </select>
+                </label>
+                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-11 gap-1 rounded-full px-2"
+                      aria-label="Open filters"
+                    >
+                      <SlidersHorizontal className="size-4" />
+                      <span>Filters</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-5">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-display text-xl">Refine your search</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Choose the details that matter most.
+                        </p>
+                      </div>
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold">Price</span>
+                        <select
+                          value={priceRange}
+                          onChange={(event) => setPriceRange(event.target.value)}
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                        >
+                          <option value="">Any price</option>
+                          <option value="under-50000">Under 50,000</option>
+                          <option value="50000-100000">50,000 - 100,000</option>
+                          <option value="100000-200000">100,000 - 200,000</option>
+                          <option value="over-200000">Over 200,000</option>
+                        </select>
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="mb-1.5 block text-xs font-semibold">Rooms</span>
+                          <select
+                            value={roomCount}
+                            onChange={(event) => setRoomCount(event.target.value)}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                          >
+                            <option value="Any">Any</option>
+                            <option value="1">1 room</option>
+                            <option value="2">2 rooms</option>
+                            <option value="3">3 rooms</option>
+                            <option value="4">4 rooms</option>
+                            <option value="5">5+ rooms</option>
+                          </select>
+                        </label>
+                        <label className="block">
+                          <span className="mb-1.5 block text-xs font-semibold">Surface area</span>
+                          <select
+                            value={surfaceRange}
+                            onChange={(event) => setSurfaceRange(event.target.value)}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                          >
+                            <option value="">Any size</option>
+                            <option value="under-50">Under 50 m²</option>
+                            <option value="50-100">50 - 100 m²</option>
+                            <option value="100-200">100 - 200 m²</option>
+                            <option value="over-200">Over 200 m²</option>
+                          </select>
+                        </label>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setPropertyType("Any");
+                          setPriceRange("");
+                          setRoomCount("Any");
+                          setSurfaceRange("");
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   size="icon"
                   className="h-11 w-11"
@@ -338,9 +443,7 @@ function Index() {
                 </Button>
               </div>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Thousands of properties. No commissions for buyers.
-            </p>
+            <p className="mt-4 text-xs text-muted-foreground"></p>
           </div>
         </section>
 

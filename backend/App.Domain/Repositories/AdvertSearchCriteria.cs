@@ -7,6 +7,7 @@ public record AdvertSearchCriteria(
     int PageSize = 20,
     string? SearchTerm = null,
     AdvertType? Type = null,
+    BuildingType? BuildingType = null,
     string? City = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
