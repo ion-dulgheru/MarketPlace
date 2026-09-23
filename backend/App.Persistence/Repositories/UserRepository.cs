@@ -38,6 +38,12 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
     {
         return await context.UserDetails.FirstOrDefaultAsync(x => x.UserId == userId, ct);
     }
+
+    public Task UpdateDetailsAsync(UserDetails details, CancellationToken ct)
+    {
+        context.UserDetails.Update(details);
+        return Task.CompletedTask;
+    }
     public async Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default)
 {
     return await context.Users

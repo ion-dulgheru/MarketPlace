@@ -6,6 +6,7 @@ public record GetAdvertsRequest(
     bool Mine = false,
     string? SearchTerm = null,
     string? Type = null,
+    string? BuildingType = null,
     string? City = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
