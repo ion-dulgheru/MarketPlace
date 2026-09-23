@@ -20,6 +20,7 @@ using App.Application.UseCases.Adverts.GetFavoriteAdverts;
 using App.Application.UseCases.Adverts.SendContactRequest;
 using App.Application.UseCases.Adverts.GetAdvertContactRequests;
 
+
 namespace App.WebApi.Controllers;
 
 [Authorize]
@@ -94,7 +95,7 @@ public class AdvertsController(ISender sender) : BaseController
     public async Task<IActionResult> Delete(Guid uuid, CancellationToken ct = default)
     {
         var result = await sender.Send(
-            new DeleteAdvertCommand(uuid, UserUuid),
+            new DeleteAdvertCommand(uuid, UserUuid, IsAdmin),
             ct);
 
         return result.IsFailure
@@ -254,7 +255,7 @@ public class AdvertsController(ISender sender) : BaseController
         [FromBody] ReportAdvertRequest request,
         CancellationToken ct = default)
     {
-        var result = await sender.Send(new ReportAdvertCommand(uuid, request.Reason, UserUuid), ct);
+        var result = await sender.Send(new ReportAdvertCommand(uuid, request.Reason, request.Description, UserUuid), ct);
 
         return result.IsFailure
             ? HandleFailure(result)
