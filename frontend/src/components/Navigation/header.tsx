@@ -3,6 +3,8 @@ import {
   Bell,
   BellOff,
   ChevronDown,
+  Check,
+  CheckCheck,
   Heart,
   KeyRound,
   LogOut,
@@ -10,6 +12,7 @@ import {
   Plus,
   Settings,
   Store,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { Button } from "../ui/button";
@@ -32,6 +35,8 @@ export default function Header() {
   const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loadingInquiries, setLoadingInquiries] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [updatingNotifications, setUpdatingNotifications] = useState(false);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -79,6 +84,9 @@ export default function Header() {
   }, [loggedIn]);
 
   const unreadCount = inquiries.filter((r) => r.status === "Unread").length;
+  const visibleInquiries = showAllNotifications
+    ? inquiries
+    : inquiries.filter((item) => item.status === "Unread");
 
   const displayName =
     [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(" ") || "Account";
@@ -104,6 +112,49 @@ export default function Header() {
     } else {
       void navigate({ to: "/mylistings", search: { inquiries: undefined } });
     }
+  };
+
+  const handleMarkAsRead = async (item: ContactRequest) => {
+    if (item.status === "Read") return;
+
+    try {
+      await markContactRequestAsRead(item.uuid);
+      setInquiries((prev) =>
+        prev.map((inquiry) =>
+          inquiry.uuid === item.uuid ? { ...inquiry, status: "Read" } : inquiry,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as read", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadInquiries = inquiries.filter((item) => item.status === "Unread");
+    if (unreadInquiries.length === 0) return;
+
+    setUpdatingNotifications(true);
+    const results = await Promise.allSettled(
+      unreadInquiries.map((item) => markContactRequestAsRead(item.uuid)),
+    );
+    const readUuids = new Set(
+      unreadInquiries
+        .filter((_, index) => results[index].status === "fulfilled")
+        .map((item) => item.uuid),
+    );
+    setInquiries((prev) =>
+      prev.map((item) => (readUuids.has(item.uuid) ? { ...item, status: "Read" } : item)),
+    );
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("Failed to mark notification as read", result.reason);
+      }
+    });
+    setUpdatingNotifications(false);
+  };
+
+  const handleDeleteNotification = (uuid: string) => {
+    setInquiries((prev) => prev.filter((item) => item.uuid !== uuid));
   };
 
   return (
@@ -171,59 +222,101 @@ export default function Header() {
                         When buyers send an inquiry for any of your listings, it will appear here.
                       </p>
                     </div>
+                  ) : visibleInquiries.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No unread notifications
+                    </div>
                   ) : (
                     <div className="max-h-[380px] overflow-y-auto divide-y divide-border">
-                      {inquiries.map((item) => (
-                        <button
+                      {visibleInquiries.map((item) => (
+                        <div
                           key={item.uuid}
-                          type="button"
-                          onClick={() => handleInquiryClick(item)}
-                          className={`w-full text-left p-3.5 transition-colors hover:bg-muted/60 flex items-start gap-3 ${
+                          className={`w-full p-3.5 transition-colors hover:bg-muted/60 flex items-start gap-3 ${
                             item.status === "Unread" ? "bg-primary/[0.04]" : ""
                           }`}
                         >
-                          <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                            <MessageSquare className="size-4" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="font-semibold text-xs text-foreground truncate">
-                                {item.senderName || "Interested Buyer"}
+                          <button
+                            type="button"
+                            onClick={() => handleInquiryClick(item)}
+                            className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          >
+                            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                              <MessageSquare className="size-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center justify-between gap-1">
+                                <span className="truncate text-xs font-semibold text-foreground">
+                                  {item.senderName || "Interested Buyer"}
+                                </span>
+                                <span className="shrink-0 text-[10px] text-muted-foreground">
+                                  {formatPostedDate(item.createdDate)}
+                                </span>
                               </span>
-                              <span className="shrink-0 text-[10px] text-muted-foreground">
-                                {formatPostedDate(item.createdDate)}
+                              {item.advertTitle && (
+                                <span className="mt-0.5 block line-clamp-1 text-[11px] font-medium text-primary">
+                                  For: {item.advertTitle}
+                                </span>
+                              )}
+                              <span className="mt-1 block line-clamp-2 text-xs text-muted-foreground">
+                                {item.message}
                               </span>
-                            </div>
-                            {item.advertTitle && (
-                              <p className="mt-0.5 text-[11px] font-medium text-primary line-clamp-1">
-                                For: {item.advertTitle}
-                              </p>
+                            </span>
+                            {item.status === "Unread" && (
+                              <span className="mt-1.5 size-2 shrink-0 rounded-full bg-red-500" />
                             )}
-                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                              {item.message}
-                            </p>
+                          </button>
+                          <div className="flex shrink-0 items-start gap-1">
+                            {item.status === "Unread" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                aria-label="Mark notification as read"
+                                title="Mark as read"
+                                onClick={() => void handleMarkAsRead(item)}
+                              >
+                                <Check className="size-3.5" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 text-muted-foreground hover:text-destructive"
+                              aria-label="Delete notification"
+                              title="Delete notification"
+                              onClick={() => handleDeleteNotification(item.uuid)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
                           </div>
-                          {item.status === "Unread" && (
-                            <span className="mt-1.5 size-2 shrink-0 rounded-full bg-red-500" />
-                          )}
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
 
                   {inquiries.length > 0 && (
-                    <div className="border-t border-border p-2 bg-muted/20 text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => {
-                          setPopoverOpen(false);
-                          void navigate({ to: "/mylistings", search: { inquiries: undefined } });
-                        }}
-                      >
-                        View all in My listings
-                      </Button>
+                    <div className="border-t border-border bg-muted/20 p-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="min-w-0 flex-1 text-xs"
+                          disabled={unreadCount === 0 || updatingNotifications}
+                          onClick={() => void handleMarkAllAsRead()}
+                        >
+                          <CheckCheck className="size-3.5" />
+                          {updatingNotifications ? "Marking…" : "Mark all as read"}
+                        </Button>
+                        <Button
+                          variant={showAllNotifications ? "secondary" : "ghost"}
+                          size="sm"
+                          className="min-w-0 flex-1 text-xs"
+                          onClick={() => setShowAllNotifications((current) => !current)}
+                        >
+                          <Bell className="size-3.5" />
+                          {showAllNotifications ? "Unread only" : "View all"}
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </PopoverContent>
