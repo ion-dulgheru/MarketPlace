@@ -22,4 +22,20 @@ public class ResendEmailSender(IResend resend, IConfiguration configuration) : I
 
         await resend.EmailSendAsync(message, ct);
     }
+    public async Task SendAdvertReportedEmailAsync(
+    Guid advertUuid, string advertTitle, string reason, CancellationToken ct = default)
+    {
+    var operatorAddress = configuration["Email:OperatorAddress"] ?? "onboarding@resend.dev";
+    var fromAddress = configuration["Email:FromAddress"] ?? "onboarding@resend.dev";
+
+    var message = new EmailMessage
+    {
+        From = fromAddress,
+        Subject = $"Advert reported: {advertTitle}",
+        HtmlBody = $"<p>Advert <strong>{advertTitle}</strong> ({advertUuid}) was reported for: <strong>{reason}</strong>.</p>"
+    };
+    message.To.Add(operatorAddress);
+
+    await resend.EmailSendAsync(message, ct);
+    }
 }

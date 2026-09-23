@@ -1,4 +1,4 @@
-
+using App.Application.UseCases.Adverts.ReportAdvert;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -243,5 +243,21 @@ public class AdvertsController(ISender sender) : BaseController
         return result.IsFailure
             ? HandleFailure(result)
             : Ok(result.Value);
+    }
+
+    [HttpPost("{uuid:guid}/reports")]
+    [SwaggerResponse(201, "Report submitted.")]
+    [SwaggerResponse(400, "Invalid reason.", typeof(ErrorDetails))]
+    [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]
+    public async Task<IActionResult> ReportAdvert(
+        Guid uuid,
+        [FromBody] ReportAdvertRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new ReportAdvertCommand(uuid, request.Reason, UserUuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : StatusCode(StatusCodes.Status201Created);
     }
 }

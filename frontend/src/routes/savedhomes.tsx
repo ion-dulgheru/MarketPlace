@@ -191,7 +191,7 @@ function SavedHomesPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <span className="font-display text-2xl font-bold">
-                          {formatAdvertPrice(advert.price, advert.type)}
+                          {formatAdvertPrice(advert)}
                         </span>
                         <Link
                           to="/listings/$listingId"

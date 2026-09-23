@@ -16,6 +16,8 @@ import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 import DOMPurify from "dompurify";
+import { Flag } from "lucide-react";
+import { ReportAdvertDialog } from "@/components/dialogs/ReportAdvertDialog";
 
 export const Route = createFileRoute("/listings/$listingId")({
   head: () => ({
@@ -32,6 +34,7 @@ function ListingDetailsPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [inquiriesOpen, setInquiriesOpen] = useState(false);
 
   const currentUserUuid = getCurrentUserUuid();
@@ -196,15 +199,26 @@ function ListingDetailsPage() {
                 </h1>
               </div>
               {!isOwner && (
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="shrink-0 rounded-full"
-                  onClick={handleToggleFavorite}
-                  aria-label={saved ? "Remove from saved" : "Save listing"}
-                >
-                  <Heart className={saved ? "fill-primary text-primary" : ""} />
-                </Button>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={handleToggleFavorite}
+                    aria-label={saved ? "Remove from saved" : "Save listing"}
+                  >
+                    <Heart className={saved ? "fill-primary text-primary" : ""} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setReportDialogOpen(true)}
+                    aria-label="Report listing"
+                  >
+                    <Flag />
+                  </Button>
+                </div>
               )}
             </div>
             {location && (
@@ -277,6 +291,12 @@ function ListingDetailsPage() {
         listingTitle={advert.title}
         onClose={() => setDialogOpen(false)}
         onSignIn={() => void navigate({ to: "/login" })}
+      />
+      <ReportAdvertDialog
+        open={reportDialogOpen}
+        advertUuid={advert.guid}
+        listingTitle={advert.title}
+        onClose={() => setReportDialogOpen(false)}
       />
 
       {inquiriesOpen && advert && (

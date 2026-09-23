@@ -443,7 +443,9 @@ function Index() {
                 </Button>
               </div>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground"></p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Thousands of properties. No commissions for buyers.
+            </p>
           </div>
         </section>
 

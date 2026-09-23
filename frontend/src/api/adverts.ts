@@ -101,6 +101,18 @@ export async function sendContactRequest(uuid: string, message: string): Promise
   }
 }
 
+export async function reportAdvert(uuid: string, reason: string): Promise<void> {
+  const response = await apiFetch(`/api/adverts/${uuid}/reports`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Failed to submit report" }));
+    throw new Error((error as { message?: string }).message ?? "Failed to submit report");
+  }
+}
+
 export interface ContactRequest {
   uuid: string;
   fromUserUuid: string;
