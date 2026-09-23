@@ -13,7 +13,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   kind: 'StorageV2'
   properties: {
     accessTier: 'Hot'
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: true
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
   }
@@ -29,7 +29,7 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   parent: blobService
   name: containerName
   properties: {
-    publicAccess: 'None'
+    publicAccess: 'Blob'
   }
 }
 

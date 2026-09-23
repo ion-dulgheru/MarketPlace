@@ -19,7 +19,17 @@ public static class DependencyInjection
     {
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        var hasAzureStorage = !string.IsNullOrWhiteSpace(configuration["Storage:ConnectionString"] ?? configuration["Storage--ConnectionString"])
+            || !string.IsNullOrWhiteSpace(configuration["Storage:BlobEndpoint"] ?? configuration["Storage--BlobEndpoint"]);
+
+        if (hasAzureStorage)
+        {
+            services.AddScoped<IFileStorageService, AzureBlobStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        }
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
