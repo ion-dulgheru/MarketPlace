@@ -459,14 +459,6 @@ function Index() {
                 {loading ? "Loading listings…" : `${totalCount} listings match your search`}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Open chat"
-              className="ml-auto flex size-16 items-center justify-center rounded-[1.25rem] border-[2px] border-[#cfc9c2] bg-[#f3f2f0] text-foreground shadow-sm hover:bg-[#ece9e6]"
-            >
-              <MessageCircle className="size-8" />
-            </Button>
           </div>
 
           {error ? (
