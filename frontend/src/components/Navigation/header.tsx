@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   BellOff,
+  ChevronDown,
   Check,
   CheckCheck,
   Heart,
   KeyRound,
+  LogOut,
   MessageSquare,
   Plus,
   Settings,
@@ -17,6 +19,7 @@ import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { getCurrentUser, type CurrentUser } from "@/api/users";
 import {
   getReceivedContactRequests,
   markContactRequestAsRead,
@@ -27,13 +30,33 @@ import { formatPostedDate } from "@/lib/advert-format";
 export default function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { loggedIn } = useAuth();
-  const isAccountPage = pathname === "/account";
+  const { loggedIn, logout } = useAuth();
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loadingInquiries, setLoadingInquiries] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [updatingNotifications, setUpdatingNotifications] = useState(false);
+
+  useEffect(() => {
+    if (!loggedIn) {
+      setCurrentUser(null);
+      return;
+    }
+
+    let cancelled = false;
+    getCurrentUser()
+      .then((data) => {
+        if (!cancelled) setCurrentUser(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load user profile in header", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loggedIn]);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -64,6 +87,14 @@ export default function Header() {
   const visibleInquiries = showAllNotifications
     ? inquiries
     : inquiries.filter((item) => item.status === "Unread");
+
+  const displayName =
+    [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(" ") || "Account";
+
+  const handleLogout = () => {
+    logout();
+    void navigate({ to: "/" });
+  };
 
   const handleInquiryClick = (item: ContactRequest) => {
     setPopoverOpen(false);
@@ -137,38 +168,12 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
-          {loggedIn ? (
-            <div className="hidden items-center lg:flex">
-              {isAccountPage ? (
-                <Button variant="ghost" onClick={() => void navigate({ to: "/settings" })}>
-                  <Settings className="size-4" /> Settings
-                </Button>
-              ) : (
-                <div className="group relative flex items-center">
-                  <Button variant="ghost" onClick={() => void navigate({ to: "/account" })}>
-                    <UserRound className="size-4" /> Account
-                  </Button>
+          <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
+            <Plus /> Publish listing
+          </Button>
 
-                  <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-all duration-200 group-hover:max-w-xs group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      className="shrink-0"
-                      onClick={() => void navigate({ to: "/savedhomes" })}
-                    >
-                      <Heart className="size-4 text-primary" /> Saved listings
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="shrink-0"
-                      onClick={() =>
-                        void navigate({ to: "/mylistings", search: { inquiries: undefined } })
-                      }
-                    >
-                      <Store className="size-4 text-primary" /> My listings
-                    </Button>
-                  </div>
-                </div>
-              )}
+          {loggedIn ? (
+            <div className="hidden items-center lg:flex gap-2">
               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -316,6 +321,71 @@ export default function Header() {
                   )}
                 </PopoverContent>
               </Popover>
+
+              <div className="group relative">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 font-medium cursor-pointer group-hover:bg-accent group-hover:text-accent-foreground"
+                >
+                  <ChevronDown className="size-3.5 text-muted-foreground transition-transform duration-200 group-hover:rotate-180" />
+                  <span className="max-w-[160px] truncate">{displayName}</span>
+                  <UserRound className="size-4 text-primary" />
+                </Button>
+
+                {/* Hover Dropdown Menu */}
+                <div className="invisible absolute right-0 top-full pt-1.5 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 z-50">
+                  <div className="w-52 rounded-xl border border-border bg-card p-1.5 shadow-lg backdrop-blur">
+                    <button
+                      type="button"
+                      onClick={() => void navigate({ to: "/account" })}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
+                    >
+                      <UserRound className="size-4 text-primary" />
+                      <span>Account details</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void navigate({ to: "/savedhomes" })}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
+                    >
+                      <Heart className="size-4 text-primary" />
+                      <span>Saved listings</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void navigate({ to: "/mylistings", search: { inquiries: undefined } })
+                      }
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
+                    >
+                      <Store className="size-4 text-primary" />
+                      <span>My listings</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void navigate({ to: "/settings" })}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
+                    >
+                      <Settings className="size-4 text-primary" />
+                      <span>Settings</span>
+                    </button>
+
+                    <div className="my-1 h-px bg-border" />
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="size-4 text-destructive" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <Button
@@ -326,10 +396,6 @@ export default function Header() {
               <UserRound /> Sign in
             </Button>
           )}
-
-          <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
-            <Plus /> Publish listing
-          </Button>
         </div>
       </div>
     </header>
