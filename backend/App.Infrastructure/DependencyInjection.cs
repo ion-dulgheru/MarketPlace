@@ -33,7 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
-        services.AddSingleton(new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));
+        services.AddSingleton(_ => new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));
         services.AddScoped<IEmailSender, AzureEmailSender>();
         return services;
     }
