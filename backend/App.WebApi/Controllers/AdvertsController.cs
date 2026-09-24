@@ -127,7 +127,7 @@ public class AdvertsController(ISender sender) : BaseController
         CancellationToken ct = default)
     {
         var result = await sender.Send(
-            new UpdateAdvertCommand(uuid, request, UserUuid),
+            new UpdateAdvertCommand(uuid, request, UserUuid, IsAdmin),
             ct);
 
         return result.IsFailure
