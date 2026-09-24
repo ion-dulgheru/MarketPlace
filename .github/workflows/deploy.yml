@@ -213,13 +213,15 @@ jobs:
       - name: Store Email, Captcha and Frontend settings in Azure Key Vault
         env:
           KV_NAME: ${{ needs.infra.outputs.key_vault_name }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
           FRONTEND_APP_HOSTNAME: ${{ needs.infra.outputs.frontend_app_hostname }}
+          AZURE_COMMUNICATION_CONNECTION_STRING: ${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}
+          AZURE_COMMUNICATION_SENDER_ADDRESS: ${{ secrets.AZURE_COMMUNICATION_SENDER_ADDRESS }}
         run: |
-          az keyvault secret set --vault-name "$KV_NAME" --name "Resend--ApiKey" --value "$RESEND_API_KEY"
           az keyvault secret set --vault-name "$KV_NAME" --name "Recaptcha--SecretKey" --value "$RECAPTCHA_SECRET_KEY"
           az keyvault secret set --vault-name "$KV_NAME" --name "Frontend--BaseUrl" --value "https://${FRONTEND_APP_HOSTNAME}"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Azure--CommunicationServices--ConnectionString" --value "$AZURE_COMMUNICATION_CONNECTION_STRING"
+          az keyvault secret set --vault-name "$KV_NAME" --name "Azure--CommunicationServices--SenderAddress" --value "$AZURE_COMMUNICATION_SENDER_ADDRESS"
 
       - name: Remove Runner IP from PostgreSQL Firewall
         if: always()
