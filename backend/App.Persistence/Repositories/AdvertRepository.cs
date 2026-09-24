@@ -116,5 +116,11 @@ public class AdvertRepository(DataContext context) : IAdvertRepository
     {
         await context.Adverts.AddAsync(advert, ct);
     }
+
+    public async Task<Advert?> GetByIdAsync(long id, CancellationToken ct)
+    {
+    return await context.Adverts
+        .FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
 }
 

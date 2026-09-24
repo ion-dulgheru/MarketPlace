@@ -1,4 +1,5 @@
 using App.Domain.Common;
+using App.Domain.Enums;
 
 namespace App.Domain.Entities;
 
@@ -13,8 +14,8 @@ public class User : PublicEntity
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockedUntil { get; private set; }
     public string? PasswordResetTokenHash { get; private set; }
-public DateTime? PasswordResetTokenExpiry { get; private set; }
-
+    public DateTime? PasswordResetTokenExpiry { get; private set; }
+    public UserRole Role { get; private set; } = UserRole.User;
     private User() { }
 
     public static User Create(string email, string passwordHash)

@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using App.Contracts.Responses;
 using App.Domain.Shared;
+using App.Domain.Enums;
 
 namespace App.WebApi.Controllers;
 
@@ -22,6 +23,7 @@ public class BaseController : Controller
     }
 
     protected static ErrorDetails ToProblem(Error error) => new(error.Code, error.Message);
+    protected bool IsAdmin => User.IsInRole(nameof(UserRole.Admin)); 
 
     protected IActionResult HandleFailure(Result result) =>
     result.Error.Type switch

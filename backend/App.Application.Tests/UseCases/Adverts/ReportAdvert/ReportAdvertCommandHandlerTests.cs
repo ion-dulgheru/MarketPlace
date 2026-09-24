@@ -32,7 +32,7 @@ public class ReportAdvertCommandHandlerTests
             advertRepositoryMock.Object, advertReportRepositoryMock.Object,
             emailSenderMock.Object, unitOfWorkMock.Object);
 
-        var command = new ReportAdvertCommand(Guid.NewGuid(), "NotARealReason", Guid.NewGuid());
+        var command = new ReportAdvertCommand(Guid.NewGuid(), "NotARealReason", null, Guid.NewGuid());
 
         // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -61,7 +61,7 @@ public class ReportAdvertCommandHandlerTests
             advertRepositoryMock.Object, advertReportRepositoryMock.Object,
             emailSenderMock.Object, unitOfWorkMock.Object);
 
-        var command = new ReportAdvertCommand(Guid.NewGuid(), "Spam", Guid.NewGuid());
+        var command = new ReportAdvertCommand(Guid.NewGuid(), "Spam", null, Guid.NewGuid());
 
         // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -97,7 +97,7 @@ public class ReportAdvertCommandHandlerTests
             advertRepositoryMock.Object, advertReportRepositoryMock.Object,
             emailSenderMock.Object, unitOfWorkMock.Object);
 
-        var command = new ReportAdvertCommand(advert.Uuid, "Fraud", reporterUuid);
+        var command = new ReportAdvertCommand(advert.Uuid, "Fraud", null, reporterUuid);
 
         // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -137,7 +137,7 @@ public class ReportAdvertCommandHandlerTests
             advertRepositoryMock.Object, advertReportRepositoryMock.Object,
             emailSenderMock.Object, unitOfWorkMock.Object);
 
-        var command = new ReportAdvertCommand(advert.Uuid, "Duplicate", reporterUuid);
+        var command = new ReportAdvertCommand(advert.Uuid, "Duplicate", null, reporterUuid);
 
         // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);

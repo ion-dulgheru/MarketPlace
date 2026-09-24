@@ -26,7 +26,7 @@ public class DeleteAdvertCommandHandlerTests
         var handler = new DeleteAdvertCommandHandler(repository.Object, unitOfWork.Object);
 
         var result = await handler.Handle(
-            new DeleteAdvertCommand(advert.Guid, ownerUuid),
+            new DeleteAdvertCommand(advert.Guid, ownerUuid, false),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);

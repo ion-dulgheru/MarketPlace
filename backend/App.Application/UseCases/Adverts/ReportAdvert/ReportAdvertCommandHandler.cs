@@ -39,7 +39,7 @@ public class ReportAdvertCommandHandler(
             return Result.Success();
         }
 
-        var report = AdvertReport.Create(advert.Id, command.ReporterUuid, reason);
+        var report = AdvertReport.Create(advert.Id, command.ReporterUuid, reason, command.Description);
         await advertReportRepository.AddAsync(report, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
