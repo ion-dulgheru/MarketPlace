@@ -23,7 +23,8 @@ public class JwtTokenGenerator(IConfiguration configuration, X509Certificate2 si
             new Claim(JwtRegisteredClaimNames.Sub, user.Guid.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, jwtId),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim("role", user.Role.ToString())
         };
 
         var key = new X509SecurityKey(signingCertificate);

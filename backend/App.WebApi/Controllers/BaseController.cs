@@ -23,7 +23,12 @@ public class BaseController : Controller
     }
 
     protected static ErrorDetails ToProblem(Error error) => new(error.Code, error.Message);
-    protected bool IsAdmin => User.IsInRole(nameof(UserRole.Admin)); 
+    protected bool IsAdmin =>
+        User.IsInRole(nameof(UserRole.Admin)) ||
+        User.HasClaim(ClaimTypes.Role, nameof(UserRole.Admin)) ||
+        User.HasClaim("role", nameof(UserRole.Admin)) ||
+        User.Claims.Any(c => (c.Type == "role" || c.Type == ClaimTypes.Role || c.Type.EndsWith("/role")) &&
+                             string.Equals(c.Value, nameof(UserRole.Admin), StringComparison.OrdinalIgnoreCase)); 
 
     protected IActionResult HandleFailure(Result result) =>
     result.Error.Type switch

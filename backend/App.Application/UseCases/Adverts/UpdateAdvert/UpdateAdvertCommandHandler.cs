@@ -20,10 +20,9 @@ public class UpdateAdvertCommandHandler(
             return Result.Failure(AdvertErrors.InvalidIdentifier);
         }
 
-        var advert = await advertRepository.GetByUuidForOwnerAsync(
-            command.AdvertUuid,
-            command.UserUuid,
-            ct);
+        var advert = command.IsAdmin
+            ? await advertRepository.GetByUuidAsync(command.AdvertUuid, ct)
+            : await advertRepository.GetByUuidForOwnerAsync(command.AdvertUuid, command.UserUuid, ct);
 
         if (advert is null)
         {
