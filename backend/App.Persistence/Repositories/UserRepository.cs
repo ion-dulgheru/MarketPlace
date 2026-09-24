@@ -49,4 +49,10 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
     return await context.Users
         .FirstOrDefaultAsync(u => u.PasswordResetTokenHash == tokenHash, ct);
 }
+
+    public async Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default)
+    {
+        return await context.Users
+            .FirstOrDefaultAsync(u => u.EmailVerificationTokenHash == tokenHash, ct);
+    }
 }

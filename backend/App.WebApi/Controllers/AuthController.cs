@@ -6,6 +6,7 @@ using App.Application.UseCases.Users.SignIn;
 using App.Application.UseCases.Users.RefreshToken;
 using App.Application.UseCases.Users.RequestPasswordReset;
 using App.Application.UseCases.Users.ResetPassword;
+using App.Application.UseCases.Users.VerifyEmail;
 namespace App.WebApi.Controllers;
 
 [Route("api/auth")]
@@ -29,7 +30,19 @@ public async Task<IActionResult> Register(
 
     return result.IsFailure
         ? HandleFailure(result)
-        : Ok(result.Value);
+        : Ok();
+}
+
+    [HttpPost("verify-email")]
+public async Task<IActionResult> VerifyEmail(
+    [FromBody] VerifyEmailRequest request,
+    CancellationToken ct = default)
+{
+    var result = await sender.Send(new VerifyEmailCommand(request.Token), ct);
+
+    return result.IsFailure
+        ? HandleFailure(result)
+        : Ok();
 }
       [HttpPost("login")]
 public async Task<IActionResult> Login(

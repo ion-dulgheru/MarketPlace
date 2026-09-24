@@ -17,7 +17,7 @@ export interface AuthTokensResponse {
   refreshToken: string;
 }
 
-export async function registerUser(data: RegisterRequest): Promise<AuthTokensResponse> {
+export async function registerUser(data: RegisterRequest): Promise<void> {
   const response = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -28,11 +28,23 @@ export async function registerUser(data: RegisterRequest): Promise<AuthTokensRes
     const error = await response.json().catch(() => ({ message: "Registration failed" }));
     throw new Error((error as { message?: string }).message ?? "Registration failed");
   }
+}
 
-  const tokens = (await response.json()) as AuthTokensResponse;
-  // Salvează token-urile în localStorage imediat după înregistrare
-  saveTokens(tokens.accessToken, tokens.refreshToken);
-  return tokens;
+export async function verifyEmail(token: string): Promise<void> {
+  const response = await fetch(`${API_URL}/api/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Verification link is invalid or expired." }));
+    throw new Error(
+      (error as { message?: string }).message ?? "Verification link is invalid or expired.",
+    );
+  }
 }
 
 export interface LoginRequest {

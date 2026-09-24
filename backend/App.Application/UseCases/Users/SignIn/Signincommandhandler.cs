@@ -44,6 +44,13 @@ public class SignInCommandHandler(
                 "Invalid email or password."));
         }
 
+        if (!user.EmailVerification)
+        {
+            return Result.Failure<SignInResponse>(Error.Forbidden(
+                "Auth.EmailNotVerified",
+                "Please verify your email address before signing in."));
+        }
+
         user.RegisterSuccessfulLogin();
 
         var (accessToken, jwtId) = jwtTokenGenerator.GenerateToken(user);

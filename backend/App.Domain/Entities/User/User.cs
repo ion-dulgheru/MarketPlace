@@ -11,6 +11,8 @@ public class User : PublicEntity
     public string Email { get; private set; } = null!;
     public string PasswordHash { get; private set; } = null!;
     public bool EmailVerification { get; private set; }
+    public string? EmailVerificationTokenHash { get; private set; }
+    public DateTime? EmailVerificationTokenExpiry { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockedUntil { get; private set; }
     public string? PasswordResetTokenHash { get; private set; }
@@ -55,5 +57,18 @@ public void ResetPassword(string newPasswordHash)
     PasswordHash = newPasswordHash;
     PasswordResetTokenHash = null;
     PasswordResetTokenExpiry = null;
+}
+
+public void SetEmailVerificationToken(string tokenHash, DateTime expiresAt)
+{
+    EmailVerificationTokenHash = tokenHash;
+    EmailVerificationTokenExpiry = expiresAt;
+}
+
+public void VerifyEmail()
+{
+    EmailVerification = true;
+    EmailVerificationTokenHash = null;
+    EmailVerificationTokenExpiry = null;
 }
 }

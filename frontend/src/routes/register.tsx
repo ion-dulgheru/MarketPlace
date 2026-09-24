@@ -47,7 +47,7 @@ function RegisterPage() {
         phoneNumber: phoneNumber || null,
         captchaToken,
       });
-      void navigate({ to: "/" });
+      void navigate({ to: "/check-email" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

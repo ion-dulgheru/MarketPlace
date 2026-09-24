@@ -12,6 +12,7 @@ public interface IUserRepository
     Task AddDetailsAsync(UserDetails details, CancellationToken ct);
     Task<UserDetails?> GetDetailsByUserIdAsync(long userId, CancellationToken ct);
     Task UpdateDetailsAsync(UserDetails details, CancellationToken ct);
-    Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default); 
+    Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default);
+    Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default);
 }
 
