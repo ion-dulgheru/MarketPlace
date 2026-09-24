@@ -1,5 +1,4 @@
 using App.Application.Abstractions.Messaging;
-using App.Application.UseCases.Users.SignIn;
 
 namespace App.Application.UseCases.Users.Register;
 
@@ -11,4 +10,4 @@ public record RegisterUserCommand(
     DateTime? DateOfBirth,
     string? PhoneNumber,
     string CaptchaToken
-    ) : ICommand<SignInResponse>;
+    ) : ICommand;

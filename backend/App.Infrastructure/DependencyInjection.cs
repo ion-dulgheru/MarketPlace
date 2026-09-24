@@ -10,7 +10,7 @@ using App.Application.Abstractions.Email;
 using App.Infrastructure.Email;
 using App.Application.Abstractions.Captcha;
 using App.Infrastructure.Captcha;
-using Resend;
+using Azure.Communication.Email;
 namespace App.Infrastructure;
 
 public static class DependencyInjection
@@ -33,13 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
-        services.AddHttpClient<ResendClient>();
-services.Configure<ResendClientOptions>(o =>
-{
-    o.ApiToken = configuration["Resend:ApiKey"]!;
-});
-services.AddTransient<IResend, ResendClient>();
-services.AddScoped<IEmailSender, ResendEmailSender>();
+        services.AddSingleton(new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));
+        services.AddScoped<IEmailSender, AzureEmailSender>();
         return services;
     }
 }
