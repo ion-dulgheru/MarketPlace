@@ -362,7 +362,9 @@ function EditAdvertPage() {
             This advert may have been removed, or you don't have access to edit it.
           </p>
           <Button asChild className="mt-6">
-            <Link to="/mylistings">Back to my listings</Link>
+            <Link to="/mylistings" search={{ inquiries: undefined }}>
+              Back to my listings
+            </Link>
           </Button>
         </div>
       </main>
@@ -381,6 +383,7 @@ function EditAdvertPage() {
           </Link>
           <Link
             to="/mylistings"
+            search={{ inquiries: undefined }}
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" /> Back to my listings

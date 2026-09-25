@@ -50,7 +50,8 @@ public class GetAdvertByIdQueryHandler(IAdvertRepository advertRepository)
             advert.ApartmentNumber,
             advert.ApartmentBlock,
             advert.GardenSquareMeters,
-            advert.UserUuid);
+            advert.UserUuid,
+            advert.Currency.ToString());
 
         return Result.Success(response);
     }

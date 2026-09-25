@@ -16,7 +16,7 @@ import placeholderImage from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/mylistings")({
   validateSearch: (search: Record<string, unknown>) => ({
-    inquiries: typeof search.inquiries === "string" ? search.inquiries : undefined,
+    inquiries: typeof search["inquiries"] === "string" ? search["inquiries"] : undefined,
   }),
   head: () => ({
     meta: [{ title: "My listings | OpenKey" }],
@@ -193,7 +193,13 @@ function MyListingsPage() {
                     />
                     <div className="absolute left-3 top-3 flex gap-2">
                       {advert.status === "Active" ? (
-                        <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                        <span
+                          className={`rounded-sm px-2.5 py-1 text-xs font-bold uppercase ${
+                            advert.type === "Sale"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-sky-100 text-sky-700"
+                          }`}
+                        >
                           {advert.type === "Sale" ? "For sale" : "For rent"}
                         </span>
                       ) : (

@@ -31,6 +31,7 @@ public static class DependencyInjection
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
         }
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
+        services.AddScoped<IAdminAccessService, AdminAccessService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         services.AddSingleton(_ => new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));

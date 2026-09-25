@@ -73,7 +73,8 @@ public class GetActiveAdvertsCommandHandler(IAdvertRepository advertRepository)
                 advert.ApartmentNumber,
                 advert.ApartmentBlock,
                 advert.GardenSquareMeters,
-                advert.UserUuid))
+                advert.UserUuid,
+                advert.Currency.ToString()))
             .ToList();
 
         return new GetAdvertsResponse(

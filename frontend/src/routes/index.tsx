@@ -261,7 +261,7 @@ function Index() {
       <Header />
 
       <main id="top">
-        <section className="border-b border-border bg-[#f4f8f9]">
+        <section className="border-b border-border bg-muted/40">
           <div className="mx-auto flex max-w-[1440px] flex-col items-center px-4 py-14 sm:px-7 sm:py-20 lg:px-10">
             <div className="w-full max-w-3xl text-center">
               <h1 className="font-sans text-4xl font-bold leading-[1.04] tracking-tight sm:text-5xl lg:text-[4.25rem]">
@@ -522,7 +522,13 @@ function Index() {
                         </Link>
                         <div className="absolute left-3 top-3 flex gap-2">
                           {advert.status === "Active" ? (
-                            <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase">
+                            <span
+                              className={`rounded-sm px-2.5 py-1 text-xs font-bold uppercase ${
+                                advert.type === "Sale"
+                                  ? "bg-rose-100 text-rose-700"
+                                  : "bg-sky-100 text-sky-700"
+                              }`}
+                            >
                               {advert.type === "Sale" ? "For sale" : "For rent"}
                             </span>
                           ) : (
