@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, KeyRound, Layers, MessageSquare, Plus, Square } from "lucide-react";
+import { ArrowLeft, DoorClosed, KeyRound, Layers, MessageSquare, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getAdverts,
@@ -9,7 +9,7 @@ import {
   deleteAdvert,
   type Advert,
 } from "@/api/adverts";
-import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
+import { formatAdvertFloor, formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { isLoggedIn } from "@/lib/tokens";
 import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
@@ -230,17 +230,19 @@ function MyListingsPage() {
                     <p className="mt-1.5 text-sm text-muted-foreground">{location}</p>
                     <div className="mt-4 flex items-center gap-4 border-y border-border py-3 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">
-                        <BedDouble className="size-4" />
-                        {advert.rooms}
+                        <DoorClosed className="size-4" />
+                        {advert.rooms} {advert.rooms === 1 ? "room" : "rooms"}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Square className="size-4" />
                         {advert.surfaceArea} m²
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <Layers className="size-4" />
-                        Floors {advert.floor}
-                      </span>
+                      {formatAdvertFloor(advert) && (
+                        <span className="flex items-center gap-1.5">
+                          <Layers className="size-4" />
+                          {formatAdvertFloor(advert)}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                       <Button

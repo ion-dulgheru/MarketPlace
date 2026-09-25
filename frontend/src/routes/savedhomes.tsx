@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, Heart, Layers, MapPin, Search, Square } from "lucide-react";
+import { ArrowLeft, DoorClosed, Heart, Layers, MapPin, Search, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Navigation/header";
 import {
@@ -9,7 +9,7 @@ import {
   getAdvertPhotoUrl,
   type Advert,
 } from "@/api/adverts";
-import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
+import { formatAdvertFloor, formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { isLoggedIn } from "@/lib/tokens";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
@@ -216,17 +216,17 @@ function SavedHomesPage() {
 
                     <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <BedDouble className="size-4 text-foreground" />
+                        <DoorClosed className="size-4 text-foreground" />
                         {advert.rooms} {advert.rooms === 1 ? "room" : "rooms"}
                       </span>
                       <span className="flex items-center gap-1">
                         <Square className="size-4 text-foreground" />
                         {advert.surfaceArea} m²
                       </span>
-                      {advert.floor ? (
+                      {formatAdvertFloor(advert) ? (
                         <span className="flex items-center gap-1">
                           <Layers className="size-4 text-foreground" />
-                          Floors {advert.floor}
+                          {formatAdvertFloor(advert)}
                         </span>
                       ) : null}
                     </div>
