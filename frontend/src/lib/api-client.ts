@@ -2,7 +2,6 @@ import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "@/lib/
 
 export const API_URL = import.meta.env.VITE_API_URL as string;
 
-// Încearcă să reînnoiască access token-ul cu refresh token-ul
 async function tryRefresh(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
@@ -24,11 +23,9 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
-// Fetch cu token automat în header + refresh automat la 401
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const token = getAccessToken();
 
-  // FormData își setează singur Content-Type-ul (cu boundary); nu-l suprascriem.
   const isFormData = init.body instanceof FormData;
 
   const makeRequest = (accessToken: string | null) =>
@@ -43,13 +40,11 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
 
   let response = await makeRequest(token);
 
-  // Dacă primim 401, încearcă refresh și repetă cererea o dată
   if (response.status === 401) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       response = await makeRequest(getAccessToken());
     } else {
-      // Refresh eșuat → delogare forțată
       clearTokens();
       window.location.href = "/login";
     }

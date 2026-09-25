@@ -63,6 +63,45 @@ Baza de date `marketplace_db` **nu trebuie creată manual** – o creează pasul
 
 ---
 
+## 3.1. Generează certificatul local pentru semnarea JWT
+
+API-ul are nevoie de un certificat `.pfx` pentru semnarea token-urilor JWT
+(`App.WebApi/jwt-signing.pfx`). Fișierul e în `.gitignore` — **fiecare
+dezvoltator își generează propriul certificat local**, nu se comite în git.
+
+**PowerShell (Windows):**
+```powershell
+$pwd = -join ((48..57)+(65..90)+(97..122)|Get-Random -Count 32|%{[char]$_})
+$cert = New-SelfSignedCertificate -Subject "CN=MarketPlace JWT Signing" `
+  -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable `
+  -KeyUsage DigitalSignature -KeyAlgorithm RSA -KeyLength 2048 `
+  -NotAfter (Get-Date).AddYears(2) -Provider "Microsoft Enhanced RSA and AES Cryptographic Provider"
+Export-PfxCertificate -Cert $cert -FilePath "App.WebApi\jwt-signing.pfx" `
+  -Password (ConvertTo-SecureString -String $pwd -Force -AsPlainText) | Out-Null
+Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force
+Write-Output "Parola ta (salveaz-o, urmează la pasul următor): $pwd"
+```
+
+**Linux/macOS (openssl):**
+```bash
+PWD=$(openssl rand -base64 24)
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 730 -nodes \
+  -subj "/CN=MarketPlace JWT Signing"
+openssl pkcs12 -export -out App.WebApi/jwt-signing.pfx -inkey key.pem -in cert.pem -passout pass:$PWD
+rm key.pem cert.pem
+echo "Parola ta (salveaz-o, urmează la pasul următor): $PWD"
+```
+
+Apoi salvează parola generată în user-secrets (**nu** în `appsettings.json`):
+```bash
+cd App.WebApi
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:CertificatePassword" "PAROLA_GENERATA_MAI_SUS"
+cd ..
+```
+
+---
+
 ## 4. Restore + build
 
 ```bash

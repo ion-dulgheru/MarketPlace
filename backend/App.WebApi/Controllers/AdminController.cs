@@ -55,7 +55,6 @@ public class AdminController(ISender sender, IHostEnvironment env, IUserReposito
         [FromBody] List<AttachAdvertImagesItemRequest> items,
         CancellationToken ct = default)
     {
-        // Reads image files directly from the server's local disk — only meaningful for local/dev seeding.
         if (!env.IsDevelopment())
         {
             return NotFound();

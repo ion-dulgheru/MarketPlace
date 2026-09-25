@@ -7,6 +7,6 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
     public ResetPasswordCommandValidator()
     {
         RuleFor(x => x.Token).NotEmpty();
-        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8); // aliniază la regula voastră reală de la Register
+        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8);
     }
 }

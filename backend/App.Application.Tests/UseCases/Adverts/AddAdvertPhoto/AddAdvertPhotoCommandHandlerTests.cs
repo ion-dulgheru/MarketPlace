@@ -30,7 +30,6 @@ public class AddAdvertPhotoCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertNotFound_ShouldReturnNotFoundError()
     {
-        // Arrange
         var advertUuid = Guid.NewGuid();
         var userUuid = Guid.NewGuid();
 
@@ -47,10 +46,8 @@ public class AddAdvertPhotoCommandHandlerTests
             stream.Length,
             false);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.Equal(AdvertErrors.NotFound.Code, result.Error.Code);
         _mockFileStorage.Verify(x => x.SaveFileAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -60,7 +57,6 @@ public class AddAdvertPhotoCommandHandlerTests
     [Fact]
     public async Task Handle_WhenValidCommand_ShouldSaveFileAddPhotoAndCommit()
     {
-        // Arrange
         var advertUuid = Guid.NewGuid();
         var userUuid = Guid.NewGuid();
         var address = Address.Create("Moldova", "Chisinau", "Center", "Stefan cel Mare", "1").Value;
@@ -93,10 +89,8 @@ public class AddAdvertPhotoCommandHandlerTests
             stream.Length,
             true);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value.Uuid);
         Assert.Equal("/uploads/adverts/unique-file.jpg", result.Value.PhotoUrl);

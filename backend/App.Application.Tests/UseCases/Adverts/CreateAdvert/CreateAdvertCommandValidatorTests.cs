@@ -12,7 +12,6 @@ public class CreateAdvertCommandValidatorTests
     [Fact]
     public void Validate_WhenTitleIsEmpty_ShouldHaveValidationError()
     {
-        // Arrange
         var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var request = new CreateAdvertRequest(
             "", 
@@ -25,10 +24,8 @@ public class CreateAdvertCommandValidatorTests
             defaultAddress);
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
-        // Act
         var result = _validator.TestValidate(command);
 
-        // Assert
         result.ShouldHaveValidationErrorFor(x => x.Request.Title)
               .WithErrorMessage("Title is required.");
     }
@@ -36,7 +33,6 @@ public class CreateAdvertCommandValidatorTests
     [Fact]
     public void Validate_WhenPriceIsZeroOrNegative_ShouldHaveValidationError()
     {
-        // Arrange
         var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var request = new CreateAdvertRequest(
             "Apartment", 
@@ -49,10 +45,8 @@ public class CreateAdvertCommandValidatorTests
             defaultAddress);
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
-        // Act
         var result = _validator.TestValidate(command);
 
-        // Assert
         result.ShouldHaveValidationErrorFor(x => x.Request.Price)
               .WithErrorMessage("Price must be greater than 0.");
     }
@@ -60,7 +54,6 @@ public class CreateAdvertCommandValidatorTests
     [Fact]
     public void Validate_WhenValidCommand_ShouldNotHaveAnyValidationErrors()
     {
-        // Arrange
         var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var request = new CreateAdvertRequest(
             "Modern Apartment", 
@@ -73,17 +66,14 @@ public class CreateAdvertCommandValidatorTests
             defaultAddress);
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
-        // Act
         var result = _validator.TestValidate(command);
 
-        // Assert
         result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public void Validate_WhenAddressIsNull_ShouldHaveValidationError()
     {
-        // Arrange
         var request = new CreateAdvertRequest(
             "Modern Apartment", 
             "Great place to live", 
@@ -95,10 +85,8 @@ public class CreateAdvertCommandValidatorTests
             null!);
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
-        // Act
         var result = _validator.TestValidate(command);
 
-        // Assert
         result.ShouldHaveValidationErrorFor(x => x.Request.Address)
               .WithErrorMessage("All address fields are required.");
     }

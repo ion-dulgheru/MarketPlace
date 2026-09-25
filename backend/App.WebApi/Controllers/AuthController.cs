@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using App.Contracts.Requests.Users;
 using App.Application.UseCases.Users.Register;
 using App.Application.UseCases.Users.SignIn;
@@ -10,6 +11,7 @@ using App.Application.UseCases.Users.VerifyEmail;
 namespace App.WebApi.Controllers;
 
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController(ISender sender) : BaseController
 {
     [HttpPost("register")]

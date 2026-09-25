@@ -4,10 +4,8 @@
 
 namespace App.Persistence.Migrations
 {
-    /// <inheritdoc />
     public partial class AddCurrencyToAdvert : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
@@ -18,8 +16,6 @@ namespace App.Persistence.Migrations
                 nullable: false,
                 defaultValue: "Mdl");
 
-            // One-time data correction: the 30 apartamente_ro.json listings imported via
-            // /api/admin/adverts/import were priced in EUR (source: makler.md), not MDL.
             migrationBuilder.Sql(
                 """
                 UPDATE "Adverts"
@@ -28,7 +24,6 @@ namespace App.Persistence.Migrations
                 """);
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(

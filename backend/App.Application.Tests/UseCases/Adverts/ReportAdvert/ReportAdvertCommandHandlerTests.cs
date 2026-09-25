@@ -22,7 +22,6 @@ public class ReportAdvertCommandHandlerTests
     [Fact]
     public async Task Handle_WhenReasonIsInvalid_ReturnsInvalidReason()
     {
-        // 1. Arrange
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         var advertReportRepositoryMock = new Mock<IAdvertReportRepository>();
         var emailSenderMock = new Mock<IEmailSender>();
@@ -34,10 +33,8 @@ public class ReportAdvertCommandHandlerTests
 
         var command = new ReportAdvertCommand(Guid.NewGuid(), "NotARealReason", null, Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("AdvertReport.InvalidReason", result.Error.Code);
         advertRepositoryMock.Verify(
@@ -47,7 +44,6 @@ public class ReportAdvertCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertNotFound_ReturnsNotFound()
     {
-        // 1. Arrange
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
             .Setup(r => r.GetByUuidAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -63,10 +59,8 @@ public class ReportAdvertCommandHandlerTests
 
         var command = new ReportAdvertCommand(Guid.NewGuid(), "Spam", null, Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Advert.NotFound", result.Error.Code);
         advertReportRepositoryMock.Verify(
@@ -76,7 +70,6 @@ public class ReportAdvertCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAlreadyReportedByThisUser_ReturnsSuccessWithoutDuplicateRow()
     {
-        // 1. Arrange
         var advert = CreateSampleAdvert();
         var reporterUuid = Guid.NewGuid();
 
@@ -99,10 +92,8 @@ public class ReportAdvertCommandHandlerTests
 
         var command = new ReportAdvertCommand(advert.Uuid, "Fraud", null, reporterUuid);
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         advertReportRepositoryMock.Verify(
             r => r.AddAsync(It.IsAny<AdvertReport>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -116,7 +107,6 @@ public class ReportAdvertCommandHandlerTests
     [Fact]
     public async Task Handle_WhenNewReport_SavesAndSendsNotification()
     {
-        // 1. Arrange
         var advert = CreateSampleAdvert();
         var reporterUuid = Guid.NewGuid();
 
@@ -139,10 +129,8 @@ public class ReportAdvertCommandHandlerTests
 
         var command = new ReportAdvertCommand(advert.Uuid, "Duplicate", null, reporterUuid);
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         advertReportRepositoryMock.Verify(
             r => r.AddAsync(

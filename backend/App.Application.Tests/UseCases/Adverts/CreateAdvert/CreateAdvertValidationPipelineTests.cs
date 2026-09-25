@@ -13,14 +13,13 @@ public class CreateAdvertValidationPipelineTests
     [Fact]
     public async Task Handle_WhenRequestHasValidationErrors_ShortCircuitsPipelineAndReturnsValidationFailure()
     {
-        // 1. Arrange
         var validator = new CreateAdvertCommandValidator();
         var behavior = new ValidationBehavior<CreateAdvertCommand, Result<Guid>>([validator]);
         var nextMock = new Mock<RequestHandlerDelegate<Result<Guid>>>();
 
         var defaultAddress = new AddressRequest("USA", "New York", "NY", "5th Ave", "101");
         var invalidRequest = new CreateAdvertRequest(
-            "", // Empty title triggers FluentValidation
+            "",
             "Some description",
             100000m,
             50m,
@@ -30,16 +29,13 @@ public class CreateAdvertValidationPipelineTests
             defaultAddress);
         var command = new CreateAdvertCommand(invalidRequest, Guid.NewGuid());
 
-        // 2. Act
         var result = await behavior.Handle(command, nextMock.Object, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.Error.Type);
         Assert.Equal("Validation.Failed", result.Error.Code);
         Assert.Contains("Title is required.", result.Error.Message);
 
-        // Ensure next handler in pipeline was NEVER executed
         nextMock.Verify(n => n(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -73,7 +69,6 @@ public class CreateAdvertValidationPipelineTests
     [Fact]
     public async Task Handle_WhenRequestIsValid_PassesThroughToNextHandler()
     {
-        // 1. Arrange
         var validator = new CreateAdvertCommandValidator();
         var behavior = new ValidationBehavior<CreateAdvertCommand, Result<Guid>>([validator]);
         var nextMock = new Mock<RequestHandlerDelegate<Result<Guid>>>();
@@ -92,14 +87,11 @@ public class CreateAdvertValidationPipelineTests
             defaultAddress);
         var command = new CreateAdvertCommand(validRequest, Guid.NewGuid());
 
-        // 2. Act
         var result = await behavior.Handle(command, nextMock.Object, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(expectedGuid, result.Value);
 
-        // Ensure next handler was called exactly once
         nextMock.Verify(n => n(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -4,10 +4,8 @@
 
 namespace App.Persistence.Migrations
 {
-    /// <inheritdoc />
     public partial class RemoveFileNameAndContentTypeFromAdvertPhoto : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
@@ -19,7 +17,6 @@ namespace App.Persistence.Migrations
                 table: "AdvertPhotos");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(

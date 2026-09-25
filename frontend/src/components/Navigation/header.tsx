@@ -335,7 +335,6 @@ export default function Header() {
                   <UserRound className="size-4 text-primary" />
                 </Button>
 
-                {/* Hover Dropdown Menu */}
                 <div className="invisible absolute right-0 top-full pt-1.5 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 z-50">
                   <div className="w-52 rounded-xl border border-border bg-card p-1.5 shadow-lg backdrop-blur">
                     <button

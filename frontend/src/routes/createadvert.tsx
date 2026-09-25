@@ -43,25 +43,20 @@ type Step = 1 | 2 | 3 | 4;
 function CreateAdvertPage() {
   const navigate = useNavigate();
 
-  // Current active step & highest unlocked step
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [unlockedStep, setUnlockedStep] = useState<Step>(1);
 
-  // Category 1: Advert Type
   const [listingType, setListingType] = useState<"Sale" | "Rent">("Sale");
   const [buildingType, setBuildingType] = useState<"Apartment" | "House">("Apartment");
 
-  // Category 2: Details
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [surfaceArea, setSurfaceArea] = useState("");
   const [rooms, setRooms] = useState("");
   const [levels, setLevels] = useState("1");
-  // 2A. Apartment Details
   const [apartmentNumber, setApartmentNumber] = useState("");
   const [apartmentFloor, setApartmentFloor] = useState("");
   const [apartmentBlock, setApartmentBlock] = useState("");
-  // 2B. House Details
   const [gardenSquareMeters, setGardenSquareMeters] = useState("");
 
   const [photos, setPhotos] = useState<SelectedPhoto[]>([]);
@@ -71,29 +66,24 @@ function CreateAdvertPage() {
   const photosRef = useRef<SelectedPhoto[]>([]);
   photosRef.current = photos;
 
-  // Category 3: Address
   const [country, setCountry] = useState("Moldova");
   const [city, setCity] = useState("Chișinău");
   const [region, setRegion] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [streetNumber, setStreetNumber] = useState("");
 
-  // Category 4: Price
   const [price, setPrice] = useState("");
 
-  // Submission state
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     };
   }, []);
 
-  // Only logged in users can publish
   useEffect(() => {
     if (!isLoggedIn()) {
       void navigate({ to: "/register" });
@@ -105,7 +95,7 @@ function CreateAdvertPage() {
     setPhotoError(null);
 
     const validFiles: File[] = [];
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const maxFileSize = 10 * 1024 * 1024;
     const maxTotalPhotos = 20;
 
     if (photos.length + files.length > maxTotalPhotos) {
@@ -191,14 +181,12 @@ function CreateAdvertPage() {
     }
   };
 
-  // Step 1 Validation & Completion
   const completeStep1 = () => {
     setError(null);
     setUnlockedStep((prev) => (prev < 2 ? 2 : prev));
     setCurrentStep(2);
   };
 
-  // Step 2 Validation & Completion
   const completeStep2 = () => {
     setError(null);
     if (!title.trim()) {
@@ -227,7 +215,6 @@ function CreateAdvertPage() {
     setCurrentStep(3);
   };
 
-  // Step 3 Validation & Completion
   const completeStep3 = () => {
     setError(null);
     if (!country.trim() || !city.trim() || !region.trim()) {
@@ -247,7 +234,6 @@ function CreateAdvertPage() {
     setCurrentStep(4);
   };
 
-  // Final Submit
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -356,7 +342,6 @@ function CreateAdvertPage() {
             </p>
           </div>
 
-          {/* Stepper Progress Bar */}
           <div className="mt-6 grid grid-cols-4 gap-2 border-b border-border pb-6">
             {stepsMeta.map((s) => {
               const isPassed = unlockedStep > s.num;
@@ -405,9 +390,6 @@ function CreateAdvertPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-6">
-            {/* ========================================================================= */}
-            {/* CATEGORY 1: Advert type (listing type / building type)                    */}
-            {/* ========================================================================= */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
@@ -417,7 +399,6 @@ function CreateAdvertPage() {
                   </p>
                 </div>
 
-                {/* Listing Type: Sale or Rent */}
                 <div>
                   <span className="mb-2 block text-xs font-semibold text-foreground">
                     Listing type
@@ -450,7 +431,6 @@ function CreateAdvertPage() {
                   </div>
                 </div>
 
-                {/* Building Type: Apartment or House */}
                 <div>
                   <span className="mb-2 block text-xs font-semibold text-foreground">
                     Building type
@@ -495,9 +475,6 @@ function CreateAdvertPage() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* CATEGORY 2: Details (2A. Details Apartment or 2B. Details House)          */}
-            {/* ========================================================================= */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -516,7 +493,6 @@ function CreateAdvertPage() {
                   </span>
                 </div>
 
-                {/* Common: Title */}
                 <label className="grid gap-1.5 text-sm font-medium">
                   Title
                   <input
@@ -534,13 +510,11 @@ function CreateAdvertPage() {
                   />
                 </label>
 
-                {/* Common: Description */}
                 <div className="grid gap-1.5 text-sm font-medium">
                   <span>Description</span>
                   <RichTextEditor value={description} onChange={setDescription} />
                 </div>
 
-                {/* Common Metrics: Surface Area & Rooms */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-1.5 text-sm font-medium">
                     Surface Area (m²)
@@ -571,7 +545,6 @@ function CreateAdvertPage() {
                   </label>
                 </div>
 
-                {/* 2A. Details Apartment: Levels, Apt nr, Apt floor, Apt block */}
                 {buildingType === "Apartment" && (
                   <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -634,7 +607,6 @@ function CreateAdvertPage() {
                   </div>
                 )}
 
-                {/* 2B. Details House: Levels, Garden square meters */}
                 {buildingType === "House" && (
                   <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -671,7 +643,6 @@ function CreateAdvertPage() {
                   </div>
                 )}
 
-                {/* Photos Dropzone & List */}
                 <div className="border-t border-border pt-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -780,9 +751,6 @@ function CreateAdvertPage() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* CATEGORY 3: Address (Address name MUST appear before street number)       */}
-            {/* ========================================================================= */}
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div>
@@ -831,7 +799,6 @@ function CreateAdvertPage() {
                   </label>
                 </div>
 
-                {/* 3. Address name MUST appear before street number */}
                 <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
                   <label className="grid gap-1.5 text-sm font-medium">
                     <span className="flex items-center gap-1.5">
@@ -873,9 +840,6 @@ function CreateAdvertPage() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* CATEGORY 4: Price & Publish                                               */}
-            {/* ========================================================================= */}
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div>
@@ -905,7 +869,6 @@ function CreateAdvertPage() {
                   </div>
                 </label>
 
-                {/* Summary Box */}
                 <div className="rounded-lg border border-border bg-muted/40 p-5 space-y-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-foreground">
                     Listing Summary
