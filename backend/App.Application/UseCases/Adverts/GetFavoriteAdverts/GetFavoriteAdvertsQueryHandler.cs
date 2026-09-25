@@ -47,7 +47,8 @@ public class GetFavoriteAdvertsQueryHandler(IFavoriteAdvertRepository favoriteRe
                 advert.ApartmentNumber,
                 advert.ApartmentBlock,
                 advert.GardenSquareMeters,
-                advert.UserUuid))
+                advert.UserUuid,
+                advert.Currency.ToString()))
             .ToList();
 
         return Result.Success(new GetAdvertsResponse(response, query.Page, query.PageSize, totalCount));

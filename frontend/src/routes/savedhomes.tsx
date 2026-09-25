@@ -165,7 +165,13 @@ function SavedHomesPage() {
                     </Link>
                     <div className="absolute left-3 top-3 flex gap-2">
                       {advert.status === "Active" ? (
-                        <span className="rounded-sm bg-background/95 px-2.5 py-1 text-xs font-bold uppercase shadow-sm">
+                        <span
+                          className={`rounded-sm px-2.5 py-1 text-xs font-bold uppercase shadow-sm ${
+                            advert.type === "Sale"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-sky-100 text-sky-700"
+                          }`}
+                        >
                           {advert.type === "Sale" ? "For sale" : "For rent"}
                         </span>
                       ) : (

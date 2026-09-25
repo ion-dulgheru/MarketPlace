@@ -1,4 +1,4 @@
-const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string;
+const SITE_KEY = import.meta.env["VITE_RECAPTCHA_SITE_KEY"] as string;
 
 declare global {
   interface Window {

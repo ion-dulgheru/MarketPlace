@@ -1,8 +1,11 @@
 import type { Advert } from "@/api/adverts";
 
-export function formatAdvertPrice(advert: Pick<Advert, "price" | "type">): string {
+export function formatAdvertPrice(advert: Pick<Advert, "price" | "type" | "currency">): string {
   const amount = new Intl.NumberFormat("ro-MD").format(advert.price);
-  return advert.type === "Rent" ? `MDL ${amount} / month` : `MDL ${amount}`;
+  const currencyLabel = advert.currency === "Eur" ? "€" : "MDL";
+  return advert.type === "Rent"
+    ? `${currencyLabel} ${amount} / month`
+    : `${currencyLabel} ${amount}`;
 }
 
 export function formatPostedDate(createdDate: string): string {

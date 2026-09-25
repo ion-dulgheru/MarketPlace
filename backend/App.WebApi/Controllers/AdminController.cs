@@ -1,16 +1,22 @@
+using App.Application.UseCases.Adverts.ImportAdverts;
+using App.Application.UseCases.Adverts.AttachAdvertImages;
+using App.Application.UseCases.Admin.GetAdvertReports;
+using App.Application.UseCases.Admin.DismissAdvertReport;
+using App.Contracts.Requests.Adverts;
+using App.Contracts.Responses.Adverts;
+using App.Contracts.Responses;
+using App.Domain.Repositories;
+using App.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using App.Application.UseCases.Admin.GetAdvertReports;
-using App.Application.UseCases.Admin.DismissAdvertReport;
-using App.Domain.Repositories;
-using App.Domain.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace App.WebApi.Controllers;
 
 [Authorize]
 [Route("api/admin")]
-public class AdminController(ISender sender, IUserRepository userRepository) : BaseController
+public class AdminController(ISender sender, IHostEnvironment env, IUserRepository userRepository) : BaseController
 {
     private async Task<bool> CheckIsAdminAsync(CancellationToken ct)
     {
@@ -19,6 +25,52 @@ public class AdminController(ISender sender, IUserRepository userRepository) : B
 
         var user = await userRepository.GetByUuidAsync(UserUuid, ct);
         return user?.Role == UserRole.Admin;
+    }
+
+    [HttpPost("adverts/import")]
+    [SwaggerResponse(200, "Import completed.", typeof(ImportAdvertsResponse))]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(403, "Not authorized.", typeof(ErrorDetails))]
+    public async Task<IActionResult> ImportAdverts(
+        [FromBody] List<ImportAdvertItemRequest> adverts,
+        CancellationToken ct = default)
+    {
+        if (!await CheckIsAdminAsync(ct))
+        {
+            return Forbid();
+        }
+
+        var result = await sender.Send(new ImportAdvertsCommand(adverts, UserUuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
+    }
+
+    [HttpPost("adverts/attach-local-images")]
+    [SwaggerResponse(200, "Images attached.", typeof(AttachAdvertImagesResponse))]
+    [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
+    [SwaggerResponse(403, "Not authorized.", typeof(ErrorDetails))]
+    public async Task<IActionResult> AttachLocalImages(
+        [FromBody] List<AttachAdvertImagesItemRequest> items,
+        CancellationToken ct = default)
+    {
+        // Reads image files directly from the server's local disk — only meaningful for local/dev seeding.
+        if (!env.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        if (!await CheckIsAdminAsync(ct))
+        {
+            return Forbid();
+        }
+
+        var result = await sender.Send(new AttachAdvertImagesCommand(items, UserUuid), ct);
+
+        return result.IsFailure
+            ? HandleFailure(result)
+            : Ok(result.Value);
     }
 
     [HttpGet("reports")]

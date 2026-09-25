@@ -19,5 +19,6 @@ public record AdvertResponse(
     string? ApartmentNumber = null,
     string? ApartmentBlock = null,
     decimal? GardenSquareMeters = null,
-    Guid? UserUuid = null
+    Guid? UserUuid = null,
+    string Currency = "Mdl"
 );

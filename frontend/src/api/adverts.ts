@@ -178,6 +178,7 @@ export interface Advert {
   title: string;
   description: string;
   price: number;
+  currency?: "Mdl" | "Eur";
   surfaceArea: number;
   rooms: number;
   floor: number;

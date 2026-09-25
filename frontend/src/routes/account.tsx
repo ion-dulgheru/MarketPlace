@@ -93,7 +93,7 @@ function AccountPage() {
           </div>
         ) : (
           <section className="mt-8 overflow-hidden rounded-lg border border-border bg-card">
-            <div className="bg-[#dcece7] px-6 py-8 sm:px-10 sm:py-10">
+            <div className="bg-accent px-6 py-8 sm:px-10 sm:py-10">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="grid size-20 shrink-0 place-items-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">

@@ -142,7 +142,7 @@ export default function Header() {
     );
     const readUuids = new Set(
       unreadInquiries
-        .filter((_, index) => results[index].status === "fulfilled")
+        .filter((_, index) => results[index]?.status === "fulfilled")
         .map((item) => item.uuid),
     );
     setInquiries((prev) =>
@@ -161,10 +161,10 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-border bg-[#f5f9fa] backdrop-blur">
+    <header className="sticky top-0 z-40 border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-4 sm:px-7 lg:px-10">
         <Link to="/" className="flex items-center gap-2" aria-label="OpenKey home">
-          <span className="grid size-9 place-items-center rounded-md text-black">
+          <span className="grid size-9 place-items-center rounded-md text-primary">
             <KeyRound className="size-5" />
           </span>
           <span className="font-display text-2xl">OpenKey</span>

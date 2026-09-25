@@ -47,7 +47,8 @@ public class GetMyAdvertsCommandHandler(IAdvertRepository advertRepository)
                 advert.ApartmentNumber,
                 advert.ApartmentBlock,
                 advert.GardenSquareMeters,
-                advert.UserUuid))
+                advert.UserUuid,
+                advert.Currency.ToString()))
             .ToList();
 
         return new GetAdvertsResponse(response, query.Request.Page, query.Request.PageSize, totalCount);

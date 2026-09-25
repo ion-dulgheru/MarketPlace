@@ -42,8 +42,9 @@ export function getCurrentUserUuid(): string | null {
   if (!token) return null;
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
+    const payloadPart = parts[1];
+    if (parts.length !== 3 || !payloadPart) return null;
+    const payload = JSON.parse(atob(payloadPart));
     return (payload.sub ?? payload.nameid ?? payload.userId ?? null) as string | null;
   } catch {
     return null;

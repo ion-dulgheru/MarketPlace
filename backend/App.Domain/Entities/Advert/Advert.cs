@@ -15,6 +15,7 @@ public class Advert : PublicEntity, ISoftDeletable
     public int Floor { get; private set; }
     public AdvertStatus Status { get; private set; }
     public AdvertType Type { get; private set; }
+    public Currency Currency { get; private set; }
     public BuildingType BuildingType { get; private set; }
     public int Levels { get; private set; }
     public int? ApartmentFloor { get; private set; }
@@ -47,7 +48,8 @@ public class Advert : PublicEntity, ISoftDeletable
         int? apartmentFloor = null,
         string? apartmentNumber = null,
         string? apartmentBlock = null,
-        decimal? gardenSquareMeters = null)
+        decimal? gardenSquareMeters = null,
+        Currency currency = Currency.Mdl)
     {
         var computedLevels = levels.HasValue && levels.Value > 0 ? levels.Value : (floor > 0 ? floor : 1);
         var computedFloor = apartmentFloor ?? floor;
@@ -62,6 +64,7 @@ public class Advert : PublicEntity, ISoftDeletable
             Rooms = rooms,
             Floor = computedFloor,
             Type = type,
+            Currency = currency,
             BuildingType = buildingType,
             Levels = computedLevels,
             ApartmentFloor = apartmentFloor ?? (buildingType == BuildingType.Apartment ? computedFloor : null),

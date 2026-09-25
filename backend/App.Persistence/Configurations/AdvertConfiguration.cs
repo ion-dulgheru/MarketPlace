@@ -44,6 +44,12 @@ public class AdvertConfiguration : IEntityTypeConfiguration<Advert>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(Currency.Mdl)
+            .IsRequired();
+
         builder.Property(x => x.BuildingType)
             .HasConversion<string>()
             .HasMaxLength(50)
