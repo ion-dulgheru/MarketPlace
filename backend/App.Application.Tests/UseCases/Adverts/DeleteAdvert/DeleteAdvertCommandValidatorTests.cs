@@ -11,7 +11,7 @@ public class DeleteAdvertCommandValidatorTests
     [Fact]
     public void Validate_WhenAdvertUuidIsEmpty_ShouldHaveValidationError()
     {
-        var command = new DeleteAdvertCommand(Guid.Empty, Guid.NewGuid());
+        var command = new DeleteAdvertCommand(Guid.Empty, Guid.NewGuid(), false);
 
         var result = _validator.TestValidate(command);
 
@@ -21,7 +21,7 @@ public class DeleteAdvertCommandValidatorTests
     [Fact]
     public void Validate_WhenCommandIsValid_ShouldNotHaveValidationErrors()
     {
-        var command = new DeleteAdvertCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new DeleteAdvertCommand(Guid.NewGuid(), Guid.NewGuid(), false);
 
         var result = _validator.TestValidate(command);
 

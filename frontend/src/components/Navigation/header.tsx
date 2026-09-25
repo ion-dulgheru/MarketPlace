@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Plus,
   Settings,
+  ShieldAlert,
   Store,
   Trash2,
   UserRound,
@@ -30,13 +31,15 @@ import { formatPostedDate } from "@/lib/advert-format";
 export default function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { loggedIn, logout } = useAuth();
+  const { loggedIn, isAdmin, logout } = useAuth();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loadingInquiries, setLoadingInquiries] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [updatingNotifications, setUpdatingNotifications] = useState(false);
+
+  const isUserAdmin = isAdmin || currentUser?.role === "Admin";
 
   useEffect(() => {
     if (!loggedIn) {
@@ -168,6 +171,18 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
+          {isUserAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex items-center gap-1.5 border-amber-500/40 bg-amber-50/80 text-amber-800 hover:bg-amber-100 hover:text-amber-900 font-medium shadow-xs"
+              onClick={() => void navigate({ to: "/admin/reports" })}
+            >
+              <ShieldAlert className="size-4 text-amber-600" />
+              <span>Admin Reports</span>
+            </Button>
+          )}
+
           <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
             <Plus /> Publish listing
           </Button>
@@ -372,6 +387,20 @@ export default function Header() {
                       <Settings className="size-4 text-primary" />
                       <span>Settings</span>
                     </button>
+
+                    {isUserAdmin && (
+                      <>
+                        <div className="my-1 h-px bg-border" />
+                        <button
+                          type="button"
+                          onClick={() => void navigate({ to: "/admin/reports" })}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-500/10 transition-colors text-left cursor-pointer"
+                        >
+                          <ShieldAlert className="size-4 text-amber-600" />
+                          <span>Admin reports</span>
+                        </button>
+                      </>
+                    )}
 
                     <div className="my-1 h-px bg-border" />
 

@@ -29,7 +29,8 @@ public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfW
             firstName = details?.FirstName,
             lastName = details?.LastName,
             dateOfBirth = details?.DateOfBirth,
-            phoneNumber = details?.PhoneNumber
+            phoneNumber = details?.PhoneNumber,
+            role = user.Role.ToString()
         });
     }
 
