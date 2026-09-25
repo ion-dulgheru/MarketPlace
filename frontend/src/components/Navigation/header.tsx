@@ -171,18 +171,6 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
-          {isUserAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:inline-flex items-center gap-1.5 border-amber-500/40 bg-amber-50/80 text-amber-800 hover:bg-amber-100 hover:text-amber-900 font-medium shadow-xs"
-              onClick={() => void navigate({ to: "/admin/reports" })}
-            >
-              <ShieldAlert className="size-4 text-amber-600" />
-              <span>Admin Reports</span>
-            </Button>
-          )}
-
           <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
             <Plus /> Publish listing
           </Button>
