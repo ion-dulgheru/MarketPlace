@@ -26,10 +26,6 @@ function loadScript(): Promise<void> {
   return scriptPromise;
 }
 
-// Rulează doar în browser; obține un token reCAPTCHA v3 pentru acțiunea dată.
-// Timeout explicit — dacă scriptul Google nu se încarcă/inițializează (site key
-// lipsă sau greșită, rețea, Google indisponibil), promisiunea nu trebuie să
-// rămână blocată la infinit și să lase butonul de submit "agățat".
 export async function getCaptchaToken(action: string, timeoutMs = 10000): Promise<string> {
   const tokenPromise = (async () => {
     await loadScript();

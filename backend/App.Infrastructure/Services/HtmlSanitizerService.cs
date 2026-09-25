@@ -33,7 +33,6 @@ public class HtmlSanitizerService : IHtmlSanitizerService
         _sanitizer.AllowedTags.Add("code");
         _sanitizer.AllowedTags.Add("pre");
 
-        // Clear all attributes, styles, schemes to prevent any inline javascript or malicious CSS
         _sanitizer.AllowedAttributes.Clear();
         _sanitizer.AllowedCssProperties.Clear();
         _sanitizer.AllowedSchemes.Clear();

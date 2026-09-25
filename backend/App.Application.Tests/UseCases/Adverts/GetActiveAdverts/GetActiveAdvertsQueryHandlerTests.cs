@@ -28,7 +28,7 @@ public class GetActiveAdvertsCommandHandlerTests
             DateTime.UtcNow.AddDays(30));
 
         var photo1 = AdvertPhoto.Create("url1", false);
-        var photo2 = AdvertPhoto.Create("url2", true); // Primary
+        var photo2 = AdvertPhoto.Create("url2", true);
         advert.AddPhoto(photo1);
         advert.AddPhoto(photo2);
 

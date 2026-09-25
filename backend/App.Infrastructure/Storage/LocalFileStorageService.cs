@@ -49,7 +49,6 @@ public class LocalFileStorageService : IFileStorageService
         }
         else
         {
-            // Fallback for legacy adverts folder
             var legacyPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "adverts", fileName);
             if (File.Exists(legacyPath))
             {

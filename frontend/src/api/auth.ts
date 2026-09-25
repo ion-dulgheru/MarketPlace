@@ -65,7 +65,6 @@ export async function loginUser(data: LoginRequest): Promise<AuthTokensResponse>
   }
 
   const tokens = (await response.json()) as AuthTokensResponse;
-  // Salvează token-urile în localStorage imediat după login
   saveTokens(tokens.accessToken, tokens.refreshToken);
   return tokens;
 }

@@ -3,8 +3,8 @@ using Moq;
 using Xunit;
 using App.Application.UseCases.Adverts.CreateAdvert;
 using App.Contracts.Requests.Adverts;
-using App.Domain.Entities;      // for AdvertType
-using App.Domain.Repositories;  // for IAdvertRepository, IUnitOfWork
+using App.Domain.Entities;
+using App.Domain.Repositories;
 
 namespace App.Application.Tests.UseCases.Adverts.CreateAdvert;
 
@@ -13,7 +13,6 @@ public class CreateAdvertHandlerTests
     [Fact]
     public async Task Handle_WhenValidCommand_ShouldAddAdvertAndSave()
     {
-        // 1. Arrange (Set up mocks and dependencies)
         var mockRepository = new Mock<IAdvertRepository>();
         var mockUnitOfWork = new Mock<IUnitOfWork>();
         var mockSanitizer = new Mock<IHtmlSanitizerService>();
@@ -36,14 +35,11 @@ public class CreateAdvertHandlerTests
         );
         var command = new CreateAdvertCommand(request, Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
 
-        // Verify that repository.AddAsync and unitOfWork.SaveChangesAsync were each called exactly once
         mockRepository.Verify(x => x.AddAsync(It.Is<Advert>(a => 
             a.Title == "Cozy Studio" && 
             a.Photos.Count == 1 && 

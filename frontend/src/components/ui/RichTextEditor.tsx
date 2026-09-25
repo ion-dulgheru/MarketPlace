@@ -18,7 +18,6 @@ export function RichTextEditor({ value, onChange, className }: RichTextEditorPro
     content: value,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      // If empty paragraph, emit empty string
       const html = editor.isEmpty ? "" : editor.getHTML();
       onChange(html);
     },
@@ -30,7 +29,6 @@ export function RichTextEditor({ value, onChange, className }: RichTextEditorPro
     },
   });
 
-  // Keep editor content in sync if value changed externally (e.g. initial load or form reset)
   React.useEffect(() => {
     if (editor && !editor.isFocused && value !== editor.getHTML()) {
       editor.commands.setContent(value);
@@ -48,7 +46,6 @@ export function RichTextEditor({ value, onChange, className }: RichTextEditorPro
         className,
       )}
     >
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 border-b border-input bg-muted/40 p-1">
         <Button
           type="button"
@@ -140,7 +137,6 @@ export function RichTextEditor({ value, onChange, className }: RichTextEditorPro
         </Button>
       </div>
 
-      {/* Editor Content Area */}
       <div className="[&_.ProseMirror]:min-h-[120px] [&_.ProseMirror]:p-3 [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-1.5 [&_.ProseMirror_h2]:text-lg [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:mt-3 [&_.ProseMirror_h2]:mb-1 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:ml-5 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:ml-5 [&_.ProseMirror_strong]:font-semibold [&_.ProseMirror_em]:italic">
         <EditorContent editor={editor} />
       </div>

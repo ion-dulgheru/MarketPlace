@@ -29,7 +29,6 @@ public class Advert : PublicEntity, ISoftDeletable
     private readonly List<AdvertPhoto> _photos = [];
     public IReadOnlyCollection<AdvertPhoto> Photos => _photos.AsReadOnly();
 
-    /// <inheritdoc cref="ISoftDeletable.DeletedAt"/>
     public DateTime? DeletedAt { get; private set; }
 
     public static Advert Create(

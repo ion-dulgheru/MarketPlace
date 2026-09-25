@@ -13,7 +13,6 @@ public class GetAdvertByIdQueryHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertExists_ReturnsAllDetailsAndAllPhotos()
     {
-        // Arrange
         var repository = new Mock<IAdvertRepository>();
         var address = Address.Create("USA", "New York", "NY", "5th Ave", "101").Value;
         var advert = Advert.Create(
@@ -29,7 +28,7 @@ public class GetAdvertByIdQueryHandlerTests
             DateTime.UtcNow.AddDays(30));
 
         var photo1 = AdvertPhoto.Create("url1", false);
-        var photo2 = AdvertPhoto.Create("url2", true); // Primary
+        var photo2 = AdvertPhoto.Create("url2", true);
         advert.AddPhoto(photo1);
         advert.AddPhoto(photo2);
 
@@ -39,10 +38,8 @@ public class GetAdvertByIdQueryHandlerTests
 
         var handler = new GetAdvertByIdQueryHandler(repository.Object);
 
-        // Act
         var result = await handler.Handle(new GetAdvertByIdQuery(advert.Guid), CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsSuccess);
         var response = result.Value;
         Assert.Equal(advert.Guid, response.Guid);
@@ -63,10 +60,8 @@ public class GetAdvertByIdQueryHandlerTests
 
         Assert.NotNull(response.Photos);
         Assert.Equal(2, response.Photos.Count);
-        // Primary photo should come first
         Assert.Equal("url2", response.Photos[0].PhotoUrl);
         Assert.True(response.Photos[0].IsPrimary);
-        // Non-primary photo
         Assert.Equal("url1", response.Photos[1].PhotoUrl);
         Assert.False(response.Photos[1].IsPrimary);
 
@@ -76,7 +71,6 @@ public class GetAdvertByIdQueryHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertDoesNotExist_ReturnsNotFound()
     {
-        // Arrange
         var repository = new Mock<IAdvertRepository>();
         var advertUuid = Guid.NewGuid();
 
@@ -86,10 +80,8 @@ public class GetAdvertByIdQueryHandlerTests
 
         var handler = new GetAdvertByIdQueryHandler(repository.Object);
 
-        // Act
         var result = await handler.Handle(new GetAdvertByIdQuery(advertUuid), CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.Equal(AdvertErrors.NotFound, result.Error);
         repository.Verify(x => x.GetByUuidAsync(advertUuid, It.IsAny<CancellationToken>()), Times.Once);
@@ -98,14 +90,11 @@ public class GetAdvertByIdQueryHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertUuidIsEmpty_ReturnsInvalidIdentifier()
     {
-        // Arrange
         var repository = new Mock<IAdvertRepository>();
         var handler = new GetAdvertByIdQueryHandler(repository.Object);
 
-        // Act
         var result = await handler.Handle(new GetAdvertByIdQuery(Guid.Empty), CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.Equal(AdvertErrors.InvalidIdentifier, result.Error);
         repository.Verify(x => x.GetByUuidAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);

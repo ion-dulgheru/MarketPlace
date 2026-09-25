@@ -78,7 +78,6 @@ public class AzureBlobStorageService : IFileStorageService
         {
             if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
             {
-                // Uri path is: /<containerName>/listings/<guid>.jpg
                 var path = uri.AbsolutePath.TrimStart('/');
                 var prefix = $"{_containerClient.Name}/";
                 var blobName = path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
@@ -91,7 +90,6 @@ public class AzureBlobStorageService : IFileStorageService
             }
             else
             {
-                // Legacy local file fallback
                 var fileName = Path.GetFileName(fileUrl);
                 var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "listings", fileName);
                 if (File.Exists(localPath))

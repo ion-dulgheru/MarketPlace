@@ -6,7 +6,7 @@ namespace App.Application.UseCases.Adverts.AddAdvertPhoto;
 public class AddAdvertPhotoCommandValidator : AbstractValidator<AddAdvertPhotoCommand>
 {
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-    private const long MaxFileSizeInBytes = 5 * 1024 * 1024; // 5 MB
+    private const long MaxFileSizeInBytes = 5 * 1024 * 1024;
 
     public AddAdvertPhotoCommandValidator()
     {

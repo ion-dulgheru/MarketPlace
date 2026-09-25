@@ -19,7 +19,6 @@ public class GetAdvertContactRequestsQueryHandlerTests
     [Fact]
     public async Task Handle_WhenNotOwner_ReturnsNotFound()
     {
-        // 1. Arrange
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
             .Setup(r => r.GetByUuidForOwnerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -32,10 +31,8 @@ public class GetAdvertContactRequestsQueryHandlerTests
 
         var query = new GetAdvertContactRequestsQuery(Guid.NewGuid(), Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(query, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Advert.NotFound", result.Error.Code);
     }
@@ -43,7 +40,6 @@ public class GetAdvertContactRequestsQueryHandlerTests
     [Fact]
     public async Task Handle_WhenOwner_ReturnsMappedContactRequests()
     {
-        // 1. Arrange
         var ownerUuid = Guid.NewGuid();
         var advert = CreateSampleAdvert(ownerUuid);
         var contactRequest = ContactRequest.Create(advert.Uuid, Guid.NewGuid(), "Interested!");
@@ -63,10 +59,8 @@ public class GetAdvertContactRequestsQueryHandlerTests
 
         var query = new GetAdvertContactRequestsQuery(advert.Uuid, ownerUuid);
 
-        // 2. Act
         var result = await handler.Handle(query, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value);
         Assert.Equal("Interested!", result.Value[0].Message);
@@ -76,7 +70,6 @@ public class GetAdvertContactRequestsQueryHandlerTests
     [Fact]
     public async Task Handle_WhenOwnerWithUserDetails_ReturnsMappedContactRequestsWithSenderInfo()
     {
-        // 1. Arrange
         var ownerUuid = Guid.NewGuid();
         var advert = CreateSampleAdvert(ownerUuid);
         var senderUser = User.Create("buyer@example.com", "hash");
@@ -106,10 +99,8 @@ public class GetAdvertContactRequestsQueryHandlerTests
 
         var query = new GetAdvertContactRequestsQuery(advert.Uuid, ownerUuid);
 
-        // 2. Act
         var result = await handler.Handle(query, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value);
         var first = result.Value[0];

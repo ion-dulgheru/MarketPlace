@@ -28,7 +28,6 @@ public class SendContactRequestCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertNotFound_ReturnsNotFound()
     {
-        // 1. Arrange
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
             .Setup(r => r.GetByUuidAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -42,10 +41,8 @@ public class SendContactRequestCommandHandlerTests
 
         var command = new SendContactRequestCommand(Guid.NewGuid(), "Hello?", Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Advert.NotFound", result.Error.Code);
         contactRequestRepositoryMock.Verify(
@@ -55,7 +52,6 @@ public class SendContactRequestCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertNotActive_ReturnsNotActive()
     {
-        // 1. Arrange
         var advert = CreateSampleAdvert(Guid.NewGuid(), AdvertStatus.Sold);
 
         var advertRepositoryMock = new Mock<IAdvertRepository>();
@@ -71,10 +67,8 @@ public class SendContactRequestCommandHandlerTests
 
         var command = new SendContactRequestCommand(advert.Uuid, "Hello?", Guid.NewGuid());
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Advert.NotActive", result.Error.Code);
     }
@@ -82,7 +76,6 @@ public class SendContactRequestCommandHandlerTests
     [Fact]
     public async Task Handle_WhenAdvertActive_CreatesContactRequestAndReturnsSuccess()
     {
-        // 1. Arrange
         var advert = CreateSampleAdvert(Guid.NewGuid(), AdvertStatus.Active);
         var senderUuid = Guid.NewGuid();
 
@@ -99,10 +92,8 @@ public class SendContactRequestCommandHandlerTests
 
         var command = new SendContactRequestCommand(advert.Uuid, "Is this still available?", senderUuid);
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
         contactRequestRepositoryMock.Verify(
@@ -119,7 +110,6 @@ public class SendContactRequestCommandHandlerTests
     [Fact]
     public async Task Handle_WhenUserIsAdvertOwner_ReturnsCannotContactOwnAdvert()
     {
-        // 1. Arrange
         var ownerUuid = Guid.NewGuid();
         var advert = CreateSampleAdvert(ownerUuid, AdvertStatus.Active);
 
@@ -136,10 +126,8 @@ public class SendContactRequestCommandHandlerTests
 
         var command = new SendContactRequestCommand(advert.Uuid, "Contacting myself?", ownerUuid);
 
-        // 2. Act
         var result = await handler.Handle(command, CancellationToken.None);
 
-        // 3. Assert
         Assert.True(result.IsFailure);
         Assert.Equal("Advert.CannotContactOwnAdvert", result.Error.Code);
         contactRequestRepositoryMock.Verify(
