@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BedDouble, Heart, Layers, MapPin, MessageSquare, Square } from "lucide-react";
+import { ArrowLeft, DoorClosed, Heart, Layers, MapPin, MessageSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getAdvertById,
@@ -10,7 +10,7 @@ import {
   getFavoriteAdvertIds,
   type Advert,
 } from "@/api/adverts";
-import { formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
+import { formatAdvertFloor, formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
 import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
@@ -231,17 +231,19 @@ function ListingDetailsPage() {
 
             <div className="mt-6 grid grid-cols-3 border-y border-border py-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
-                <BedDouble className="size-4" />
-                {advert.rooms} rooms
+                <DoorClosed className="size-4" />
+                {advert.rooms} {advert.rooms === 1 ? "room" : "rooms"}
               </span>
               <span className="flex items-center gap-2">
                 <Square className="size-4" />
                 {advert.surfaceArea} m²
               </span>
-              <span className="flex items-center gap-2">
-                <Layers className="size-4" />
-                Floors {advert.floor}
-              </span>
+              {formatAdvertFloor(advert) ? (
+                <span className="flex items-center gap-2">
+                  <Layers className="size-4" />
+                  {formatAdvertFloor(advert)}
+                </span>
+              ) : null}
             </div>
 
             <div className="mt-7 flex items-center justify-between gap-4 border-b border-border pb-6">

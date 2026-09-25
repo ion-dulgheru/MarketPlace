@@ -24,3 +24,21 @@ export function formatPostedDate(createdDate: string): string {
 
   return created.toLocaleDateString();
 }
+
+export function formatAdvertFloor(
+  advert: Pick<Advert, "buildingType" | "floor" | "apartmentFloor" | "levels">,
+): string {
+  if (advert.buildingType === "House") {
+    const levels = advert.levels ?? advert.floor;
+    if (levels != null && levels > 0) {
+      return `${levels} ${levels === 1 ? "floor" : "floors"}`;
+    }
+    return "";
+  }
+
+  const floorNum = advert.apartmentFloor ?? advert.floor;
+  if (floorNum != null && floorNum > 0) {
+    return `Floor ${floorNum}`;
+  }
+  return "";
+}

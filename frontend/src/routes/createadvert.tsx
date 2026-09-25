@@ -95,7 +95,7 @@ function CreateAdvertPage() {
     setPhotoError(null);
 
     const validFiles: File[] = [];
-    const maxFileSize = 10 * 1024 * 1024; 
+    const maxFileSize = 10 * 1024 * 1024;
     const maxTotalPhotos = 20;
 
     if (photos.length + files.length > maxTotalPhotos) {

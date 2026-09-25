@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ public class DataContextDesignTimeFactory : IDesignTimeDbContextFactory<DataCont
     {
         var configuration = new ConfigurationBuilder()
             .AddUserSecrets(AppWebApiUserSecretsId)
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = configuration.GetConnectionString("Default");
@@ -22,6 +24,7 @@ public class DataContextDesignTimeFactory : IDesignTimeDbContextFactory<DataCont
         optionsBuilder.UseNpgsql(string.IsNullOrWhiteSpace(connectionString)
             ? PlaceholderConnectionString
             : connectionString);
+
         return new DataContext(optionsBuilder.Options);
     }
 }

@@ -6,5 +6,6 @@ namespace App.Application.UseCases.Adverts.UpdateAdvert;
 public record UpdateAdvertCommand(
     Guid AdvertUuid,
     UpdateAdvertRequest Request,
-    Guid UserUuid
+    Guid UserUuid,
+    bool IsAdmin = false
 ) : ICommand;

@@ -7,6 +7,7 @@ export interface CurrentUser {
   lastName: string | null;
   dateOfBirth: string | null;
   phoneNumber: string | null;
+  role?: string;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {

@@ -42,3 +42,31 @@ export function getCurrentUserUuid(): string | null {
     return null;
   }
 }
+
+// Extrage rolul utilizatorului logat din JWT access token
+export function getUserRole(): string | null {
+  const token = getAccessToken();
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    const payloadPart = parts[1];
+    if (parts.length !== 3 || !payloadPart) return null;
+    const payload = JSON.parse(atob(payloadPart));
+    const role =
+      payload.role ??
+      payload.roles ??
+      payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ??
+      null;
+    if (Array.isArray(role)) {
+      return role.includes("Admin") ? "Admin" : ((role[0] as string) ?? null);
+    }
+    return typeof role === "string" ? role : null;
+  } catch {
+    return null;
+  }
+}
+
+// Returnează true dacă utilizatorul curent are rolul de Admin
+export function isAdmin(): boolean {
+  return getUserRole() === "Admin";
+}

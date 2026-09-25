@@ -140,7 +140,7 @@ function EditAdvertPage() {
     if (!files || files.length === 0) return;
     setPhotoError(null);
 
-    const maxFileSize = 10 * 1024 * 1024; 
+    const maxFileSize = 10 * 1024 * 1024;
     const maxTotalPhotos = 20;
 
     if (photos.length + files.length > maxTotalPhotos) {

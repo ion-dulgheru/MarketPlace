@@ -9,4 +9,5 @@ public interface IAdvertRepository
     Task<(IReadOnlyList<Advert> Items, int TotalCount)> GetActiveAsync(AdvertSearchCriteria criteria, CancellationToken ct);
     Task<(IReadOnlyList<Advert> Items, int TotalCount)> GetByUserAsync(Guid userUuid, int page, int pageSize, CancellationToken ct);
     Task AddAsync(Advert advert, CancellationToken ct);
+    Task<Advert?> GetByIdAsync(long id, CancellationToken ct);
 }
