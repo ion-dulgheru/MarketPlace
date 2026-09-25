@@ -171,7 +171,6 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
-
           <Button onClick={() => void navigate({ to: loggedIn ? "/createadvert" : "/register" })}>
             <Plus /> Publish listing
           </Button>
@@ -235,8 +234,9 @@ export default function Header() {
                       {visibleInquiries.map((item) => (
                         <div
                           key={item.uuid}
-                          className={`w-full p-3.5 transition-colors hover:bg-muted/60 flex items-start gap-3 ${item.status === "Unread" ? "bg-primary/[0.04]" : ""
-                            }`}
+                          className={`w-full p-3.5 transition-colors hover:bg-muted/60 flex items-start gap-3 ${
+                            item.status === "Unread" ? "bg-primary/[0.04]" : ""
+                          }`}
                         >
                           <button
                             type="button"
