@@ -1,7 +1,9 @@
 using App.Application.Abstractions;
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
 using App.Domain.Entities;
+using App.Domain.Enums;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -12,6 +14,7 @@ public class SignInCommandHandler(
     IUserSessionRepository userSessionRepository,
     IJwtTokenGenerator jwtTokenGenerator,
     IRefreshTokenGenerator refreshTokenGenerator,
+    ISecurityAuditLogger auditLogger,
     IUnitOfWork unitOfWork)
     : ICommandHandler<SignInCommand, SignInResponse>
 {
@@ -24,6 +27,13 @@ public class SignInCommandHandler(
 
         if (user is null)
         {
+            await auditLogger.LogAsync(
+                SecurityEventType.LoginFailed,
+                success: false,
+                email: request.Email,
+                details: "User does not exist.",
+                ct: cancellationToken);
+
             return Result.Failure<SignInResponse>(Error.Unauthorized(
                 "Auth.InvalidCredentials",
                 "Invalid email or password."));
@@ -31,6 +41,14 @@ public class SignInCommandHandler(
 
         if (user.IsLockedOut(now))
         {
+            await auditLogger.LogAsync(
+                SecurityEventType.AccountLocked,
+                success: false,
+                userId: user.Guid,
+                email: user.Email,
+                details: "Account is locked out.",
+                ct: cancellationToken);
+
             return Result.Failure<SignInResponse>(Error.Forbidden(
                 "Auth.AccountLocked",
                 "This account is temporarily locked due to too many failed login attempts. Try again later."));
@@ -41,6 +59,28 @@ public class SignInCommandHandler(
             user.RegisterFailedLogin(now);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var lockedNow = user.IsLockedOut(now);
+            if (lockedNow)
+            {
+                await auditLogger.LogAsync(
+                    SecurityEventType.AccountLocked,
+                    success: false,
+                    userId: user.Guid,
+                    email: user.Email,
+                    details: "Account locked after reaching max failed login attempts.",
+                    ct: cancellationToken);
+            }
+            else
+            {
+                await auditLogger.LogAsync(
+                    SecurityEventType.LoginFailed,
+                    success: false,
+                    userId: user.Guid,
+                    email: user.Email,
+                    details: "Invalid password.",
+                    ct: cancellationToken);
+            }
+
             return Result.Failure<SignInResponse>(Error.Unauthorized(
                 "Auth.InvalidCredentials",
                 "Invalid email or password."));
@@ -48,6 +88,14 @@ public class SignInCommandHandler(
 
         if (!user.EmailVerification)
         {
+            await auditLogger.LogAsync(
+                SecurityEventType.LoginFailed,
+                success: false,
+                userId: user.Guid,
+                email: user.Email,
+                details: "Email not verified.",
+                ct: cancellationToken);
+
             return Result.Failure<SignInResponse>(Error.Forbidden(
                 "Auth.EmailNotVerified",
                 "Please verify your email address before signing in."));
@@ -78,6 +126,13 @@ public class SignInCommandHandler(
 
         await userSessionRepository.AddAsync(session, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await auditLogger.LogAsync(
+            SecurityEventType.LoginSucceeded,
+            success: true,
+            userId: user.Guid,
+            email: user.Email,
+            ct: cancellationToken);
 
         return Result.Success(new SignInResponse(accessToken, refreshToken));
     }

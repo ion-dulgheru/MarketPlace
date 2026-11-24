@@ -23,4 +23,5 @@ public class DataContext : DbContext
     }
     public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
     public DbSet<AdvertReport> AdvertReports => Set<AdvertReport>();
+    public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
 }

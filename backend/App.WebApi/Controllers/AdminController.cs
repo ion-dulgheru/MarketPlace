@@ -5,8 +5,6 @@ using App.Application.UseCases.Admin.DismissAdvertReport;
 using App.Contracts.Requests.Adverts;
 using App.Contracts.Responses.Adverts;
 using App.Contracts.Responses;
-using App.Domain.Repositories;
-using App.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,19 +12,10 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace App.WebApi.Controllers;
 
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin")]
-public class AdminController(ISender sender, IHostEnvironment env, IUserRepository userRepository) : BaseController
+public class AdminController(ISender sender, IHostEnvironment env) : BaseController
 {
-    private async Task<bool> CheckIsAdminAsync(CancellationToken ct)
-    {
-        if (IsAdmin) return true;
-        if (UserId is null) return false;
-
-        var user = await userRepository.GetByUuidAsync(UserUuid, ct);
-        return user?.Role == UserRole.Admin;
-    }
-
     [HttpPost("adverts/import")]
     [SwaggerResponse(200, "Import completed.", typeof(ImportAdvertsResponse))]
     [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
@@ -35,11 +24,6 @@ public class AdminController(ISender sender, IHostEnvironment env, IUserReposito
         [FromBody] List<ImportAdvertItemRequest> adverts,
         CancellationToken ct = default)
     {
-        if (!await CheckIsAdminAsync(ct))
-        {
-            return Forbid();
-        }
-
         var result = await sender.Send(new ImportAdvertsCommand(adverts, UserUuid), ct);
 
         return result.IsFailure
@@ -60,11 +44,6 @@ public class AdminController(ISender sender, IHostEnvironment env, IUserReposito
             return NotFound();
         }
 
-        if (!await CheckIsAdminAsync(ct))
-        {
-            return Forbid();
-        }
-
         var result = await sender.Send(new AttachAdvertImagesCommand(items, UserUuid), ct);
 
         return result.IsFailure
@@ -78,11 +57,6 @@ public class AdminController(ISender sender, IHostEnvironment env, IUserReposito
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        if (!await CheckIsAdminAsync(ct))
-        {
-            return Forbid();
-        }
-
         var result = await sender.Send(new GetAdvertReportsQuery(page, pageSize), ct);
 
         return result.IsFailure
@@ -93,11 +67,6 @@ public class AdminController(ISender sender, IHostEnvironment env, IUserReposito
     [HttpDelete("reports/{uuid:guid}")]
     public async Task<IActionResult> DismissReport(Guid uuid, CancellationToken ct = default)
     {
-        if (!await CheckIsAdminAsync(ct))
-        {
-            return Forbid();
-        }
-
         var result = await sender.Send(new DismissAdvertReportCommand(uuid), ct);
 
         return result.IsFailure

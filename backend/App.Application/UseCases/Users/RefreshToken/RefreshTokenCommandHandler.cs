@@ -1,5 +1,7 @@
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
+using App.Domain.Enums;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -10,6 +12,7 @@ public class RefreshTokenCommandHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
     IRefreshTokenGenerator refreshTokenGenerator,
+    ISecurityAuditLogger auditLogger,
     IUnitOfWork unitOfWork)
     : ICommandHandler<RefreshTokenCommand, RefreshTokenResponse>
 {
@@ -27,6 +30,12 @@ public class RefreshTokenCommandHandler(
 
         if (session is null || !session.IsValid(now))
         {
+            await auditLogger.LogAsync(
+                SecurityEventType.RefreshFailed,
+                success: false,
+                details: "Session invalid or expired.",
+                ct: ct);
+
             return Result.Failure<RefreshTokenResponse>(InvalidRefreshToken);
         }
 
@@ -34,6 +43,12 @@ public class RefreshTokenCommandHandler(
 
         if (user is null)
         {
+            await auditLogger.LogAsync(
+                SecurityEventType.RefreshFailed,
+                success: false,
+                details: "User not found for session.",
+                ct: ct);
+
             return Result.Failure<RefreshTokenResponse>(InvalidRefreshToken);
         }
 

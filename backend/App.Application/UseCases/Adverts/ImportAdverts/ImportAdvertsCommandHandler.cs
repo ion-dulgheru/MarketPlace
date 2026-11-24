@@ -3,6 +3,7 @@ using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.Messaging;
 using App.Contracts.Responses.Adverts;
 using App.Domain.Entities;
+using App.Domain.Enums;
 using App.Domain.Errors;
 using App.Domain.Repositories;
 using App.Domain.Shared;
@@ -14,8 +15,7 @@ public class ImportAdvertsCommandHandler(
     IAdvertRepository advertRepository,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IHtmlSanitizerService htmlSanitizerService,
-    IAdminAccessService adminAccessService)
+    IHtmlSanitizerService htmlSanitizerService)
     : ICommandHandler<ImportAdvertsCommand, ImportAdvertsResponse>
 {
     private const string DefaultCountry = "Moldova";
@@ -23,7 +23,7 @@ public class ImportAdvertsCommandHandler(
     public async Task<Result<ImportAdvertsResponse>> Handle(ImportAdvertsCommand command, CancellationToken ct)
     {
         var user = await userRepository.GetByUuidAsync(command.UserUuid, ct);
-        if (user is null || !adminAccessService.IsAdmin(user.Email))
+        if (user is null || user.Role != UserRole.Admin)
         {
             return Result.Failure<ImportAdvertsResponse>(AdminErrors.Forbidden);
         }
