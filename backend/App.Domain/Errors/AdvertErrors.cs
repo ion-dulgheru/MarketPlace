@@ -43,6 +43,9 @@ public static class AdvertErrors
     public static readonly Error InvalidFileFormat =
         Error.Validation("Advert.InvalidFileFormat", "Only .jpg, .jpeg, .png, and .webp images are allowed.");
 
+    public static readonly Error InvalidImageContent =
+        Error.Validation("Advert.InvalidImageContent", "The file is not a valid image.");
+
     public static readonly Error PhotoNotFound =
         Error.NotFound("Advert.PhotoNotFound", "Photo not found.");
     public static readonly Error CannotFavoriteOwnAdvert =

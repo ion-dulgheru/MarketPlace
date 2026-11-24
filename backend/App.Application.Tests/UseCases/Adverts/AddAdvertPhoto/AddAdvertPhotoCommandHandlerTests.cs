@@ -13,6 +13,7 @@ public class AddAdvertPhotoCommandHandlerTests
 {
     private readonly Mock<IAdvertRepository> _mockRepository;
     private readonly Mock<IFileStorageService> _mockFileStorage;
+    private readonly Mock<IImageProcessor> _mockImageProcessor;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly AddAdvertPhotoCommandHandler _handler;
 
@@ -20,10 +21,12 @@ public class AddAdvertPhotoCommandHandlerTests
     {
         _mockRepository = new Mock<IAdvertRepository>();
         _mockFileStorage = new Mock<IFileStorageService>();
+        _mockImageProcessor = new Mock<IImageProcessor>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _handler = new AddAdvertPhotoCommandHandler(
             _mockRepository.Object,
             _mockFileStorage.Object,
+            _mockImageProcessor.Object,
             _mockUnitOfWork.Object);
     }
 
@@ -50,6 +53,50 @@ public class AddAdvertPhotoCommandHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(AdvertErrors.NotFound.Code, result.Error.Code);
+        _mockImageProcessor.Verify(x => x.SanitizeAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockFileStorage.Verify(x => x.SaveFileAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenImageProcessorReturnsNull_ShouldReturnInvalidImageContentAndNotSaveFile()
+    {
+        var advertUuid = Guid.NewGuid();
+        var userUuid = Guid.NewGuid();
+        var address = Address.Create("Moldova", "Chisinau", "Center", "Stefan cel Mare", "1").Value;
+        var advert = Advert.Create(
+            userUuid,
+            "Title",
+            "Description",
+            100000m,
+            75m,
+            3,
+            4,
+            AdvertType.Sale,
+            address,
+            DateTime.UtcNow.AddDays(30));
+
+        _mockRepository
+            .Setup(x => x.GetByUuidForOwnerAsync(advertUuid, userUuid, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(advert);
+
+        _mockImageProcessor
+            .Setup(x => x.SanitizeAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProcessedImage?)null);
+
+        using var stream = new MemoryStream([1, 2, 3, 4]);
+        var command = new AddAdvertPhotoCommand(
+            advertUuid,
+            userUuid,
+            stream,
+            "invalid_file.jpg",
+            stream.Length,
+            true);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(AdvertErrors.InvalidImageContent.Code, result.Error.Code);
         _mockFileStorage.Verify(x => x.SaveFileAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -76,8 +123,13 @@ public class AddAdvertPhotoCommandHandlerTests
             .Setup(x => x.GetByUuidForOwnerAsync(advertUuid, userUuid, It.IsAny<CancellationToken>()))
             .ReturnsAsync(advert);
 
+        using var sanitizedStream = new MemoryStream([9, 9, 9]);
+        _mockImageProcessor
+            .Setup(x => x.SanitizeAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProcessedImage(sanitizedStream, ".jpg", "image/jpeg"));
+
         _mockFileStorage
-            .Setup(x => x.SaveFileAsync(It.IsAny<Stream>(), "living_room.jpg", It.IsAny<CancellationToken>()))
+            .Setup(x => x.SaveFileAsync(sanitizedStream, "photo.jpg", It.IsAny<CancellationToken>()))
             .ReturnsAsync("/uploads/adverts/unique-file.jpg");
 
         using var stream = new MemoryStream([1, 2, 3, 4]);
@@ -98,7 +150,7 @@ public class AddAdvertPhotoCommandHandlerTests
         Assert.Single(advert.Photos);
         Assert.Equal("/uploads/adverts/unique-file.jpg", advert.Photos.First().PhotoUrl);
         Assert.True(advert.Photos.First().IsPrimary);
-
+        _mockFileStorage.Verify(x => x.SaveFileAsync(sanitizedStream, "photo.jpg", It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

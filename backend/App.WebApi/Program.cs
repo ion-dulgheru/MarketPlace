@@ -28,7 +28,7 @@ builder.Services.AddSingleton(signingCertificate);
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

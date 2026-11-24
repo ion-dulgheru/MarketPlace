@@ -137,6 +137,7 @@ public class AdvertsController(ISender sender) : BaseController
 
     [HttpPost("{uuid:guid}/photos")]
     [Consumes("multipart/form-data")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     [SwaggerResponse(201, "Photo added.", typeof(AdvertPhotoResponse))]
     [SwaggerResponse(400, "Validation failed.", typeof(ErrorDetails))]
     [SwaggerResponse(404, "Advert not found.", typeof(ErrorDetails))]

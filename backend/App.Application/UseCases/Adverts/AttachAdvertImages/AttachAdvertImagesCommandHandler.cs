@@ -14,6 +14,7 @@ public class AttachAdvertImagesCommandHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     IFileStorageService fileStorageService,
+    IImageProcessor imageProcessor,
     IAdminAccessService adminAccessService)
     : ICommandHandler<AttachAdvertImagesCommand, AttachAdvertImagesResponse>
 {
@@ -75,7 +76,14 @@ public class AttachAdvertImagesCommandHandler(
                 }
 
                 await using var stream = File.OpenRead(path);
-                var photoUrl = await fileStorageService.SaveFileAsync(stream, Path.GetFileName(path), ct);
+                var processed = await imageProcessor.SanitizeAsync(stream, ct);
+                if (processed is null)
+                {
+                    errors.Add($"'{item.Title}': skipped '{path}' (invalid image content).");
+                    continue;
+                }
+
+                var photoUrl = await fileStorageService.SaveFileAsync(processed.Content, "photo" + processed.Extension, ct);
                 advert.AddPhoto(AdvertPhoto.Create(photoUrl, isPrimary: !attachedAny));
                 attachedAny = true;
             }
