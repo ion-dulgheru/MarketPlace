@@ -32,6 +32,8 @@ public static class DependencyInjection
         }
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddScoped<IAdminAccessService, AdminAccessService>();
+        // Temporary: replaced by the database-backed audit logger (SecurityAuditLogs table).
+        services.AddScoped<ISecurityAuditLogger, LoggingSecurityAuditLogger>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         services.AddSingleton(_ => new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));
