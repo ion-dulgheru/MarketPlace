@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using App.Contracts.Requests.Users;
@@ -8,6 +9,10 @@ using App.Application.UseCases.Users.RefreshToken;
 using App.Application.UseCases.Users.RequestPasswordReset;
 using App.Application.UseCases.Users.ResetPassword;
 using App.Application.UseCases.Users.VerifyEmail;
+using App.Application.UseCases.Users.Mfa.DisableMfa;
+using App.Application.UseCases.Users.Mfa.EnableMfa;
+using App.Application.UseCases.Users.Mfa.SetupMfa;
+using App.Application.UseCases.Users.Mfa.VerifyMfaLogin;
 namespace App.WebApi.Controllers;
 
 [Route("api/auth")]
@@ -57,6 +62,53 @@ public async Task<IActionResult> Login(
         ? HandleFailure(result)
         : Ok(result.Value);
 }
+
+    /// <summary>Second login step for accounts with MFA: exchanges the mfaToken and a TOTP code for tokens.</summary>
+    [HttpPost("login/mfa")]
+    public async Task<IActionResult> LoginMfa(
+        [FromBody] MfaLoginRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new VerifyMfaLoginCommand(request.MfaToken, request.Code), ct);
+
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        SetRefreshCookie(result.Value.RefreshToken!);
+        return Ok(result.Value);
+    }
+
+    [Authorize]
+    [HttpPost("mfa/setup")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> SetupMfa(CancellationToken ct = default)
+    {
+        var result = await sender.Send(new SetupMfaCommand(UserUuid), ct);
+        return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+    }
+
+    [Authorize]
+    [HttpPost("mfa/enable")]
+    public async Task<IActionResult> EnableMfa(
+        [FromBody] MfaCodeRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new EnableMfaCommand(UserUuid, request.Code), ct);
+        return result.IsFailure ? HandleFailure(result) : NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("mfa/disable")]
+    public async Task<IActionResult> DisableMfa(
+        [FromBody] MfaCodeRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new DisableMfaCommand(UserUuid, request.Code), ct);
+        return result.IsFailure ? HandleFailure(result) : NoContent();
+    }
+
       [HttpPost("password-reset-requests")]
 public async Task<IActionResult> RequestPasswordReset(
     [FromBody] RequestPasswordResetRequest request,
