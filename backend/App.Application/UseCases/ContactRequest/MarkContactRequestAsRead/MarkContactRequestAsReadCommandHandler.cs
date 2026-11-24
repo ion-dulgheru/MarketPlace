@@ -25,10 +25,14 @@ public class MarkContactRequestAsReadCommandHandler(
             return Result.Failure(ContactRequestErrors.NotFound);
         }
 
-        var advert = await advertRepository.GetByUuidAsync(contactRequest.AdvertUuid, ct);
-
         var isSender = command.UserUuid == contactRequest.FromUserUuid;
-        var isOwner = advert is not null && command.UserUuid == advert.UserUuid;
+        var isOwner = false;
+
+        if (!isSender)
+        {
+            var advert = await advertRepository.GetByUuidForOwnerAsync(contactRequest.AdvertUuid, command.UserUuid, ct);
+            isOwner = advert is not null;
+        }
 
         if (!isSender && !isOwner)
         {
