@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using App.Contracts.Requests.Users;
+using App.Contracts.Responses.Users;
+using App.Domain.Shared;
+using App.Application.UseCases.Users.Logout;
 using App.Application.UseCases.Users.Register;
 using App.Application.UseCases.Users.SignIn;
 using App.Application.UseCases.Users.RefreshToken;
@@ -51,17 +54,17 @@ public async Task<IActionResult> VerifyEmail(
         ? HandleFailure(result)
         : Ok();
 }
-      [HttpPost("login")]
-public async Task<IActionResult> Login(
-    [FromBody] LoginRequest request,
-    CancellationToken ct = default)
-{
-    var result = await sender.Send(new SignInCommand(request.Email, request.Password), ct);
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new SignInCommand(request.Email, request.Password), ct);
 
-    return result.IsFailure
-        ? HandleFailure(result)
-        : Ok(result.Value);
-}
+        return result.IsFailure
+            ? HandleFailure(result)
+            : SignedIn(result.Value);
+    }
 
     /// <summary>Second login step for accounts with MFA: exchanges the mfaToken and a TOTP code for tokens.</summary>
     [HttpPost("login/mfa")]
@@ -71,13 +74,9 @@ public async Task<IActionResult> Login(
     {
         var result = await sender.Send(new VerifyMfaLoginCommand(request.MfaToken, request.Code), ct);
 
-        if (result.IsFailure)
-        {
-            return HandleFailure(result);
-        }
-
-        SetRefreshCookie(result.Value.RefreshToken!);
-        return Ok(result.Value);
+        return result.IsFailure
+            ? HandleFailure(result)
+            : SignedIn(result.Value);
     }
 
     [Authorize]
@@ -127,20 +126,57 @@ public async Task<IActionResult> ResetPassword(
     return result.IsFailure ? HandleFailure(result) : Ok();
 }
    
+    // No body: the refresh token comes only from the HttpOnly cookie and is rotated on every call.
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh(
-        [FromBody] RefreshTokenRequest request,
-        CancellationToken ct = default)
+    public async Task<IActionResult> Refresh(CancellationToken ct = default)
     {
-        var result = await sender.Send(new RefreshTokenCommand(request.RefreshToken), ct);
+        var refreshToken = ReadRefreshCookie();
+        if (refreshToken is null)
+        {
+            return Unauthorized(ToProblem(MissingRefreshToken));
+        }
 
-        return result.IsFailure
-            ? HandleFailure(result)
-            : Ok(result.Value);
+        var result = await sender.Send(new RefreshTokenCommand(refreshToken), ct);
+
+        if (result.IsFailure)
+        {
+            ClearRefreshCookie();
+            return HandleFailure(result);
+        }
+
+        SetRefreshCookie(result.Value.RefreshToken);
+        return Ok(new AccessTokenResponse(result.Value.AccessToken));
     }
 
-    // ---- Refresh-token cookie (SR-07). Not wired yet: login/refresh/logout start using these
-    // ---- when the refresh token moves out of the response body (DAS plan, section 9.2).
+    // Not [Authorize]: the access token may already be expired, the cookie is enough to find the session.
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(CancellationToken ct = default)
+    {
+        var refreshToken = ReadRefreshCookie();
+        if (refreshToken is not null)
+        {
+            await sender.Send(new LogoutCommand(refreshToken), ct);
+        }
+
+        ClearRefreshCookie();
+        return NoContent();
+    }
+
+    // Login and login/mfa: the refresh token goes only into the cookie, never into the body.
+    private OkObjectResult SignedIn(SignInResponse response)
+    {
+        if (response.RefreshToken is not null)
+        {
+            SetRefreshCookie(response.RefreshToken);
+        }
+
+        return Ok(new LoginResponse(response.AccessToken, response.MfaRequired, response.MfaToken));
+    }
+
+    private static readonly Error MissingRefreshToken =
+        Error.Unauthorized("Auth.InvalidRefreshToken", "Invalid or expired refresh token.");
+
+    // ---- Refresh-token cookie (SR-07).
 
     internal const string RefreshCookieName = "openkey_rt";
     private const string RefreshCookiePath = "/api/auth";

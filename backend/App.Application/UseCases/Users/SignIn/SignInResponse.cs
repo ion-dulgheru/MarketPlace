@@ -7,8 +7,8 @@ namespace App.Application.UseCases.Users.SignIn;
 /// <item>MFA enabled: no tokens, <see cref="MfaRequired"/> = true and <see cref="MfaToken"/> set;
 /// the client then calls POST /api/auth/login/mfa.</item>
 /// </list>
-/// <see cref="RefreshToken"/> is still returned in the body for now; it moves to the
-/// HttpOnly cookie (AuthController.SetRefreshCookie) and is then removed from this record.
+/// This is the handler result, not the HTTP body: AuthController puts <see cref="RefreshToken"/>
+/// in the HttpOnly cookie and returns App.Contracts LoginResponse, which has no refresh token.
 /// </summary>
 public record SignInResponse(
     string? AccessToken,
