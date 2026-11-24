@@ -11,6 +11,23 @@ import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 
+// Content-Security-Policy (SR-07). 'unsafe-inline' la scripturi e necesar pentru scripturile
+// inline de hidratare SSR - limitare cunoscuta, pasul urmator e nonce.
+// API_URL e si in img-src: pozele locale vin de la API (/uploads), cele din productie din Blob.
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  `img-src 'self' data: blob: https://*.blob.core.windows.net ${API_URL}`,
+  `connect-src 'self' ${API_URL}`,
+  "frame-src https://www.google.com/recaptcha/",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -72,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      { httpEquiv: "Content-Security-Policy", content: CONTENT_SECURITY_POLICY },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OpenKey" },
       { name: "description", content: "Open property listings for sale and rent." },
