@@ -8,6 +8,7 @@ export interface CurrentUser {
   dateOfBirth: string | null;
   phoneNumber: string | null;
   role?: string;
+  twoFactorEnabled: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {

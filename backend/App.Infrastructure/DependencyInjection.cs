@@ -6,6 +6,7 @@ using App.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using App.Application.Abstractions.JWT;
+using App.Application.Abstractions.Mfa;
 using App.Application.Abstractions.Email;
 using App.Infrastructure.Email;
 using App.Application.Abstractions.Captcha;
@@ -30,6 +31,9 @@ public static class DependencyInjection
         {
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
         }
+        services.AddOpenKeyDataProtection(configuration);
+        services.AddSingleton<ITotpService, TotpService>();
+        services.AddSingleton<ITotpSecretProtector, TotpSecretProtector>();
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddScoped<IAdminAccessService, AdminAccessService>();
         // Temporary: replaced by the database-backed audit logger (SecurityAuditLogs table).

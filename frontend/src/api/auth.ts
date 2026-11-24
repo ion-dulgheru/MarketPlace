@@ -12,11 +12,6 @@ export interface RegisterRequest {
   captchaToken: string;
 }
 
-export interface AuthTokensResponse {
-  accessToken: string;
-  refreshToken: string;
-}
-
 export async function registerUser(data: RegisterRequest): Promise<void> {
   const response = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
@@ -52,7 +47,19 @@ export interface LoginRequest {
   password: string;
 }
 
-export async function loginUser(data: LoginRequest): Promise<AuthTokensResponse> {
+export type LoginResult = { mfaRequired: false } | { mfaRequired: true; mfaToken: string };
+
+interface SignInResponse {
+  accessToken: string | null;
+  refreshToken: string | null;
+  mfaRequired: boolean;
+  mfaToken: string | null;
+}
+
+/** The mfaToken expired or was invalidated: the user has to enter the password again. */
+export class MfaSessionExpiredError extends Error {}
+
+export async function loginUser(data: LoginRequest): Promise<LoginResult> {
   const response = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -64,9 +71,43 @@ export async function loginUser(data: LoginRequest): Promise<AuthTokensResponse>
     throw new Error((error as { message?: string }).message ?? "Invalid email or password");
   }
 
-  const tokens = (await response.json()) as AuthTokensResponse;
-  saveTokens(tokens.accessToken, tokens.refreshToken);
-  return tokens;
+  const result = (await response.json()) as SignInResponse;
+  if (result.mfaRequired && result.mfaToken) {
+    return { mfaRequired: true, mfaToken: result.mfaToken };
+  }
+
+  saveSignIn(result);
+  return { mfaRequired: false };
+}
+
+export async function verifyMfaLogin(mfaToken: string, code: string): Promise<void> {
+  const response = await fetch(`${API_URL}/api/auth/login/mfa`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mfaToken, code }),
+  });
+
+  if (!response.ok) {
+    const error = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
+    const fallback =
+      response.status === 429
+        ? "Too many attempts. Wait a minute and try again."
+        : "Could not verify the code";
+    const message = error.message ?? fallback;
+    throw error.code === "Auth.InvalidMfaToken" || error.code === "Auth.AccountLocked"
+      ? new MfaSessionExpiredError(message)
+      : new Error(message);
+  }
+
+  saveSignIn((await response.json()) as SignInResponse);
+}
+
+function saveSignIn(result: SignInResponse) {
+  if (!result.accessToken || !result.refreshToken) {
+    throw new Error("Unexpected response from the server");
+  }
+  saveTokens(result.accessToken, result.refreshToken);
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
