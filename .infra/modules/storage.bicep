@@ -33,6 +33,15 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
+// ASP.NET Data Protection keys (encrypt the TOTP secrets). Must stay private.
+resource dataProtectionContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'dataprotection-keys'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 // Storage Blob Data Contributor: ba92f5b4-2d11-453d-a403-e96b0029c9fe
 var blobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
 

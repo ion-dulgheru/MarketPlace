@@ -15,6 +15,8 @@ public class SignInCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<SignInCommand, SignInResponse>
 {
+    private static readonly TimeSpan MfaTokenLifetime = TimeSpan.FromMinutes(5);
+
     public async Task<Result<SignInResponse>> Handle(SignInCommand request, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -49,6 +51,17 @@ public class SignInCommandHandler(
             return Result.Failure<SignInResponse>(Error.Forbidden(
                 "Auth.EmailNotVerified",
                 "Please verify your email address before signing in."));
+        }
+
+        if (user.TwoFactorEnabled)
+        {
+            // The failed-attempt counter is deliberately not reset here: otherwise someone who knows the
+            // password could reset it before each batch of code guesses and never reach the lockout.
+            var mfaToken = refreshTokenGenerator.GenerateToken();
+            user.SetMfaToken(refreshTokenGenerator.Hash(mfaToken), now.Add(MfaTokenLifetime));
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success(new SignInResponse(null, null, MfaRequired: true, MfaToken: mfaToken));
         }
 
         user.RegisterSuccessfulLogin();

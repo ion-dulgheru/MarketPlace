@@ -55,4 +55,10 @@ return await context.Users.FirstOrDefaultAsync(x => x.Email == email, ct);
         return await context.Users
             .FirstOrDefaultAsync(u => u.EmailVerificationTokenHash == tokenHash, ct);
     }
+
+    public async Task<User?> GetByMfaTokenHashAsync(string tokenHash, CancellationToken ct = default)
+    {
+        return await context.Users
+            .FirstOrDefaultAsync(u => u.MfaTokenHash == tokenHash, ct);
+    }
 }

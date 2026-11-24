@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, KeyRound, LogOut, UserRound } from "lucide-react";
 import Header from "@/components/Navigation/header";
+import { TwoFactorSection } from "@/components/Account/TwoFactorSection";
 import { Button } from "@/components/ui/button";
 import { changePassword, getCurrentUser, updateCurrentUser, type CurrentUser } from "@/api/users";
 import { isLoggedIn } from "@/lib/tokens";
@@ -39,6 +40,12 @@ function SettingsPage() {
           <ArrowLeft className="size-4" /> Back to account
         </Link>
         <ChangePasswordSection />
+        {user && (
+          <TwoFactorSection
+            enabled={user.twoFactorEnabled}
+            onChanged={(twoFactorEnabled) => setUser({ ...user, twoFactorEnabled })}
+          />
+        )}
         {user && <EditAccountSection user={user} onSaved={setUser} />}
         <section className="mt-8 rounded-lg border border-border bg-card p-6 sm:p-10">
           <div className="flex items-center justify-between gap-4">

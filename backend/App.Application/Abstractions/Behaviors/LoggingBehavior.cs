@@ -44,7 +44,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             stopwatch.Stop();
             logger.LogError(
                 ex,
-                "Unhandled expection in {RequestName} after {ElapsedMilliseconds}ms",
+                "Unhandled exception in {RequestName} after {ElapsedMilliseconds}ms",
                 requestName, stopwatch.ElapsedMilliseconds);
             throw;
         }

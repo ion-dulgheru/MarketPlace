@@ -30,7 +30,8 @@ public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfW
             lastName = details?.LastName,
             dateOfBirth = details?.DateOfBirth,
             phoneNumber = details?.PhoneNumber,
-            role = user.Role.ToString()
+            role = user.Role.ToString(),
+            twoFactorEnabled = user.TwoFactorEnabled
         });
     }
 
