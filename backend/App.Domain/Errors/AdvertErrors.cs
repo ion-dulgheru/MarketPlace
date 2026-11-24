@@ -44,7 +44,7 @@ public static class AdvertErrors
         Error.Validation("Advert.InvalidFileFormat", "Only .jpg, .jpeg, .png, and .webp images are allowed.");
 
     public static readonly Error InvalidImageContent =
-        Error.Validation("Advert.InvalidImageContent", "Fișierul nu este o imagine validă.");
+        Error.Validation("Advert.InvalidImageContent", "The file is not a valid image.");
 
     public static readonly Error PhotoNotFound =
         Error.NotFound("Advert.PhotoNotFound", "Photo not found.");
