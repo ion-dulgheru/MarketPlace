@@ -5,6 +5,7 @@ using App.Infrastructure.Services;
 using App.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Mfa;
 using App.Application.Abstractions.Email;
@@ -17,7 +18,10 @@ namespace App.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
@@ -36,21 +40,22 @@ public static class DependencyInjection
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<ITotpSecretProtector, TotpSecretProtector>();
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
-        services.AddSingleton<IImageProcessor, ImageSharpProcessor>();
+        services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
         services.AddScoped<IAdminAccessService, AdminAccessService>();
         // Temporary: replaced by the database-backed audit logger (SecurityAuditLogs table).
         services.AddScoped<ISecurityAuditLogger, LoggingSecurityAuditLogger>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         var emailConnString = configuration["Azure:CommunicationServices:ConnectionString"];
-        if (!string.IsNullOrWhiteSpace(emailConnString))
+        if (string.IsNullOrWhiteSpace(emailConnString) && environment.IsDevelopment())
         {
-            services.AddSingleton(_ => new EmailClient(emailConnString));
-            services.AddScoped<IEmailSender, AzureEmailSender>();
+            // Development only: it logs password reset and verification links.
+            services.AddScoped<IEmailSender, LoggingEmailSender>();
         }
         else
         {
-            services.AddScoped<IEmailSender, LoggingEmailSender>();
+            services.AddSingleton(_ => new EmailClient(emailConnString));
+            services.AddScoped<IEmailSender, AzureEmailSender>();
         }
         return services;
     }
