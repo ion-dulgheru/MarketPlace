@@ -1,4 +1,5 @@
 using App.Application.Abstractions.Behaviors;
+using App.Application.UseCases.Users.Mfa;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,12 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
+        services.AddScoped<MfaCodeVerifier>();
+        services.AddScoped<MfaFailureRecorder>();
+
+        // Order matters: behaviors registered first wrap the ones registered later,
+        // so logging also records requests rejected by validation.
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;

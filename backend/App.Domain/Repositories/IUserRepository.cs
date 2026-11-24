@@ -14,5 +14,6 @@ public interface IUserRepository
     Task UpdateDetailsAsync(UserDetails details, CancellationToken ct);
     Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken ct = default);
     Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken ct = default);
+    Task<User?> GetByMfaTokenHashAsync(string tokenHash, CancellationToken ct = default);
 }
 

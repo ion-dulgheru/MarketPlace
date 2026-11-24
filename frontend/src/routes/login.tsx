@@ -2,7 +2,8 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { loginUser } from "@/api/auth";
+import { MfaCodeInput } from "@/components/Account/MfaCodeInput";
+import { loginUser, MfaSessionExpiredError, verifyMfaLogin } from "@/api/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -21,6 +22,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,9 +35,33 @@ function LoginPage() {
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
 
     try {
-      await loginUser({ email, password });
+      const result = await loginUser({ email, password });
+      if (result.mfaRequired) {
+        setMfaToken(result.mfaToken);
+      } else {
+        void navigate({ to: "/" });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCodeSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!mfaToken) return;
+    setError(null);
+    setLoading(true);
+
+    try {
+      await verifyMfaLogin(mfaToken, code);
       void navigate({ to: "/" });
     } catch (err) {
+      if (err instanceof MfaSessionExpiredError) {
+        setMfaToken(null);
+      }
+      setCode("");
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
@@ -63,45 +90,72 @@ function LoginPage() {
           <p className="text-sm font-semibold text-primary">Welcome back</p>
           <h1 className="mt-2 font-display text-4xl leading-tight">Log in to OpenKey</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Log in to contact property owners and manage your listings.
+            {mfaToken
+              ? "Enter the 6-digit code from your authenticator app."
+              : "Log in to contact property owners and manage your listings."}
           </p>
 
-          <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Email
-              <input
-                name="email"
-                required
-                type="email"
-                placeholder="you@example.com"
-                className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Password
-              <input
-                name="password"
-                required
-                type="password"
-                placeholder="••••••••"
-                className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <Link
-              to="/forgot-password"
-              className="-mt-1 justify-self-end text-sm font-medium text-primary hover:underline"
-            >
-              Forgot password?
-            </Link>
-            {error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            )}
-            <Button type="submit" disabled={loading} className="mt-2 w-full">
-              {loading ? "Logging in…" : "Log in"}
-            </Button>
-          </form>
+          {mfaToken ? (
+            <form className="mt-8 grid gap-4" onSubmit={handleCodeSubmit}>
+              <MfaCodeInput label="Verification code" value={code} onChange={setCode} autoFocus />
+              {error && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" disabled={loading || code.length !== 6} className="mt-2 w-full">
+                {loading ? "Checking…" : "Verify"}
+              </Button>
+              <button
+                type="button"
+                className="text-sm font-medium text-primary hover:underline"
+                onClick={() => {
+                  setMfaToken(null);
+                  setCode("");
+                  setError(null);
+                }}
+              >
+                Back to password
+              </button>
+            </form>
+          ) : (
+            <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
+              <label className="grid gap-1.5 text-sm font-medium">
+                Email
+                <input
+                  name="email"
+                  required
+                  type="email"
+                  placeholder="you@example.com"
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium">
+                Password
+                <input
+                  name="password"
+                  required
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <Link
+                to="/forgot-password"
+                className="-mt-1 justify-self-end text-sm font-medium text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
+              {error && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" disabled={loading} className="mt-2 w-full">
+                {loading ? "Logging in…" : "Log in"}
+              </Button>
+            </form>
+          )}
 
           <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
