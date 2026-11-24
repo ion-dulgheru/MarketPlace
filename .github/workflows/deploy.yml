@@ -114,11 +114,11 @@ jobs:
           docker build -t ${ACR_SERVER}/marketplace-api:${TAG} -t ${ACR_SERVER}/marketplace-api:latest -f backend/Dockerfile backend
 
       - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ needs.infra.outputs.acr_login_server }}/marketplace-api:${{ needs.build.outputs.image_tag }}
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
@@ -320,11 +320,11 @@ jobs:
           docker build -t ${ACR_SERVER}/marketplace-web:${TAG} -t ${ACR_SERVER}/marketplace-web:latest -f frontend/Dockerfile frontend
 
       - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ needs.infra.outputs.acr_login_server }}/marketplace-web:${{ needs.build.outputs.image_tag }}
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
