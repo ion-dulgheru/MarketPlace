@@ -48,14 +48,22 @@ există deja.
 
 ## 3. Securitate frontend
 
-- [ ] **Tokenurile stau în `localStorage`** (`frontend/src/lib/tokens.ts`), nu în
-  cookie `httpOnly`/`Secure`/`SameSite` → vulnerabile la furt prin XSS, dacă vreodată
-  apare o breșă XSS. De discutat: migrare refresh token către cookie httpOnly.
-- [x] Sanitizare HTML pe input utilizator (`HtmlSanitizerService`) — există.
-- [~] **CSRF** — nefolosite cookie-uri pentru auth (bearer token în header), deci
-  riscul clasic CSRF e redus structural; nu există totuși token anti-CSRF explicit
-  și nici documentat *de ce* nu e nevoie — merită un paragraf în documentația de
-  securitate.
+- [x] **Refresh token în cookie HttpOnly** (SR-07) — refresh token-ul nu mai e în
+  `localStorage` și nici în body-ul răspunsurilor: stă doar în cookie-ul `openkey_rt`
+  (`HttpOnly; Secure; SameSite=None; Path=/api/auth`), rotit la fiecare refresh și
+  revocat la `POST /api/auth/logout`. CORS acceptă doar originea exactă a frontend-ului
+  (plus localhost în Development). Limitări: access token-ul (15 min) rămâne în
+  `localStorage` (plan: păstrare în memorie); `SameSite=None` în loc de `Strict` din cauza
+  subdomeniilor `azurewebsites.net` (plan: domeniu propriu).
+- [x] Sanitizare HTML pe input utilizator (`HtmlSanitizerService`) — există; în frontend
+  DOMPurify e folosit doar prin `src/lib/sanitizer.ts`.
+- [x] **CSP în frontend** — `<meta http-equiv="Content-Security-Policy">` în `__root.tsx`.
+  Limitare: `'unsafe-inline'` la scripturi (hidratare SSR); plan: nonce.
+- [x] **CSRF** — API-ul autorizează cererile prin bearer token în header, pe care un site
+  străin nu îl poate trimite. Singurul cookie de auth (`openkey_rt`) e folosit doar de
+  `/api/auth/refresh` și `/api/auth/logout`: un site străin poate declanșa cererea, dar nu
+  poate citi răspunsul (CORS strict, fără `*.azurewebsites.net`), deci nu obține access
+  token-ul; cel mult forțează un logout. De aceea nu e nevoie de token anti-CSRF.
 
 ## 4. Securitate backend
 
