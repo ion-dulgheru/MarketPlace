@@ -1,12 +1,14 @@
+// Refresh token-ul nu mai e aici: e in cookie-ul HttpOnly openkey_rt, setat de API.
 const ACCESS_TOKEN_KEY = "openkey_access_token";
-const REFRESH_TOKEN_KEY = "openkey_refresh_token";
+// cheia veche, stearsa ca sa nu ramana refresh token-uri salvate inainte de migrare
+const LEGACY_REFRESH_TOKEN_KEY = "openkey_refresh_token";
 
 const hasLocalStorage = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
-export function saveTokens(accessToken: string, refreshToken: string) {
+export function saveAccessToken(accessToken: string) {
   if (!hasLocalStorage) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 }
 
 export function getAccessToken(): string | null {
@@ -14,15 +16,10 @@ export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function getRefreshToken(): string | null {
-  if (!hasLocalStorage) return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
 export function clearTokens() {
   if (!hasLocalStorage) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 }
 
 export function isLoggedIn(): boolean {

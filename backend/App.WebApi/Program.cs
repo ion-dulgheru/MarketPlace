@@ -29,7 +29,7 @@ builder.Services.AddSingleton(signingCertificate);
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddGlobalExceptionHandling();
 
 builder.Services
@@ -86,17 +86,20 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Only the exact frontend origin (plus localhost in Development). With the refresh token in a
+// cookie and AllowCredentials, allowing any *.azurewebsites.net would let any app hosted there
+// call /api/auth/refresh with the victim's cookie and read the new access token.
 builder.Services.AddCors(options =>
 {
     var frontendBaseUrl = builder.Configuration["Frontend:BaseUrl"];
+    var isDevelopment = builder.Environment.IsDevelopment();
     options.AddPolicy("Frontend", policy =>
         policy.SetIsOriginAllowed(origin =>
         {
             if (string.IsNullOrWhiteSpace(origin)) return false;
             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             {
-                if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
-                if (uri.Host.EndsWith(".azurewebsites.net", StringComparison.OrdinalIgnoreCase)) return true;
+                if (isDevelopment && (uri.Host == "localhost" || uri.Host == "127.0.0.1")) return true;
                 if (!string.IsNullOrWhiteSpace(frontendBaseUrl) &&
                     origin.TrimEnd('/').Equals(frontendBaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)) return true;
             }

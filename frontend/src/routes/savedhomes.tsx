@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, DoorClosed, Heart, Layers, MapPin, Search, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,29 +10,27 @@ import {
   type Advert,
 } from "@/api/adverts";
 import { formatAdvertFloor, formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
 export const Route = createFileRoute("/savedhomes")({
   head: () => ({
     meta: [{ title: "Saved listings | OpenKey" }],
   }),
-  component: SavedHomesPage,
+  component: () => (
+    <RequireAuth>
+      <SavedHomesPage />
+    </RequireAuth>
+  ),
 });
 
 function SavedHomesPage() {
-  const navigate = useNavigate();
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [unfavoritingId, setUnfavoritingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/login" });
-      return;
-    }
-
     let cancelled = false;
     getFavoriteAdverts(1, 100)
       .then((response) => {
@@ -48,7 +46,7 @@ function SavedHomesPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, []);
 
   const handleRemoveFavorite = async (guid: string) => {
     setUnfavoritingId(guid);

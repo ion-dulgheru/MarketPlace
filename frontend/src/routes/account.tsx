@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -16,15 +16,18 @@ import Header from "@/components/Navigation/header";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, type CurrentUser } from "@/api/users";
 import { getAdverts, getFavoriteAdverts } from "@/api/adverts";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "My account | OpenKey" }] }),
-  component: AccountPage,
+  component: () => (
+    <RequireAuth>
+      <AccountPage />
+    </RequireAuth>
+  ),
 });
 
 function AccountPage() {
-  const navigate = useNavigate();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [listingCount, setListingCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
@@ -32,11 +35,6 @@ function AccountPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/login" });
-      return;
-    }
-
     let cancelled = false;
     Promise.all([
       getCurrentUser(),
@@ -59,7 +57,7 @@ function AccountPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, []);
 
   const fullName = user ? [user.firstName, user.lastName].filter(Boolean).join(" ") : "";
   const initials = fullName

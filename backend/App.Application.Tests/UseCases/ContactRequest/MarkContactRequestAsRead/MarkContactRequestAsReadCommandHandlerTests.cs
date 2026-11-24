@@ -53,8 +53,8 @@ public class MarkContactRequestAsReadCommandHandlerTests
 
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
-            .Setup(r => r.GetByUuidAsync(advert.Uuid, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(advert);
+            .Setup(r => r.GetByUuidForOwnerAsync(advert.Uuid, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Advert?)null);
 
         var unitOfWorkMock = new Mock<IUnitOfWork>();
 
@@ -81,17 +81,16 @@ public class MarkContactRequestAsReadCommandHandlerTests
             .Setup(r => r.GetByUuidAsync(contactRequest.Uuid, It.IsAny<CancellationToken>()))
             .ReturnsAsync(contactRequest);
 
+        var command = new MarkContactRequestAsReadCommand(contactRequest.Uuid, ownerUuid);
+
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
-            .Setup(r => r.GetByUuidAsync(advert.Uuid, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUuidForOwnerAsync(advert.Uuid, ownerUuid, It.IsAny<CancellationToken>()))
             .ReturnsAsync(advert);
 
         var unitOfWorkMock = new Mock<IUnitOfWork>();
-
         var handler = new MarkContactRequestAsReadCommandHandler(
             contactRequestRepositoryMock.Object, advertRepositoryMock.Object, unitOfWorkMock.Object);
-
-        var command = new MarkContactRequestAsReadCommand(contactRequest.Uuid, ownerUuid);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -112,8 +111,8 @@ public class MarkContactRequestAsReadCommandHandlerTests
 
         var advertRepositoryMock = new Mock<IAdvertRepository>();
         advertRepositoryMock
-            .Setup(r => r.GetByUuidAsync(advert.Uuid, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(advert);
+            .Setup(r => r.GetByUuidForOwnerAsync(advert.Uuid, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Advert?)null);
 
         var unitOfWorkMock = new Mock<IUnitOfWork>();
 

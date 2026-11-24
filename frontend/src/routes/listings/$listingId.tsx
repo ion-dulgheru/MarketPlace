@@ -15,7 +15,7 @@ import { getCurrentUserUuid, isLoggedIn } from "@/lib/tokens";
 import { ContactOwnerDialog } from "@/components/dialogs/ContactOwnerDialog";
 import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
-import DOMPurify from "dompurify";
+import { sanitizer } from "@/lib/sanitizer";
 import { Flag } from "lucide-react";
 import { ReportAdvertDialog } from "@/components/dialogs/ReportAdvertDialog";
 
@@ -278,7 +278,7 @@ function ListingDetailsPage() {
               <div
                 className="mt-3 text-sm leading-7 text-muted-foreground [&_p]:mb-3 [&_strong]:font-semibold [&_strong]:text-foreground [&_em]:italic [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-3"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(advert.description),
+                  __html: sanitizer.html(advert.description),
                 }}
               />
             </div>

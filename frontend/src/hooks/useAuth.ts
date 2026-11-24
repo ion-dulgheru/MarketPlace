@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { isLoggedIn, clearTokens, isAdmin as checkIsAdmin, getUserRole } from "@/lib/tokens";
+import { isLoggedIn, isAdmin as checkIsAdmin, getUserRole } from "@/lib/tokens";
+import { logoutUser } from "@/api/auth";
 
 export function useAuth() {
   const [loggedIn, setLoggedIn] = useState<boolean>(false);
@@ -21,7 +22,7 @@ export function useAuth() {
   }, []);
 
   const logout = () => {
-    clearTokens();
+    void logoutUser();
     setLoggedIn(false);
     setIsAdmin(false);
     setRole(null);
