@@ -36,8 +36,16 @@ public static class DependencyInjection
         services.AddScoped<IAdminAccessService, AdminAccessService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
-        services.AddSingleton(_ => new EmailClient(configuration["Azure:CommunicationServices:ConnectionString"]));
-        services.AddScoped<IEmailSender, AzureEmailSender>();
+        var emailConnString = configuration["Azure:CommunicationServices:ConnectionString"];
+        if (!string.IsNullOrWhiteSpace(emailConnString))
+        {
+            services.AddSingleton(_ => new EmailClient(emailConnString));
+            services.AddScoped<IEmailSender, AzureEmailSender>();
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, LoggingEmailSender>();
+        }
         return services;
     }
 }
