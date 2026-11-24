@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Email;
 using App.Infrastructure.Email;
+using App.Infrastructure.Images;
 using App.Application.Abstractions.Captcha;
 using App.Infrastructure.Captcha;
 using Azure.Communication.Email;
@@ -31,6 +32,7 @@ public static class DependencyInjection
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
         }
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
+        services.AddSingleton<IImageProcessor, ImageSharpProcessor>();
         services.AddScoped<IAdminAccessService, AdminAccessService>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();

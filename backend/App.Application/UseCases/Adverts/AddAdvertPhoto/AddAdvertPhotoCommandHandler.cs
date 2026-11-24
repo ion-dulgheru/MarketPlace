@@ -11,6 +11,7 @@ namespace App.Application.UseCases.Adverts.AddAdvertPhoto;
 public class AddAdvertPhotoCommandHandler(
     IAdvertRepository advertRepository,
     IFileStorageService fileStorageService,
+    IImageProcessor imageProcessor,
     IUnitOfWork unitOfWork)
     : ICommandHandler<AddAdvertPhotoCommand, AdvertPhotoResponse>
 {
@@ -22,9 +23,15 @@ public class AddAdvertPhotoCommandHandler(
             return Result.Failure<AdvertPhotoResponse>(AdvertErrors.NotFound);
         }
 
+        var processed = await imageProcessor.SanitizeAsync(command.FileStream, ct);
+        if (processed is null)
+        {
+            return Result.Failure<AdvertPhotoResponse>(AdvertErrors.InvalidImageContent);
+        }
+
         var photoUrl = await fileStorageService.SaveFileAsync(
-            command.FileStream,
-            command.FileName,
+            processed.Content,
+            "photo" + processed.Extension,
             ct);
 
         var photo = AdvertPhoto.Create(photoUrl, command.IsPrimary);
