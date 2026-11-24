@@ -11,14 +11,12 @@ import {
   Filter,
   Flag,
   Loader2,
-  Lock,
   Pencil,
   RefreshCw,
   Search,
   Shield,
   ShieldAlert,
   ShieldCheck,
-  ShieldX,
   Trash2,
   X,
 } from "lucide-react";
@@ -42,8 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
-import { getCurrentUser, type CurrentUser } from "@/api/users";
+import { RequireRole } from "@/components/guards/RequireRole";
 import { getAdvertReports, dismissAdvertReport, type AdvertReport } from "@/api/admin";
 import { deleteAdvert } from "@/api/adverts";
 import { formatPostedDate } from "@/lib/advert-format";
@@ -58,7 +55,11 @@ export const Route = createFileRoute("/admin/reports")({
       { name: "description", content: "Moderate and manage property listing reports" },
     ],
   }),
-  component: AdminReportsPage,
+  component: () => (
+    <RequireRole role="Admin">
+      <AdminReportsPage />
+    </RequireRole>
+  ),
 });
 
 type ReasonFilter = "All" | "Spam" | "Fraud" | "Duplicate" | "Other";
@@ -68,11 +69,6 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 function AdminReportsPage() {
   const navigate = useNavigate();
-  const { loggedIn, isAdmin: tokenIsAdmin, logout } = useAuth();
-
-  // Authentication & authorization states
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [authChecking, setAuthChecking] = useState(true);
 
   // Reports data state
   const [reports, setReports] = useState<AdvertReport[]>([]);
@@ -105,41 +101,6 @@ function AdminReportsPage() {
   // Copied feedback helper
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // 1. Check authentication and admin permissions
-  useEffect(() => {
-    let cancelled = false;
-
-    // Small delay to allow localStorage/auth hook hydration
-    const timer = setTimeout(() => {
-      if (!loggedIn) {
-        setAuthChecking(false);
-        return;
-      }
-
-      getCurrentUser()
-        .then((userData) => {
-          if (!cancelled) {
-            setCurrentUser(userData);
-          }
-        })
-        .catch(() => {
-          // If profile fetch fails, tokenIsAdmin can still grant access
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setAuthChecking(false);
-          }
-        });
-    }, 100);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [loggedIn]);
-
-  const isUserAdmin = Boolean(tokenIsAdmin || currentUser?.role === "Admin");
-
   // 2. Fetch reports when admin access confirmed
   const loadReports = async (isManualRefresh = false) => {
     if (isManualRefresh) {
@@ -160,11 +121,10 @@ function AdminReportsPage() {
     }
   };
 
+  // accesul de admin e verificat de RequireRole (UX) si de policy AdminOnly pe server
   useEffect(() => {
-    if (!authChecking && loggedIn && isUserAdmin) {
-      void loadReports();
-    }
-  }, [authChecking, loggedIn, isUserAdmin]);
+    void loadReports();
+  }, []);
 
   // Handle copy helper
   const handleCopy = (text: string, id: string) => {
@@ -339,94 +299,6 @@ function AdminReportsPage() {
       </span>
     );
   };
-
-  // Loading state while verifying user role
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="mx-auto max-w-[1200px] px-4 py-16 sm:px-7 lg:px-10">
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Loader2 className="size-10 animate-spin text-primary" />
-            <p className="mt-4 text-sm font-medium text-muted-foreground">
-              Verifying admin credentials…
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Not logged in: Redirect prompt / login card
-  if (!loggedIn) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="mx-auto max-w-[540px] px-4 py-20">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
-            <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-600">
-              <Lock className="size-7" />
-            </div>
-            <h1 className="mt-5 font-display text-2xl font-bold">Authentication Required</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You must be logged in as an administrator to view and manage listing reports.
-            </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <Button onClick={() => void navigate({ to: "/login" })} className="w-full">
-                Sign in
-              </Button>
-              <Button variant="ghost" onClick={() => void navigate({ to: "/" })} className="w-full">
-                Back to marketplace
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Logged in but not admin: Access Denied 403
-  if (!isUserAdmin) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="mx-auto max-w-[620px] px-4 py-20">
-          <div className="overflow-hidden rounded-2xl border border-destructive/30 bg-card p-8 text-center shadow-xl">
-            <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-destructive/10 text-destructive">
-              <ShieldX className="size-9" />
-            </div>
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
-              <span>Error 403 • Access Restricted</span>
-            </div>
-            <h1 className="mt-4 font-display text-3xl font-bold">Admin Privileges Required</h1>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              Your account does not have administrator permissions to access the reports moderation
-              portal. Only designated platform administrators can manage reported adverts.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => void navigate({ to: "/" })}
-                className="w-full sm:w-auto"
-              >
-                <ArrowLeft className="size-4" /> Return to Marketplace
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  logout();
-                  void navigate({ to: "/login" });
-                }}
-                className="w-full sm:w-auto"
-              >
-                Sign in with another account
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   // Admin view
   return (

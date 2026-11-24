@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createAdvert, addAdvertPhoto } from "@/api/adverts";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 export const Route = createFileRoute("/createadvert")({
@@ -28,7 +28,11 @@ export const Route = createFileRoute("/createadvert")({
       },
     ],
   }),
-  component: CreateAdvertPage,
+  component: () => (
+    <RequireAuth redirectTo="/register">
+      <CreateAdvertPage />
+    </RequireAuth>
+  ),
 });
 
 interface SelectedPhoto {
@@ -83,12 +87,6 @@ function CreateAdvertPage() {
       photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     };
   }, []);
-
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/register" });
-    }
-  }, [navigate]);
 
   const handleAddFiles = (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;

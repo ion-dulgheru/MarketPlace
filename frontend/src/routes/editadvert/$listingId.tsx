@@ -24,7 +24,7 @@ import {
   type Advert,
   type AdvertPhoto,
 } from "@/api/adverts";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 export const Route = createFileRoute("/editadvert/$listingId")({
@@ -37,7 +37,11 @@ export const Route = createFileRoute("/editadvert/$listingId")({
       },
     ],
   }),
-  component: EditAdvertPage,
+  component: () => (
+    <RequireAuth>
+      <EditAdvertPage />
+    </RequireAuth>
+  ),
 });
 
 type Step = 1 | 2 | 3 | 4;
@@ -84,11 +88,6 @@ function EditAdvertPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/login" });
-      return;
-    }
-
     let cancelled = false;
     getAdvertById(listingId)
       .then((result) => {
@@ -134,7 +133,7 @@ function EditAdvertPage() {
     return () => {
       cancelled = true;
     };
-  }, [listingId, navigate]);
+  }, [listingId]);
 
   const handleUploadPhotos = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;

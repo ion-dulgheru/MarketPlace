@@ -1,22 +1,29 @@
-import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "@/lib/tokens";
+import { getAccessToken, saveAccessToken, clearTokens } from "@/lib/tokens";
 
 export const API_URL = import.meta.env.VITE_API_URL as string;
 
-async function tryRefresh(): Promise<boolean> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
+// Un singur refresh odata: token-ul se roteste, deci cereri paralele cu acelasi cookie ar esua.
+let refreshPromise: Promise<boolean> | null = null;
 
+function tryRefresh(): Promise<boolean> {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+// Fara body: refresh token-ul pleaca automat in cookie-ul HttpOnly (credentials: "include").
+async function refreshAccessToken(): Promise<boolean> {
   try {
     const response = await fetch(`${API_URL}/api/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      credentials: "include",
     });
 
     if (!response.ok) return false;
 
-    const data = (await response.json()) as { accessToken: string; refreshToken: string };
-    saveTokens(data.accessToken, data.refreshToken);
+    const data = (await response.json()) as { accessToken: string };
+    saveAccessToken(data.accessToken);
     return true;
   } catch {
     return false;

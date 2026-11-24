@@ -1,4 +1,4 @@
-import { saveTokens } from "@/lib/tokens";
+import { clearTokens, saveAccessToken } from "@/lib/tokens";
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -49,9 +49,9 @@ export interface LoginRequest {
 
 export type LoginResult = { mfaRequired: false } | { mfaRequired: true; mfaToken: string };
 
+// Refresh token-ul nu vine in body, ci in cookie-ul HttpOnly openkey_rt.
 interface SignInResponse {
   accessToken: string | null;
-  refreshToken: string | null;
   mfaRequired: boolean;
   mfaToken: string | null;
 }
@@ -62,6 +62,7 @@ export class MfaSessionExpiredError extends Error {}
 export async function loginUser(data: LoginRequest): Promise<LoginResult> {
   const response = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
@@ -104,10 +105,20 @@ export async function verifyMfaLogin(mfaToken: string, code: string): Promise<vo
 }
 
 function saveSignIn(result: SignInResponse) {
-  if (!result.accessToken || !result.refreshToken) {
+  if (!result.accessToken) {
     throw new Error("Unexpected response from the server");
   }
-  saveTokens(result.accessToken, result.refreshToken);
+  saveAccessToken(result.accessToken);
+}
+
+// Sterge token-ul local imediat, apoi revoca sesiunea pe server (care sterge si cookie-ul).
+export async function logoutUser(): Promise<void> {
+  clearTokens();
+  try {
+    await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
+  } catch {
+    // fara retea: utilizatorul a iesit oricum local
+  }
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

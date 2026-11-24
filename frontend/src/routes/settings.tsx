@@ -5,12 +5,16 @@ import Header from "@/components/Navigation/header";
 import { TwoFactorSection } from "@/components/Account/TwoFactorSection";
 import { Button } from "@/components/ui/button";
 import { changePassword, getCurrentUser, updateCurrentUser, type CurrentUser } from "@/api/users";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings | OpenKey" }] }),
-  component: SettingsPage,
+  component: () => (
+    <RequireAuth>
+      <SettingsPage />
+    </RequireAuth>
+  ),
 });
 
 function SettingsPage() {
@@ -19,11 +23,6 @@ function SettingsPage() {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/login" });
-      return;
-    }
-
     void getCurrentUser()
       .then(setUser)
       .catch(() => void navigate({ to: "/login" }));

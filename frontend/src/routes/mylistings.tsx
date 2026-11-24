@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, DoorClosed, KeyRound, Layers, MessageSquare, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   type Advert,
 } from "@/api/adverts";
 import { formatAdvertFloor, formatAdvertPrice, formatPostedDate } from "@/lib/advert-format";
-import { isLoggedIn } from "@/lib/tokens";
+import { RequireAuth } from "@/components/guards/RequireAuth";
 import { AdvertContactRequestsDialog } from "@/components/dialogs/AdvertContactRequestsDialog";
 import placeholderImage from "@/assets/openkey-apartment.jpg";
 
@@ -21,7 +21,11 @@ export const Route = createFileRoute("/mylistings")({
   head: () => ({
     meta: [{ title: "My listings | OpenKey" }],
   }),
-  component: MyListingsPage,
+  component: () => (
+    <RequireAuth>
+      <MyListingsPage />
+    </RequireAuth>
+  ),
 });
 
 const statusLabel: Record<Advert["status"], string> = {
@@ -31,7 +35,6 @@ const statusLabel: Record<Advert["status"], string> = {
 };
 
 function MyListingsPage() {
-  const navigate = useNavigate();
   const search = Route.useSearch();
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +47,6 @@ function MyListingsPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      void navigate({ to: "/login" });
-      return;
-    }
-
     let cancelled = false;
     getAdverts({ mine: true, pageSize: 100, sortBy: "date", sortDescending: true })
       .then((response) => {
@@ -64,7 +62,7 @@ function MyListingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (search.inquiries && adverts.length > 0) {
