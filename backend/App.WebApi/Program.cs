@@ -8,11 +8,11 @@ using System.Threading.RateLimiting;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Cryptography.X509Certificates;
-using App.WebApi.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +59,16 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    // App Service terminates TLS in its front end, which is the only way to reach the container and
+    // appends the client address last. One hop only: earlier values can be forged by the client.
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -74,7 +84,7 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<InvalidBodyFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -120,22 +130,23 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseGlobalExceptionHandling();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
+}
 
 app.Use(async (context, next) =>
 {
-    var headers = context.Response.Headers;
-    headers["X-Content-Type-Options"] = "nosniff";
-    headers["X-Frame-Options"] = "DENY";
-    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
-    if (!app.Environment.IsDevelopment())
+    // OnStarting: the exception handler clears the headers already set on the response.
+    context.Response.OnStarting(() =>
     {
-        // Skipped in Development: Swagger UI relies on an inline <script>, which a strict CSP blocks.
-        headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'; object-src 'none'";
-    }
+        SetSecurityHeaders(context.Response.Headers);
+        return Task.CompletedTask;
+    });
     await next();
 });
+
+app.UseGlobalExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
@@ -162,3 +173,15 @@ app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 
 app.Run();
 
+void SetSecurityHeaders(IHeaderDictionary headers)
+{
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
+    if (!app.Environment.IsDevelopment())
+    {
+        // Skipped in Development: Swagger UI relies on an inline <script>, which a strict CSP blocks.
+        headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'; object-src 'none'";
+    }
+}

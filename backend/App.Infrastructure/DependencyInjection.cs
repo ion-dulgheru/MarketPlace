@@ -43,7 +43,7 @@ public static class DependencyInjection
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
         services.AddScoped<ISecurityAuditLogger, DbSecurityAuditLogger>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
-services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
+        services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         var emailConnString = configuration["Azure:CommunicationServices:ConnectionString"];
         if (string.IsNullOrWhiteSpace(emailConnString) && environment.IsDevelopment())
         {

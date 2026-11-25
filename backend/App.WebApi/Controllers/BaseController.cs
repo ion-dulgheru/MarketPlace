@@ -22,6 +22,8 @@ public class BaseController : Controller
         }
     }
 
+    protected string? JwtId => User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
     protected static ErrorDetails ToProblem(Error error) => new(error.Code, error.Message);
     protected bool IsAdmin => User.IsInRole("Admin");
 

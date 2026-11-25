@@ -13,7 +13,8 @@ its flow, error paths, data and endpoint.
 
 ## Scope
 
-The platform supports a **single account type** (no multi-agent roles or permissions).
+The platform supports a **single account type** (no multi-agent roles or permissions),
+plus an internal `Admin` role for moderation and import.
 An account is a `User`; agencies are just a `User` with an `isAgency` flag rather than a
 separate entity.
 

@@ -9,6 +9,7 @@ namespace App.Application.UseCases.Users.ResetPassword;
 
 public class ResetPasswordCommandHandler(
     IUserRepository userRepository,
+    IUserSessionRepository userSessionRepository,
     IRefreshTokenGenerator tokenGenerator,
     ISecurityAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : ICommandHandler<ResetPasswordCommand>
@@ -32,6 +33,13 @@ public class ResetPasswordCommandHandler(
         }
 
         user.ResetPassword(BCrypt.Net.BCrypt.HashPassword(request.NewPassword));
+
+        // Whoever holds a refresh token issued before the reset must not stay signed in.
+        foreach (var session in await userSessionRepository.GetActiveByUserIdAsync(user.Id, cancellationToken))
+        {
+            session.Redeem();
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         await auditLogger.LogAsync(
