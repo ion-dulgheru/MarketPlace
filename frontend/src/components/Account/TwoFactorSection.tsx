@@ -13,6 +13,8 @@ export function TwoFactorSection({
   onChanged: (enabled: boolean) => void;
 }) {
   const [setup, setSetup] = useState<MfaSetup | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [password, setPassword] = useState("");
   const [disabling, setDisabling] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,18 +31,27 @@ export function TwoFactorSection({
       setError(requestError instanceof Error ? requestError.message : "Something went wrong");
     } finally {
       setCode("");
+      setPassword("");
       setLoading(false);
     }
   };
 
   const reset = () => {
     setSetup(null);
+    setStarting(false);
     setDisabling(false);
     setCode("");
+    setPassword("");
     setError(null);
   };
 
-  const handleStart = () => run(async () => setSetup(await setupMfa()));
+  const handleStart = (event: FormEvent) => {
+    event.preventDefault();
+    void run(async () => {
+      setSetup(await setupMfa(password));
+      setStarting(false);
+    });
+  };
 
   const handleEnable = (event: FormEvent) => {
     event.preventDefault();
@@ -74,10 +85,40 @@ export function TwoFactorSection({
           : "Off. Protect your account with a code from an authenticator app, in addition to your password."}
       </p>
 
-      {!enabled && !setup && (
-        <Button className="mt-6" disabled={loading} onClick={() => void handleStart()}>
-          {loading ? "Preparing…" : "Turn on"}
+      {!enabled && !setup && !starting && (
+        <Button
+          className="mt-6"
+          onClick={() => {
+            setSuccess(null);
+            setStarting(true);
+          }}
+        >
+          Turn on
         </Button>
+      )}
+
+      {!enabled && !setup && starting && (
+        <form className="mt-6 grid max-w-md gap-4" onSubmit={handleStart}>
+          <label className="grid gap-2 text-sm font-medium">
+            Enter your current password to continue
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="h-11 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={loading || password.length === 0}>
+              {loading ? "Preparing…" : "Continue"}
+            </Button>
+            <Button type="button" variant="outline" disabled={loading} onClick={reset}>
+              Cancel
+            </Button>
+          </div>
+        </form>
       )}
 
       {!enabled && setup && (

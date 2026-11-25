@@ -229,7 +229,7 @@ public class MfaTests
     [Fact]
     public async Task Setup_StoresEncryptedSecretWithoutEnablingMfa()
     {
-        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid), CancellationToken.None);
+        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid, Password), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.False(_user.TwoFactorEnabled);
@@ -241,12 +241,36 @@ public class MfaTests
     }
 
     [Fact]
+    public async Task Setup_WithWrongPassword_FailsAndCountsAttempt()
+    {
+        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid, "wrong"), CancellationToken.None);
+
+        Assert.Equal(MfaErrors.InvalidPassword, result.Error);
+        Assert.Null(_user.TotpSecret);
+        Assert.Equal(1, _user.FailedLoginAttempts);
+    }
+
+    [Fact]
+    public async Task Setup_AfterFiveWrongPasswords_RejectsCorrectPassword()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            await SetupHandler().Handle(new SetupMfaCommand(_user.Guid, "wrong"), CancellationToken.None);
+        }
+
+        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid, Password), CancellationToken.None);
+
+        Assert.Equal(MfaErrors.AccountLocked, result.Error);
+        Assert.Null(_user.TotpSecret);
+    }
+
+    [Fact]
     public async Task Setup_WhenAlreadyEnabled_FailsAndKeepsSecret()
     {
         EnableMfa();
         var storedSecret = _user.TotpSecret;
 
-        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid), CancellationToken.None);
+        var result = await SetupHandler().Handle(new SetupMfaCommand(_user.Guid, Password), CancellationToken.None);
 
         Assert.Equal(MfaErrors.AlreadyEnabled, result.Error);
         Assert.Equal(storedSecret, _user.TotpSecret);
@@ -351,7 +375,8 @@ public class MfaTests
 
     private MfaFailureRecorder Recorder() => new(_audit.Object, _unitOfWork.Object);
 
-    private SetupMfaCommandHandler SetupHandler() => new(_users.Object, _totp, _protector, _unitOfWork.Object);
+    private SetupMfaCommandHandler SetupHandler() => new(
+        _users.Object, _totp, _protector, new MfaFailureRecorder(_audit.Object, _unitOfWork.Object), _unitOfWork.Object);
 
     private VerifyMfaLoginCommandHandler LoginHandler() => new(
         _users.Object, _sessions.Object, _jwt.Object, _tokens, Verifier(), Recorder(), _audit.Object, _unitOfWork.Object);

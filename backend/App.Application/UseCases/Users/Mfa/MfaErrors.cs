@@ -21,6 +21,11 @@ public static class MfaErrors
         "Mfa.InvalidCode",
         "The code is invalid or was already used. Wait for a new code and try again.");
 
+    /// <summary>Validation (400) for the same reason as <see cref="InvalidCode"/>.</summary>
+    public static readonly Error InvalidPassword = Error.Validation(
+        "Mfa.InvalidPassword",
+        "Current password is incorrect.");
+
     /// <summary>The stored secret cannot be decrypted, so no code can be checked.</summary>
     public static readonly Error SecretUnavailable = Error.Failure(
         "Mfa.SecretUnavailable",
