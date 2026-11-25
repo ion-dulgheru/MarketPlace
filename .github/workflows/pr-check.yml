@@ -25,6 +25,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore backend/RealEstateMarketplace.slnx
 
+      - name: Check NuGet packages for vulnerabilities (fail on High/Critical)
+        run: bash .github/scripts/check-nuget-vulnerabilities.sh backend/RealEstateMarketplace.slnx
+
       - name: Build solution
         run: dotnet build backend/RealEstateMarketplace.slnx --configuration Release --no-restore
 
@@ -59,6 +62,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit npm dependencies (fail on high/critical)
+        run: npm audit --audit-level=high --omit=dev
+
       - name: Run linter
         run: npm run lint
 
@@ -74,3 +80,27 @@ jobs:
 
       - name: Validate Bicep syntax
         run: az bicep build --file .infra/main.bicep
+
+  trivy-fs:
+    name: Trivy Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Pinned to the commit SHA of v0.36.0 (not @master): a tag or branch can be moved
+      # by whoever controls the repository, a commit SHA cannot.
+      - name: Scan repository dependencies with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'vuln'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '1'
+          format: 'table'
+          # frontend/bun.lock is a stale leftover from the initial project template (last updated
+          # 2026-09-15). Every install uses npm (`npm ci` reads package-lock.json, which is scanned),
+          # so bun.lock never reaches the build. Remove this line once bun.lock is deleted.
+          skip-files: 'frontend/bun.lock'
