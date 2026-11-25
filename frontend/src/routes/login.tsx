@@ -151,6 +151,14 @@ function LoginPage() {
                   {error}
                 </p>
               )}
+              {error?.includes("verify your email") && (
+                <Link
+                  to="/check-email"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Resend verification email
+                </Link>
+              )}
               <Button type="submit" disabled={loading} className="mt-2 w-full">
                 {loading ? "Logging in…" : "Log in"}
               </Button>

@@ -42,6 +42,22 @@ export async function verifyEmail(token: string): Promise<void> {
   }
 }
 
+export async function resendVerificationEmail(email: string): Promise<void> {
+  const response = await fetch(`${API_URL}/api/auth/verification-emails`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 429
+        ? "Too many attempts. Wait a minute and try again."
+        : "Failed to send the verification email",
+    );
+  }
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

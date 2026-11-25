@@ -21,7 +21,7 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src 'self' data: blob: https://*.blob.core.windows.net ${API_URL}`,
-  `connect-src 'self' ${API_URL}`,
+  `connect-src 'self' ${API_URL} https://www.google.com/recaptcha/`,
   "frame-src https://www.google.com/recaptcha/",
   "object-src 'none'",
   "base-uri 'self'",

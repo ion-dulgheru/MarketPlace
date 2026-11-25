@@ -71,7 +71,8 @@ Fiecare acțiune (ex. „creează un advert") e un `Command`/`Query` separat, cu
 
 ### Autentificare & cont (`api/auth`, `api/users`)
 - Înregistrare cu verificare CAPTCHA (`POST /api/auth/register`)
-- Verificare email prin token cu expirare (`POST /api/auth/verify-email`)
+- Verificare email prin token cu expirare (`POST /api/auth/verify-email`) și retrimitere
+  (`POST /api/auth/verification-emails`)
 - Login cu JWT + refresh token, lockout automat după 5 încercări eșuate
   (`POST /api/auth/login`)
 - Refresh token în cookie HttpOnly, sesiuni hash-uite în DB (`POST /api/auth/refresh`)
@@ -161,9 +162,10 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
 - **Implementare**: token random cu expirare, hash-uit în DB (`EmailVerificationTokenHash`);
   contul rămâne creat, dar **login-ul e blocat** până la verificare
   (`SignInCommandHandler` verifică `EmailVerification`).
-- **Testare**: fără test automat dedicat.
-- **Limitări**: nu există rate limiting explicit pe retrimiterea emailului de
-  verificare (dincolo de policy-ul general `"auth"`).
+  Retrimiterea răspunde mereu 202 și are o pauză de un minut per cont. O eroare a serviciului de
+  email e scrisă în log (`ResilientEmailSender`), fără să pice înregistrarea.
+- **Testare**: `ResendEmailVerificationCommandHandlerTests`, `ResilientEmailSenderTests`.
+- **Limitări**: emailul nu e reîncercat automat dacă serviciul e indisponibil.
 
 ### 4.5. CAPTCHA (Google reCAPTCHA)
 - **Problemă**: bot-uri care fac înregistrări în masă.

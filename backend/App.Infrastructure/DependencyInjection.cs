@@ -6,6 +6,7 @@ using App.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Mfa;
 using App.Application.Abstractions.Email;
@@ -52,8 +53,15 @@ public static class DependencyInjection
         }
         else
         {
-            services.AddSingleton(_ => new EmailClient(emailConnString));
-            services.AddScoped<IEmailSender, AzureEmailSender>();
+            // Fail fast: the send happens inside a user request and a failure is only logged.
+            var emailOptions = new EmailClientOptions();
+            emailOptions.Retry.MaxRetries = 1;
+            emailOptions.Retry.NetworkTimeout = TimeSpan.FromSeconds(5);
+            services.AddSingleton(_ => new EmailClient(emailConnString, emailOptions));
+            services.AddScoped<AzureEmailSender>();
+            services.AddScoped<IEmailSender>(sp => new ResilientEmailSender(
+                sp.GetRequiredService<AzureEmailSender>(),
+                sp.GetRequiredService<ILogger<ResilientEmailSender>>()));
         }
         return services;
     }
