@@ -6,7 +6,7 @@ using App.Domain.Repositories;
 namespace App.Application.UseCases.Users.Mfa;
 
 /// <summary>
-/// Counts a wrong code towards the account lockout, so a 6-digit code cannot be guessed
+/// Counts a wrong code, or a wrong password at setup, towards the account lockout, so a 6-digit code cannot be guessed
 /// by spreading attempts over many IPs (the rate limit is per IP only).
 /// </summary>
 public class MfaFailureRecorder(ISecurityAuditLogger auditLogger, IUnitOfWork unitOfWork)
@@ -28,7 +28,7 @@ public class MfaFailureRecorder(ISecurityAuditLogger auditLogger, IUnitOfWork un
         if (locked)
         {
             await auditLogger.LogAsync(
-                SecurityEventType.AccountLocked, false, user.Guid, user.Email, "Too many wrong MFA codes", ct);
+                SecurityEventType.AccountLocked, false, user.Guid, user.Email, "Too many wrong MFA attempts", ct);
         }
     }
 }

@@ -82,9 +82,11 @@ public async Task<IActionResult> VerifyEmail(
     [Authorize]
     [HttpPost("mfa/setup")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public async Task<IActionResult> SetupMfa(CancellationToken ct = default)
+    public async Task<IActionResult> SetupMfa(
+        [FromBody] MfaSetupRequest request,
+        CancellationToken ct = default)
     {
-        var result = await sender.Send(new SetupMfaCommand(UserUuid), ct);
+        var result = await sender.Send(new SetupMfaCommand(UserUuid, request.CurrentPassword), ct);
         return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
     }
 

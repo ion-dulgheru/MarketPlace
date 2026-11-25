@@ -4,6 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
+import { SECURITY_HEADERS } from "./src/lib/security-headers";
 
 export default defineConfig(({ command }) => ({
   resolve: {
@@ -16,6 +17,8 @@ export default defineConfig(({ command }) => ({
     viteReact(),
     tailwindcss(),
     tsconfigPaths(),
-    ...(command === "build" ? [nitro({ preset: "node-server" })] : []),
+    ...(command === "build"
+      ? [nitro({ preset: "node-server", routeRules: { "/**": { headers: SECURITY_HEADERS } } })]
+      : []),
   ],
 }));

@@ -5,10 +5,10 @@ export interface MfaSetup {
   secret: string;
 }
 
-async function post(path: string, body?: unknown): Promise<Response> {
+async function post(path: string, body: unknown): Promise<Response> {
   const response = await apiFetch(path, {
     method: "POST",
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -23,8 +23,8 @@ async function post(path: string, body?: unknown): Promise<Response> {
   return response;
 }
 
-export async function setupMfa(): Promise<MfaSetup> {
-  return (await (await post("/api/auth/mfa/setup")).json()) as MfaSetup;
+export async function setupMfa(currentPassword: string): Promise<MfaSetup> {
+  return (await (await post("/api/auth/mfa/setup", { currentPassword })).json()) as MfaSetup;
 }
 
 export async function enableMfa(code: string): Promise<void> {

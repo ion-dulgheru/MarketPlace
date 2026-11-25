@@ -9,6 +9,7 @@ public class SetupMfaCommandHandler(
     IUserRepository userRepository,
     ITotpService totpService,
     ITotpSecretProtector secretProtector,
+    MfaFailureRecorder failureRecorder,
     IUnitOfWork unitOfWork) : ICommandHandler<SetupMfaCommand, SetupMfaResponse>
 {
     public async Task<Result<SetupMfaResponse>> Handle(SetupMfaCommand request, CancellationToken cancellationToken)
@@ -23,6 +24,20 @@ public class SetupMfaCommandHandler(
         if (user.TwoFactorEnabled)
         {
             return Result.Failure<SetupMfaResponse>(MfaErrors.AlreadyEnabled);
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (user.IsLockedOut(now))
+        {
+            return Result.Failure<SetupMfaResponse>(MfaErrors.AccountLocked);
+        }
+
+        // A stolen access token must not be enough to enable MFA and lock the owner out.
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            await failureRecorder.RecordAsync(user, now, "setup", cancellationToken);
+            return Result.Failure<SetupMfaResponse>(MfaErrors.InvalidPassword);
         }
 
         var secret = totpService.GenerateSecret();
