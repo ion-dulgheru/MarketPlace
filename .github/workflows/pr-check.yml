@@ -100,7 +100,3 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
           format: 'table'
-          # frontend/bun.lock is a stale leftover from the initial project template (last updated
-          # 2026-09-15). Every install uses npm (`npm ci` reads package-lock.json, which is scanned),
-          # so bun.lock never reaches the build. Remove this line once bun.lock is deleted.
-          skip-files: 'frontend/bun.lock'
