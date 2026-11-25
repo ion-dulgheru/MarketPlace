@@ -15,4 +15,9 @@ public class UserSessionRepository(DataContext context) : IUserSessionRepository
     {
         return context.UserSessions.FirstOrDefaultAsync(s => s.RefreshTokenHash == refreshTokenHash, ct);
     }
+
+    public Task<List<UserSession>> GetActiveByUserIdAsync(long userId, CancellationToken ct)
+    {
+        return context.UserSessions.Where(s => s.UserId == userId && !s.Redeemed).ToListAsync(ct);
+    }
 }

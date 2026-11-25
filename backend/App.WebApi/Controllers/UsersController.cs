@@ -64,7 +64,7 @@ public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfW
         CancellationToken ct = default)
     {
         var result = await sender.Send(
-            new ChangePasswordCommand(UserUuid, request.CurrentPassword, request.NewPassword),
+            new ChangePasswordCommand(UserUuid, request.CurrentPassword, request.NewPassword, JwtId),
             ct);
 
         return result.IsFailure ? HandleFailure(result) : NoContent();
