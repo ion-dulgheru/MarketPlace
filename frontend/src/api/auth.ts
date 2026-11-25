@@ -1,4 +1,4 @@
-import { clearTokens, saveAccessToken } from "@/lib/tokens";
+import { clearTokens, markSignedOut, saveAccessToken } from "@/lib/tokens";
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -113,6 +113,7 @@ function saveSignIn(result: SignInResponse) {
 
 // Sterge token-ul local imediat, apoi revoca sesiunea pe server (care sterge si cookie-ul).
 export async function logoutUser(): Promise<void> {
+  markSignedOut();
   clearTokens();
   try {
     await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" });

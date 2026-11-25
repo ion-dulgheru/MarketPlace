@@ -2,6 +2,8 @@
 const ACCESS_TOKEN_KEY = "openkey_access_token";
 // cheia veche, stearsa ca sa nu ramana refresh token-uri salvate inainte de migrare
 const LEGACY_REFRESH_TOKEN_KEY = "openkey_refresh_token";
+// pus la logout: cookie-ul ramas (logout in curs sau fara retea) nu trebuie sa refaca sesiunea
+const SIGNED_OUT_KEY = "openkey_signed_out";
 
 const hasLocalStorage = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
@@ -9,6 +11,7 @@ export function saveAccessToken(accessToken: string) {
   if (!hasLocalStorage) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+  localStorage.removeItem(SIGNED_OUT_KEY);
 }
 
 export function getAccessToken(): string | null {
@@ -20,6 +23,15 @@ export function clearTokens() {
   if (!hasLocalStorage) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+}
+
+export function markSignedOut() {
+  if (!hasLocalStorage) return;
+  localStorage.setItem(SIGNED_OUT_KEY, "1");
+}
+
+export function isSignedOut(): boolean {
+  return hasLocalStorage && localStorage.getItem(SIGNED_OUT_KEY) !== null;
 }
 
 export function isLoggedIn(): boolean {

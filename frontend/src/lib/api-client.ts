@@ -1,4 +1,10 @@
-import { getAccessToken, saveAccessToken, clearTokens } from "@/lib/tokens";
+import {
+  getAccessToken,
+  saveAccessToken,
+  clearTokens,
+  isLoggedIn,
+  isSignedOut,
+} from "@/lib/tokens";
 
 export const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -23,11 +29,19 @@ async function refreshAccessToken(): Promise<boolean> {
     if (!response.ok) return false;
 
     const data = (await response.json()) as { accessToken: string };
+    if (isSignedOut()) return false;
     saveAccessToken(data.accessToken);
     return true;
   } catch {
     return false;
   }
+}
+
+// Fara access token, incearca sa refaca sesiunea din cookie-ul de refresh.
+export async function ensureSession(): Promise<boolean> {
+  if (isLoggedIn()) return true;
+  if (isSignedOut()) return false;
+  return tryRefresh();
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
