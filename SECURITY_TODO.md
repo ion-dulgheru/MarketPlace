@@ -1,9 +1,8 @@
 # Security TODO — DAS (Dezvoltarea Aplicațiilor Securizate)
 
 Bazat pe `project_requirements.md` (cerințele PBL/DAS) comparat cu starea actuală a
-codului (`backend/`, `frontend/`) la data de 2026-09-25. Conține doar ce **nu** e
-făcut încă / e făcut parțial. Pentru context, la final e un rezumat scurt al ce
-există deja.
+codului (`backend/`, `frontend/`) actualizat la 2026-11-25. Punctele bifate sunt făcute,
+cu limitările lor; la final e un rezumat scurt al ce există deja.
 
 ---
 
@@ -30,11 +29,10 @@ există deja.
 
 ## 1. Criptare și autentificare
 
-- [ ] **MFA/2FA** — nu există deloc (nici TOTP, nici email/SMS code). Cerința o
-  menționează explicit ("Use multi-factor authentication").
-- [ ] **Criptare la rest pentru date sensibile** — nu e configurată explicit
-  criptare pe coloane sensibile în DB (se bazează implicit pe criptarea default a
-  Postgres/Azure, dar asta nu e documentată/verificată nicăieri).
+- [x] **MFA/2FA** (SR-12) — TOTP opțional, cu secret criptat și blocare după 5 coduri greșite.
+  Limitare: fără coduri de recuperare.
+- [ ] **Criptare la rest pentru date sensibile** — secretul TOTP e criptat cu Data Protection;
+  restul coloanelor se bazează pe criptarea implicită Azure, nedocumentată/neverificată.
 - [x] Hashing parole (BCrypt) — făcut, nu mai e nevoie de lucru aici.
 
 ## 2. API-uri securizate
@@ -42,9 +40,8 @@ există deja.
 - [ ] **OAuth 2.0** — cerința îl menționează explicit; proiectul folosește JWT
   custom (cert-signed) în loc de OAuth 2.0. E o alegere validă, dar trebuie
   documentată explicit ca decizie (de ce JWT propriu și nu OAuth 2.0/OpenID Connect).
-- [ ] **Global exception handling / ProblemDetails** — nu există middleware de
-  excepții neprins; risc de scurgere de stack trace pe erori neașteptate în
-  producție.
+- [x] **Global exception handling / ProblemDetails** (SR-14) — `GlobalExceptionHandler`: răspuns
+  generic cu `traceId`, fără mesajul excepției și fără stack trace.
 
 ## 3. Securitate frontend
 
@@ -69,25 +66,18 @@ există deja.
 
 - [x] SQL Injection — mitigat structural prin EF Core (query-uri parametrizate),
   nu se folosește SQL raw nicăieri găsit.
-- [ ] **RBAC real** — nu există rol/permisiune pe `User` (entitatea `User` n-are
-  câmp `Role`). Singurul control de tip admin e o listă de email-uri hardcodată în
-  `appsettings.json` (`Admin:Emails`) verificată în `AdminAccessService`, folosită
-  doar pe 2 handler-e (`ImportAdverts`, `AttachAdvertImages`). E un RBAC minimal,
-  nu unul general (policy-based) — de discutat dacă rămâne așa (README zice
-  "single account type, no roles" ca decizie MVP) sau se documentează explicit ca
-  limitare cunoscută.
-- [ ] **Security logging / audit trail** — nu există logging dedicat pentru
-  evenimente de securitate (login eșuat, cont blocat, acces admin, etc.), doar
-  logging-ul default ASP.NET Core. Nu există Application Insights / Serilog
-  configurat.
-- [ ] **Plan de update/patch periodic pentru dependențe** — nu există proces
-  documentat (ex. Dependabot, `dotnet list package --vulnerable` în CI).
+- [x] **RBAC** — rol pe `User` (`User`/`Admin`) și policy `AdminOnly` pe `AdminController`.
+  Limitări: rolul se atribuie manual în DB; rolul din JWT e valabil până la expirare (15 min).
+- [x] **Security logging / audit trail** (SR-13) — tabela `SecurityAuditLogs`: login, blocare,
+  refresh, resetare parolă, MFA, acces admin interzis. Limitare: fără retenție și alertare.
+- [x] **Update/patch pentru dependențe** — Dependabot săptămânal + alerte, `npm audit`, verificare
+  NuGet și Trivy blocante în CI și la deploy.
 
 ## 5. Gestionarea bazelor de date
 
-- [ ] **RBAC la nivel de date** — vezi punctul de mai sus (secțiunea 4).
-- [ ] **Backup & recovery** — niciun proces documentat sau automatizat găsit în
-  `.infra/`.
+- [ ] **RBAC la nivel de date** — rolurile există doar în aplicație (secțiunea 4).
+- [ ] **Backup & recovery** — backup automat 7 zile configurat în `.infra/modules/postgres.bicep`;
+  restaurarea nu e documentată.
 - [ ] **Criptare explicită date sensibile** — vezi secțiunea 1.
 
 ## 6. Documentație cerută de curs (livrabile, nu cod)
@@ -95,11 +85,8 @@ există deja.
 - [ ] **Security Documentation** — document cu măsurile de securitate, threat
   model, risk assessment. Nu există încă un fișier dedicat.
 - [ ] **Incident Response Plan** — plan de răspuns la incidente. Nu există.
-- [ ] **Explicația per-măsură** (Problem / Relevance / Implementation / Testing /
-  Limitations) pentru fiecare control de securitate implementat — cerută explicit
-  pentru prezentarea finală, nescrisă încă pentru niciuna din măsurile de mai jos:
-  BCrypt, JWT+refresh tokens, lockout brute-force, verificare email, reset parolă,
-  reCAPTCHA, validare upload fișiere, sanitizare HTML, protecție IDOR pe adverturi.
+- [x] **Explicația per-măsură** (Problem / Relevance / Implementation / Testing /
+  Limitations) — scrisă în `IMPLEMENTATION.md`, secțiunea 4.
 
 ---
 
@@ -113,15 +100,15 @@ există deja.
 - Reset parolă prin token cu expirare.
 - reCAPTCHA (Google) la înregistrare.
 - Validare input pe toate comenzile principale (FluentValidation, ~22 validatoare).
-- Validare upload imagini: whitelist extensii (`.jpg/.jpeg/.png/.webp`) + limită 5MB.
+- Upload imagini: whitelist extensii, limită 5MB, verificarea formatului real și re-encodare.
 - Sanitizare HTML pe câmpuri rich-text (protecție XSS pe conținut generat de user).
 - Protecție IDOR: operațiile pe adverturi verifică ownership (`GetByUuidForOwnerAsync`),
   nu doar existența resursei.
-- CORS restricționat pe origini explicite (localhost, `*.azurewebsites.net`,
-  frontend URL configurat) — nu wildcard.
+- CORS restricționat la originea exactă a frontend-ului (plus localhost în Development).
 - `UseHttpsRedirection()` + `UseHsts()` activ în non-dev.
-- Fără cookie-uri pentru auth (bearer token), deci suprafață CSRF redusă structural.
+- Access token trimis ca bearer; singurul cookie de auth e `openkey_rt` (HttpOnly).
 - Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
-  `Permissions-Policy`, `Content-Security-Policy`) setate global în `Program.cs`.
+  `Permissions-Policy`, `Content-Security-Policy`) setate global în `Program.cs`,
+  inclusiv pe erorile 500.
 - Rate limiting pe `AuthController` (10 req/min/IP) — completează lockout-ul de cont.
 - Certificat JWT local regenerat, fără parolă în clar în `appsettings.json`.
