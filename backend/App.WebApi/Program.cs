@@ -84,7 +84,7 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<InvalidBodyFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
