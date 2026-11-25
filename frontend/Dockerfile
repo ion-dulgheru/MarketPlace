@@ -15,4 +15,6 @@ EXPOSE 8080
 
 COPY .output ./.output
 
+USER node
+
 CMD ["node", ".output/server/index.mjs"]
