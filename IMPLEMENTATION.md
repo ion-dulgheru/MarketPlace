@@ -93,7 +93,7 @@ Fiecare acțiune (ex. „creează un advert") e un `Command`/`Query` separat, cu
 - Upload / ștergere fotografii, validate și re-encodate pe server
   (`POST/DELETE /api/adverts/{uuid}/photos`)
 - Favorite (`POST /api/adverts/{uuid}/favorite`, `GET /api/adverts/favorites`)
-- Raportare advert, cu CAPTCHA (`POST /api/adverts/{uuid}/reports`)
+- Raportare advert, doar autentificat (`POST /api/adverts/{uuid}/reports`)
 - Cereri de contact către proprietar (`POST /api/adverts/{uuid}/contact-requests`,
   `GET /api/adverts/{uuid}/contact-requests`)
 
@@ -135,8 +135,10 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
   expirare scurtă (15 min, `Jwt:ExpiryMinutes`). Refresh token opac, generat random,
   stocat hash-uit în tabela `UserSession` (nu în clar), valabil 30 zile. La refresh,
   sesiunea veche e marcată `Redeemed` (nu mai poate fi refolosită) și se emite un
-  refresh token nou — rotație cu detectare de reuse.
-- **Testare**: `LogoutCommandHandlerTests`, `SecurityAuditAndRbacTests`.
+  refresh token nou — rotație cu detectare de reuse. Resetarea parolei revocă toate sesiunile,
+  iar schimbarea parolei revocă toate celelalte sesiuni.
+- **Testare**: `LogoutCommandHandlerTests`, `SecurityAuditAndRbacTests`,
+  `PasswordSessionRevocationTests`.
 - **Limitări**: la detectarea unui refresh token deja folosit (`Redeemed`), sesiunea
   e doar respinsă (`401`) — nu se invalidează automat *toate* sesiunile acelui user,
   deci un atacator care a apucat să facă un refresh înaintea userului legitim nu
@@ -164,9 +166,9 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
   verificare (dincolo de policy-ul general `"auth"`).
 
 ### 4.5. CAPTCHA (Google reCAPTCHA)
-- **Problemă**: bot-uri care fac înregistrări în masă sau raportări abuzive.
-- **Relevanță**: singurele 2 acțiuni publice de scriere expuse fără autentificare
-  anterioară (register, report) sunt cele mai atractive pentru automatizare.
+- **Problemă**: bot-uri care fac înregistrări în masă.
+- **Relevanță**: înregistrarea e publică, deci atractivă pentru automatizare. Raportarea
+  cere autentificare și nu are CAPTCHA.
 - **Implementare**: `ICaptchaVerifier`/`GoogleRecaptchaVerifier` verifică server-side
   tokenul primit din widget-ul reCAPTCHA înainte de a procesa comanda.
 - **Testare**: fără test automat dedicat.
@@ -294,9 +296,10 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
 ### 4.17. Tratarea globală a erorilor (SR-14)
 - **Problemă**: mesajele de excepție pot dezvălui detalii interne.
 - **Relevanță**: API-ul e public.
-- **Implementare**: `GlobalExceptionHandler` întoarce `ProblemDetails` generic cu `traceId`.
+- **Implementare**: `GlobalExceptionHandler` întoarce `ProblemDetails` generic cu `traceId`;
+  `InvalidBodyFilter` răspunde 400 la JSON lipsă sau malformat.
 - **Testare**: `GlobalExceptionHandlerTests`, `ExceptionStatusCodeMapperTests`,
-  `SafeProblemDetailsFactoryTests`.
+  `SafeProblemDetailsFactoryTests`, `InvalidBodyFilterTests`.
 - **Limitări**: `traceId`-ul se caută manual în loguri.
 
 ### 4.18. Dependențe și imagini Docker
