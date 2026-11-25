@@ -10,6 +10,7 @@ using App.Application.UseCases.Users.Register;
 using App.Application.UseCases.Users.SignIn;
 using App.Application.UseCases.Users.RefreshToken;
 using App.Application.UseCases.Users.RequestPasswordReset;
+using App.Application.UseCases.Users.ResendEmailVerification;
 using App.Application.UseCases.Users.ResetPassword;
 using App.Application.UseCases.Users.VerifyEmail;
 using App.Application.UseCases.Users.Mfa.DisableMfa;
@@ -54,6 +55,15 @@ public async Task<IActionResult> VerifyEmail(
         ? HandleFailure(result)
         : Ok();
 }
+    [HttpPost("verification-emails")]
+    public async Task<IActionResult> ResendEmailVerification(
+        [FromBody] ResendEmailVerificationRequest request,
+        CancellationToken ct = default)
+    {
+        await sender.Send(new ResendEmailVerificationCommand(request.Email), ct);
+        return Accepted();
+    }
+
     [HttpPost("login")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,

@@ -41,6 +41,7 @@ public class AzureEmailSender(EmailClient emailClient, IConfiguration configurat
         var emailContent = new EmailContent(subject) { Html = htmlBody };
         var emailMessage = new EmailMessage(senderAddress, toEmail, emailContent);
 
-        await emailClient.SendAsync(WaitUntil.Completed, emailMessage, ct);
+        // Started: the provider accepted the message. Waiting for delivery would hold the request for seconds.
+        await emailClient.SendAsync(WaitUntil.Started, emailMessage, ct);
     }
 }
