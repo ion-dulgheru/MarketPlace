@@ -2,6 +2,7 @@ using App.Application;
 using App.Infrastructure;
 using App.Infrastructure.Auth;
 using App.Persistence;
+using App.WebApi.Infrastructure;
 using System.Text;
 using System.Threading.RateLimiting;
 using Azure.Identity;
@@ -29,6 +30,7 @@ builder.Services.AddSingleton(signingCertificate);
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
+builder.Services.AddGlobalExceptionHandling();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -109,6 +111,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseGlobalExceptionHandling();
 
 app.Use(async (context, next) =>
 {
