@@ -250,6 +250,8 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
   Swagger UI folosește un `<script>` inline pe care CSP l-ar bloca), `UseHsts()`
   (doar non-Development). Headerele se pun la trimiterea răspunsului, deci apar și pe erorile 500.
 - **Testare**: manual, verificat header-ele în răspuns via curl/browser devtools.
+- **Frontend**: aceleași headere pe toate răspunsurile (`vite.config.ts`, `routeRules`), plus
+  `frame-ancestors 'none'` împotriva clickjacking.
 - **Limitări**: CSP e dezactivat complet în Development; nu există `Strict-Transport-Security`
   în dev (normal, dev rulează pe HTTP local).
 
@@ -278,8 +280,8 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
 ### 4.15. Verificare în doi pași — TOTP (SR-12)
 - **Problemă**: o parolă furată ajunge pentru a intra în cont.
 - **Relevanță**: conturile conțin date personale și cereri de contact.
-- **Implementare**: cod de 6 cifre, secret criptat cu Data Protection, token intermediar de
-  5 minute, cod nereutilizabil, blocarea contului după 5 coduri greșite.
+- **Implementare**: activarea cere parola curentă; cod de 6 cifre, secret criptat cu Data Protection, token intermediar de
+  5 minute, cod nereutilizabil, blocarea contului după 5 încercări greșite.
 - **Testare**: `MfaTests`.
 - **Limitări**: opțional pentru utilizator; fără coduri de recuperare.
 
@@ -306,7 +308,8 @@ Pentru fiecare, format cerut de curs: **Problemă → Relevanță → Implementa
 - **Problemă**: biblioteci cu vulnerabilități cunoscute.
 - **Relevanță**: aplicația depinde de sute de pachete npm și NuGet.
 - **Implementare**: Dependabot săptămânal + alerte; `npm audit`, verificare NuGet și Trivy
-  blocante pe HIGH/CRITICAL în CI; Trivy blocant pe imagini la deploy; imaginea Web nu conține npm.
+  blocante pe HIGH/CRITICAL în CI; Trivy blocant pe imagini la deploy; imaginea Web nu conține npm
+  și rulează ca utilizator neprivilegiat (`node`).
 - **Testare**: la scanarea din 2026-11-25 ambele imagini aveau 0 vulnerabilități HIGH/CRITICAL
   reparabile.
 - **Limitări**: Trivy ignoră vulnerabilitățile fără fix disponibil (`ignore-unfixed`).
