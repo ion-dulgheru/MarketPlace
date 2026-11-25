@@ -41,9 +41,7 @@ public static class DependencyInjection
         services.AddSingleton<ITotpSecretProtector, TotpSecretProtector>();
         services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
-        services.AddScoped<IAdminAccessService, AdminAccessService>();
-        // Temporary: replaced by the database-backed audit logger (SecurityAuditLogs table).
-        services.AddScoped<ISecurityAuditLogger, LoggingSecurityAuditLogger>();
+        services.AddScoped<ISecurityAuditLogger, DbSecurityAuditLogger>();
         services.AddHttpClient<GoogleRecaptchaVerifier>();
 services.AddTransient<ICaptchaVerifier, GoogleRecaptchaVerifier>();
         var emailConnString = configuration["Azure:CommunicationServices:ConnectionString"];

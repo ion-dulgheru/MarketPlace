@@ -3,6 +3,7 @@ using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.Messaging;
 using App.Contracts.Responses.Adverts;
 using App.Domain.Entities;
+using App.Domain.Enums;
 using App.Domain.Errors;
 using App.Domain.Repositories;
 using App.Domain.Shared;
@@ -14,8 +15,7 @@ public class AttachAdvertImagesCommandHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     IFileStorageService fileStorageService,
-    IImageProcessor imageProcessor,
-    IAdminAccessService adminAccessService)
+    IImageProcessor imageProcessor)
     : ICommandHandler<AttachAdvertImagesCommand, AttachAdvertImagesResponse>
 {
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
@@ -24,7 +24,7 @@ public class AttachAdvertImagesCommandHandler(
     public async Task<Result<AttachAdvertImagesResponse>> Handle(AttachAdvertImagesCommand command, CancellationToken ct)
     {
         var user = await userRepository.GetByUuidAsync(command.UserUuid, ct);
-        if (user is null || !adminAccessService.IsAdmin(user.Email))
+        if (user is null || user.Role != UserRole.Admin)
         {
             return Result.Failure<AttachAdvertImagesResponse>(AdminErrors.Forbidden);
         }

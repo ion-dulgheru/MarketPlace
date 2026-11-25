@@ -1,5 +1,7 @@
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.JWT;
 using App.Application.Abstractions.Messaging;
+using App.Domain.Enums;
 using App.Domain.Repositories;
 using App.Domain.Shared;
 
@@ -8,6 +10,7 @@ namespace App.Application.UseCases.Users.ResetPassword;
 public class ResetPasswordCommandHandler(
     IUserRepository userRepository,
     IRefreshTokenGenerator tokenGenerator,
+    ISecurityAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : ICommandHandler<ResetPasswordCommand>
 {
     public async Task<Result> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
@@ -17,12 +20,26 @@ public class ResetPasswordCommandHandler(
 
         if (user is null || user.PasswordResetTokenExpiry is null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
         {
-return Result.Failure(Error.Validation(                "PasswordReset.InvalidToken",
+            await auditLogger.LogAsync(
+                SecurityEventType.PasswordResetCompleted,
+                success: false,
+                details: "Invalid or expired reset token.",
+                ct: cancellationToken);
+
+            return Result.Failure(Error.Validation(
+                "PasswordReset.InvalidToken",
                 "Reset token is invalid or expired."));
         }
 
         user.ResetPassword(BCrypt.Net.BCrypt.HashPassword(request.NewPassword));
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await auditLogger.LogAsync(
+            SecurityEventType.PasswordResetCompleted,
+            success: true,
+            userId: user.Guid,
+            email: user.Email,
+            ct: cancellationToken);
 
         return Result.Success();
     }

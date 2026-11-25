@@ -1,3 +1,4 @@
+using App.Application.Abstractions.Interfaces;
 using App.Application.Abstractions.JWT;
 using App.Application.UseCases.Users.Logout;
 using App.Application.UseCases.Users.RefreshToken;
@@ -55,7 +56,7 @@ public class LogoutCommandHandlerTests
         await Logout(RefreshToken);
 
         var result = await new RefreshTokenCommandHandler(
-                _sessions.Object, _users.Object, _jwt.Object, _tokens, _unitOfWork.Object)
+                _sessions.Object, _users.Object, _jwt.Object, _tokens, new Mock<ISecurityAuditLogger>().Object, _unitOfWork.Object)
             .Handle(new RefreshTokenCommand(RefreshToken), CancellationToken.None);
 
         Assert.True(result.IsFailure);

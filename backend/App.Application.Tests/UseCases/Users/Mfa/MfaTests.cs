@@ -357,7 +357,7 @@ public class MfaTests
         _users.Object, _sessions.Object, _jwt.Object, _tokens, Verifier(), Recorder(), _audit.Object, _unitOfWork.Object);
 
     private Task<Domain.Shared.Result<SignInResponse>> SignIn() =>
-        new SignInCommandHandler(_users.Object, _sessions.Object, _jwt.Object, _tokens, _unitOfWork.Object)
+        new SignInCommandHandler(_users.Object, _sessions.Object, _jwt.Object, _tokens, _audit.Object, _unitOfWork.Object)
             .Handle(new SignInCommand(Email, Password), CancellationToken.None);
 
     private Task<Domain.Shared.Result<SignInResponse>> VerifyLogin(string code) =>
