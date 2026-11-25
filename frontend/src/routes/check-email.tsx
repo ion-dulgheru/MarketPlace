@@ -1,5 +1,8 @@
+import { useState, type FormEvent } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { KeyRound, MailCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { resendVerificationEmail } from "@/api/auth";
 
 export const Route = createFileRoute("/check-email")({
   head: () => ({
@@ -13,6 +16,61 @@ export const Route = createFileRoute("/check-email")({
   }),
   component: CheckEmailPage,
 });
+
+function ResendForm() {
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSent(false);
+    setLoading(true);
+
+    const form = event.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+
+    try {
+      await resendVerificationEmail(email);
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form className="mt-8 grid gap-3 border-t border-border pt-6 text-left" onSubmit={handleSubmit}>
+      <label className="grid gap-1.5 text-sm font-medium">
+        Didn&apos;t get it? Check your spam folder or send it again
+        <input
+          name="email"
+          required
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          className="h-11 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+        />
+      </label>
+      {error && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {sent && (
+        <p role="status" className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+          If that account still needs verification, a new link is on its way. You can ask again in a
+          minute.
+        </p>
+      )}
+      <Button type="submit" variant="outline" disabled={loading}>
+        {loading ? "Sending…" : "Resend verification email"}
+      </Button>
+    </form>
+  );
+}
 
 function CheckEmailPage() {
   return (
@@ -44,6 +102,8 @@ function CheckEmailPage() {
           >
             Go to login
           </Link>
+
+          <ResendForm />
         </section>
 
         <p className="text-center text-xs text-muted-foreground">© 2026 OpenKey</p>
